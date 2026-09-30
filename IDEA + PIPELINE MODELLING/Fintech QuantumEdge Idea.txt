@@ -1,0 +1,349 @@
+===============================================================================
+FINTECH PRODUCT — CONVERSATION SUMMARY
+Vietnamese stock lookup & verification platform
+===============================================================================
+
+
+-------------------------------------------------------------------------------
+1. HOW WE GOT HERE
+-------------------------------------------------------------------------------
+
+The conversation moved through several business ideas before converging:
+
+  - Generic teen online business plan (financial education, not products)
+  - Vietnam-focused finance content in two languages (VN + EN)
+  - Dropshipping in 2026 — assessed, judged weak edge, time-box only
+  - General Vietnam-executable online business ideas
+  - Fintech: data product built on the existing HOSE screener
+  - Final: a lookup / verification platform for Vietnamese small & mid-caps
+
+Key observation raised repeatedly: every framing landed in the same place —
+Vietnamese market data, explained well. That convergence is the edge. The
+stated risk is idea-switching, not idea shortage.
+
+Timing note: FTSE Russell upgrade of Vietnam frontier -> secondary emerging
+market, effective 21 September 2026. Constituent list published 21 August 2026.
+Estimated USD 5–6bn passive inflows over the following 12–18 months.
+
+
+-------------------------------------------------------------------------------
+2. THE PRODUCT
+-------------------------------------------------------------------------------
+
+ONE LINE
+  "Tra cuu bat ky co phieu nao — ke ca nhung ma khong ai phan tich."
+  (Look up any stock — including the ones nobody analyses.)
+
+THE PROBLEM
+  Vietnamese retail investors receive stock tips via Zalo and Facebook groups
+  and have no fast way to check them. Broker research covers VN30; the stocks
+  that actually get tipped are small/mid-caps with no coverage in any language.
+  The gap is not literacy in the abstract — it is VERIFICATION AT THE MOMENT
+  OF DECISION.
+
+THE USP
+  Coverage where coverage doesn't exist. Breadth on small-caps is a content
+  moat: at 200 tickers, a competitor needs 200 too. Blue-chip analysis is
+  commodity; this isn't. Small-cap-specific risks (thin liquidity, dilution
+  history, related-party dealings) are the differentiating signals.
+
+AUDIENCE
+  Primary   — Vietnamese retail investors
+  Secondary — English-language readers riding the FTSE reclassification
+
+
+-------------------------------------------------------------------------------
+3. PRODUCT LAYERS (build order)
+-------------------------------------------------------------------------------
+
+LAYER 0 — Schema (invisible, decides everything)
+  Objects: Ticker, Company, Sector, Flag, Filing, Metric, User, Watchlist.
+  Every surface is a query over these. Get it right once = new features in a
+  day. Get it wrong = rebuild.
+
+LAYER 1 — Ticker page (the atom)
+  - What the business does, 2–3 sentences, plain Vietnamese
+  - 5 metrics + sector median + the stock's own 3-year range
+  - Active red flags, each linked to the filing or data row as evidence
+  - "What would have to be true for this to work"
+  - Explicit "khong cong bo" where data is missing — this is part of the value
+  - Review stamp: date + reviewer + personal position disclosure
+  Track: most-viewed tickers -> that's the upgrade-to-handwritten list.
+
+LAYER 2 — Sector pages + flag-list pages
+  Auto-generated from the same schema. Sector pages age better and rank
+  better than obscure tickers. Flag lists ("all HOSE companies with interest
+  coverage under 2x") are inherently shareable.
+
+LAYER 3 — Search
+  The real front door. Must handle: uppercase/lowercase tickers, company names
+  with and without diacritics, forum nicknames, single-character typos. The
+  alias table built here is reused by the bot and the tip parser.
+
+LAYER 4 — Accounts + watchlist
+  The moment it becomes a platform rather than a site. Technically light,
+  strategically heavy: tells you who cares about which tickers, which directs
+  all future effort allocation.
+
+LAYER 5 — Alerts
+  The ONLY retention mechanic in the whole list. Fires on: flag state change,
+  important new disclosure (dilution, auditor change, insider sale), metric
+  crossing a threshold. Key insight: the STATE-CHANGE EVENT is more
+  interesting than the static snapshot.
+
+LAYER 6 — Zalo/Telegram bot
+  Thin client over the same API. Lives in the app where tips actually arrive —
+  no context switch required.
+
+LAYER 7 — Tip parser
+  Architecturally an INPUT layer, not a page: free text in, a view of
+  Layer 1 out.
+
+CROSS-CUTTING
+  - Glossary: every metric on every page links to a definition. Cheap, and
+    this is the real financial-literacy component.
+  - Share cards: every page exports an image. Distribution channel is message
+    forwarding, so the product must be forwardable.
+
+REVISED ORDER (if platform, not publication)
+  Layer 1 (10 tickers) -> Layer 6 (bot) -> Layers 4–5 -> then 2–3 once
+  traffic justifies SEO work. Ticker pages are read-once-and-leave; without
+  watchlist and alerts you have a dictionary, not a platform.
+
+
+-------------------------------------------------------------------------------
+4. AGENT SYSTEM
+-------------------------------------------------------------------------------
+
+GOVERNING PRINCIPLE
+  Agents may READ, EXTRACT, CROSS-CHECK, and EXPRESS.
+  Agents may NOT JUDGE.
+
+AGENT 1 — Event extraction
+  In:  HOSE disclosures, IR pages, RSS media, vnstock company news
+  Out: {event_type, ticker, date, severity, source_url, excerpt}
+  Closed enum for event_type: dilution, auditor_change, insider_sale,
+  related_party, profit_warning, board_change, share_pledge, none.
+  Closed enum is critical — free-text categories break everything downstream.
+  Runs daily, writes to the events table. No commentary, no price-impact
+  guessing, no sentiment scores.
+  Role: fuels the alerting layer. For small-caps this event set is where the
+  real risk lives.
+
+AGENT 2 — Analysis expression
+  Division of labour is the point:
+    Python (deterministic) — thresholds, formulas, flag rules, sector medians
+                             -> fact sheet JSON
+    LLM (expression only)  — turns the fact sheet into plain Vietnamese
+  LLM may use ONLY numbers present in the fact sheet; every figure traceable
+  to a field; missing data written as "khong cong bo". Machine validation
+  rejects drafts containing unsourced numbers.
+  Reason: reproducibility is what's being sold. Same ticker + same data must
+  produce the same conclusion every time.
+
+AGENT 3 — Tip parser (the standout feature)
+  1. Extract -> {ticker, claims[], price_target, timeframe, tone}
+     Claim types: valuation, catalyst/news, technical, insider, vague hype
+  2. Verify IN CODE — catalyst claims against Agent 1's event table;
+     price targets -> implied P/E and EV/EBITDA vs sector median and the
+     stock's own 3-year range
+  3. Fire ALL flags for that ticker, including ones the tip never mentioned —
+     often the most valuable output
+  4. Three blocks out: what the tip claims / what the data shows /
+     what it doesn't tell you
+  5. Render as a shareable card
+  Rules: no match = "no corresponding disclosure found", never "false".
+  Never conclude "scam" or "don't buy".
+  Log every parsed tip — which tickers get pumped, with what language, when.
+  Nobody else will have that dataset.
+
+AGENT 4 — Portfolio inspection (NOT construction)
+  User pastes their existing holdings. System DESCRIBES:
+    - sector concentration
+    - total active flags across the portfolio
+    - overlapping risk (e.g. multiple names on one commodity cycle)
+    - share of thin-liquidity small-caps
+  No buy/sell suggestions, no target weights. Describing what exists is a
+  tool; prescribing what should exist is SSC-licensed advice.
+
+AGENT 5 — Liquidity risk (narrowed TA)
+  Pure code, no LLM: 20-session average volume, zero-trade sessions over
+  3 months, price range, bid-ask spread, estimated sessions to exit a given
+  position size. Framed as RISK, not signal. No MACD/RSI, no buy signals.
+  For small-caps, thin liquidity is the biggest invisible retail risk — so
+  this fits the USP.
+
+FLOW
+  Sources
+    -> Agent 1 (event extraction)
+    -> Events table + financials + price/liquidity  [Postgres]
+    -> Deterministic layer: metrics -> flags -> fact sheet JSON
+        |-> Agent 2 -> ticker page -> machine validation -> human review -> publish
+        |-> Agent 3 -> tip analysis card
+        |-> Agent 4 -> portfolio report
+        |-> Agent 5 -> liquidity block (embedded in ticker page)
+  Loop closes: share card -> forwarded into Zalo group -> next tip pasted in.
+  That loop is the distribution, and the only self-growing part of the system.
+
+BUILD ORDER
+  Agent 5 (pure code, one evening) -> Agent 2 -> Agent 3 -> Agent 1 -> Agent 4
+  Honest advice: don't build all five. Build Agent 3 in a weekend with ONE
+  checker, post it to the community, see if it gets forwarded.
+
+
+-------------------------------------------------------------------------------
+5. THE 7-STEP PORTFOLIO FLOW — ASSESSED
+-------------------------------------------------------------------------------
+
+Proposed: profile -> screen 10 -> narrow to 5 by news/sentiment -> TA entry
+price -> position sizing -> 3 return projections -> save & track.
+
+VERDICT ON EACH
+
+  Step 1  Preference intake      NO MODEL (optional small LLM for free-text
+                                 intake; user confirms parsed form)
+  Step 2  Screener               CODE — existing Python screen over cached
+                                 VN100
+  Step 3  News/filings           THE ONE REAL LLM — event extraction, NOT
+                                 sentiment. Vietnamese financial media is thin
+                                 and often promotional; sentiment scores there
+                                 are noise dressed as signal. Code (not the
+                                 model) does the 10 -> 5 cut using written
+                                 rules.
+  Step 4  Entry price            CODE — support/resistance, MAs, ATR bands are
+                                 arithmetic. LLMs are unreliable at chart math
+                                 with zero capability gain. Output a RANGE with
+                                 assumptions shown, not a single number.
+  Step 5  Position sizing        CODE — equal-weight / inverse-vol / capped
+                                 concentration + Step 1 constraints, rounded to
+                                 lot sizes.
+  Step 6  Scenarios              CODE — derive from historical multiples
+                                 ("at 3-year low P/E this implies X"), never
+                                 modelled returns, never probabilities, no time
+                                 horizon attached.
+  Step 7  Tracking               CODE + optional LLM monthly plain-Vietnamese
+                                 summary driven strictly from snapshot diffs.
+
+  HONEST COUNT: one agent. Step 3 is the only place a language model does work
+  code can't.
+
+TWO STRUCTURAL WARNINGS
+  - VN100 is large/mid-cap — using it quietly abandons the small-cap USP.
+    Not wrong, but it's a different product. VN100 rebalances semi-annually,
+    not monthly.
+  - The word "client" is the problem, not the tech. Steps 4–6 output an entry
+    price, a share count, and a projection for a named person = personalised
+    investment advice = SSC-licensed territory. Two workable versions:
+      (a) PERSONAL TOOL — built for yourself, own money, no regulatory issue
+      (b) SELF-DIRECTED TOOL — user sets criteria and sizes their own
+          positions; you provide the calculator, they make every decision
+    What doesn't work is a system that decides for someone else.
+
+
+-------------------------------------------------------------------------------
+6. DATA & INFRASTRUCTURE
+-------------------------------------------------------------------------------
+
+SOURCES
+  vnstock     — financials, prices, company news (wrapper over TCBS/SSI
+                endpoints; unaffiliated, can break without warning — cache
+                everything)
+  RSS         — VnExpress, CafeF, VietStock, Tuoi Tre, Thanh Nien via
+                feedparser
+  HOSE + IR   — official disclosures; hardest to parse, highest value, and the
+                actual differentiator for small-caps
+  Scraping    — last resort only; respect robots.txt, rate-limit, cache
+
+COPYRIGHT LINE
+  Store headline + link + publisher + timestamp ONLY. Never article bodies.
+  Display headline + link + your own one-line note. News is an INPUT TO FLAGS,
+  not a page section — that keeps the product in "verification tool" rather
+  than the crowded "news aggregator" category.
+
+PIPELINE
+  Ingest (raw, timestamped, never re-fetched)
+    -> deterministic extraction (never let a model retype a number off a PDF)
+    -> structured fact sheet per ticker
+    -> LLM draft from that fact sheet only
+    -> machine validation (rejects any number not in the fact sheet, ticker
+       mismatches, missing sections, wrong length)
+    -> human review queue (approve / edit / reject; rejections logged, and
+       that log is how the prompt improves)
+    -> static publish with reviewed_by + reviewed_at stamp
+  Alerts on: new filing for a covered ticker, flag state change, page stale
+  past 90 days. Re-run only what changed.
+
+STACK
+  Next.js + Postgres + Vercel, static generation (traffic costs nothing,
+  nothing breaks during exams). Python pipeline writes to the same database,
+  fully separate from the web app. Git from day one, prompts versioned.
+
+TWO THINGS THAT WILL BITE
+  - Extraction from Vietnamese financial PDFs is the hardest engineering here
+    and always takes ~3x longer than expected.
+  - Every stage must be idempotent and re-runnable — you WILL change a rule at
+    ticker 80 and need to regenerate all 80.
+
+SECURITY NOTE
+  An API key was pasted in chat during this conversation. Rotate it. Keep
+  credentials in a gitignored .env file — never in messages, never in a repo.
+
+
+-------------------------------------------------------------------------------
+7. STRATEGY & GUARDRAILS
+-------------------------------------------------------------------------------
+
+COVERAGE — THE BARBELL
+  10 hand-written flagship pages proving capability, plus automated shallow
+  coverage clearly marked as such. Promote shallow -> deep based on what people
+  ask for. Demand tells you where to spend effort.
+  Automate the DRAFTING, never the VERIFYING. The "reviewed by [name] on
+  [date]" stamp is the product. Fully automated output at scale is exactly
+  what a competitor with more compute replicates next month — and one
+  hallucinated fact about a small-cap, in public, ends the trust being sold.
+
+REGULATORY GUARDRAILS
+  - Education and context, never recommendations (SSC-licensed territory)
+  - Disclose personal positions on any covered ticker
+  - Unmatched claim = "no disclosure found", never "false"
+  - Negative catalogue: strictly factual and sourced (defamation risk)
+  - No guaranteed returns, never handle other people's money
+
+CADENCE
+  Weekly cycle: Monday pick ONE thing -> midweek build -> Friday publish
+  publicly -> weekend log what people asked that you couldn't answer.
+  Small enough to survive a bad week at university. The public deadline is
+  what keeps it moving.
+
+DECISION LOG
+  One file, one line per decision: what was chosen, why, what would reverse it.
+  Includes kill criteria. Also the artifact that makes the project legible to
+  admissions and employers.
+
+
+-------------------------------------------------------------------------------
+8. WHAT TO ACTUALLY DO NEXT
+-------------------------------------------------------------------------------
+
+THREE WEEKEND PROTOTYPES — none commits you to a codebase
+
+  1. TIP PARSER with a single checker (implied multiples)
+     Matches a behaviour people already have.
+
+  2. RETROSPECTIVE POST-MORTEM of a past Vietnamese small-cap blow-up, walked
+     through the framework. Proves the system with zero infrastructure and is
+     the single most persuasive demo available — it shows the tool would have
+     caught something before it broke.
+
+  3. ONE FLAG-FIRST LIST POST
+     Tests whether the data alone travels.
+
+KILL CRITERIA
+  Publish 5 hand-written pages on genuinely obscure tickers this month. If
+  nobody forwards them and nobody sends tickers to cover, the USP isn't real —
+  and the cost was one afternoon each.
+
+RECOMMENDED FIRST MOVE
+  Start with the post-mortem. Most persuasive artifact, needs nothing built.
+
+===============================================================================

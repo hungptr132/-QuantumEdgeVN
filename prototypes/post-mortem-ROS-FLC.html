@@ -1,0 +1,524 @@
+<!doctype html>
+<title>ROS / FLC Faros Dossier</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --paper: #eef1f0;
+    --surface: #f8faf9;
+    --surface-2: #ffffff;
+    --ink: #142621;
+    --ink-2: #3f544e;
+    --ink-mute: #75887f;
+    --line: #d3dbd6;
+    --line-strong: #aebcb4;
+    --accent: #0f6e5f;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcece7;
+    --accent-soft-line: #b7d6cc;
+    --cat-1: #2a78d6; /* liabilities */
+    --cat-2: #eb6834; /* charter capital */
+    --cat-3: #1baf7a; /* other equity */
+    --good: #0ca30c;
+    --warning: #fab219;
+    --warning-ink: #6b4c00;
+    --serious: #ec835a;
+    --critical: #d03b3b;
+    --critical-soft: #f8e2e0;
+    --critical-soft-line: #e3b3ae;
+    --shadow: 0 1px 2px rgba(20,38,33,0.06), 0 8px 24px -12px rgba(20,38,33,0.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --paper: #0d1512;
+      --surface: #121b17;
+      --surface-2: #16211c;
+      --ink: #e9efec;
+      --ink-2: #aebdb6;
+      --ink-mute: #7c8c84;
+      --line: #26332c;
+      --line-strong: #384a41;
+      --accent: #3fb39f;
+      --accent-ink: #06231c;
+      --accent-soft: #16302a;
+      --accent-soft-line: #244a3f;
+      --cat-1: #3987e5;
+      --cat-2: #d95926;
+      --cat-3: #199e70;
+      --good: #35c235;
+      --warning: #fab219;
+      --warning-ink: #2a1f00;
+      --serious: #ec835a;
+      --critical: #e66767;
+      --critical-soft: #2c1613;
+      --critical-soft-line: #5c2b26;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --paper: #0d1512;
+    --surface: #121b17;
+    --surface-2: #16211c;
+    --ink: #e9efec;
+    --ink-2: #aebdb6;
+    --ink-mute: #7c8c84;
+    --line: #26332c;
+    --line-strong: #384a41;
+    --accent: #3fb39f;
+    --accent-ink: #06231c;
+    --accent-soft: #16302a;
+    --accent-soft-line: #244a3f;
+    --cat-1: #3987e5;
+    --cat-2: #d95926;
+    --cat-3: #199e70;
+    --good: #35c235;
+    --warning: #fab219;
+    --warning-ink: #2a1f00;
+    --serious: #ec835a;
+    --critical: #e66767;
+    --critical-soft: #2c1613;
+    --critical-soft-line: #5c2b26;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans", system-ui, sans-serif;
+    font-size:16px; line-height:1.55;
+  }
+  .wrap{max-width:920px; margin:0 auto; padding:28px 20px 80px;}
+  .mono{font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums;}
+  .serif{font-family:"Source Serif 4", Georgia, serif;}
+  h1,h2,h3{text-wrap:balance; margin:0;}
+  a{color:var(--accent);}
+  a:focus-visible, button:focus-visible, summary:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  /* ---- masthead ---- */
+  .masthead{
+    display:flex; flex-direction:column; gap:14px;
+    padding:22px 22px 24px; background:var(--surface-2);
+    border:1px solid var(--line); border-radius:6px; box-shadow:var(--shadow);
+  }
+  .eyebrow{
+    font-family:"IBM Plex Mono", monospace; font-size:11.5px; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--accent); font-weight:600;
+  }
+  .masthead h1{font-family:"Source Serif 4", serif; font-weight:700; font-size:clamp(28px,5vw,40px); color:var(--ink);}
+  .masthead .dek{color:var(--ink-2); font-size:15px; max-width:62ch;}
+  .meta-row{display:flex; flex-wrap:wrap; gap:8px 10px; margin-top:4px;}
+  .meta-chip{
+    font-family:"IBM Plex Mono", monospace; font-size:12px; padding:4px 9px;
+    border:1px solid var(--line-strong); border-radius:4px; color:var(--ink-2); background:var(--surface);
+  }
+  .meta-chip b{color:var(--ink); font-weight:600;}
+  .scope-note{
+    font-size:13px; color:var(--ink-2); border-top:1px solid var(--line); padding-top:12px; margin-top:2px;
+  }
+
+  /* ---- kpi row ---- */
+  .kpi-row{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:6px; overflow:hidden; margin:20px 0;}
+  .kpi{background:var(--surface-2); padding:16px 14px; display:flex; flex-direction:column; gap:4px; min-width:0;}
+  .kpi .val{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:clamp(20px,3.4vw,26px); color:var(--ink); line-height:1.1;}
+  .kpi .val.neg{color:var(--critical);}
+  .kpi .lbl{font-size:12px; color:var(--ink-mute); line-height:1.35;}
+  @media (max-width:640px){ .kpi-row{grid-template-columns:repeat(2,1fr);} }
+
+  section{margin-top:38px;}
+  .sec-head{display:flex; align-items:baseline; gap:10px; margin-bottom:12px;}
+  .sec-num{font-family:"IBM Plex Mono",monospace; color:var(--ink-mute); font-size:13px;}
+  h2.sec-title{font-family:"Source Serif 4",serif; font-weight:600; font-size:22px;}
+  .lede{color:var(--ink-2); font-size:14.5px; margin:-4px 0 16px; max-width:68ch;}
+
+  p{max-width:68ch;}
+
+  .card{background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:18px 20px; box-shadow:var(--shadow);}
+
+  /* ---- tables ---- */
+  table{border-collapse:collapse; width:100%; font-size:13.5px;}
+  .tbl-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:6px; background:var(--surface-2);}
+  th{
+    text-align:left; font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:11px; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--ink-mute); padding:10px 12px; border-bottom:1px solid var(--line-strong); white-space:nowrap;
+  }
+  td{padding:11px 12px; border-bottom:1px solid var(--line); vertical-align:top; color:var(--ink);}
+  tr:last-child td{border-bottom:none;}
+  td.date{font-family:"IBM Plex Mono",monospace; white-space:nowrap; color:var(--ink-2); font-size:12.5px;}
+  td.num{font-family:"IBM Plex Mono",monospace; text-align:right; white-space:nowrap;}
+  .src-link{font-size:12px; white-space:nowrap;}
+
+  .tag{
+    display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10.5px; font-weight:600;
+    letter-spacing:.03em; padding:2.5px 7px; border-radius:3px; white-space:nowrap; text-transform:uppercase;
+  }
+  .tag-dilution{background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent-soft-line);}
+  .tag-related{background:color-mix(in srgb, var(--serious) 16%, var(--surface-2)); color:var(--serious); border:1px solid color-mix(in srgb, var(--serious) 45%, var(--surface-2));}
+  .tag-board{background:color-mix(in srgb, var(--warning) 22%, var(--surface-2)); color:var(--warning-ink); border:1px solid color-mix(in srgb, var(--warning) 55%, var(--surface-2));}
+  .tag-guidance{background:color-mix(in srgb, var(--warning) 22%, var(--surface-2)); color:var(--warning-ink); border:1px solid color-mix(in srgb, var(--warning) 55%, var(--surface-2));}
+  .tag-insider{background:var(--critical-soft); color:var(--critical); border:1px solid var(--critical-soft-line);}
+  .tag-audit{background:var(--critical-soft); color:var(--critical); border:1px solid var(--critical-soft-line);}
+  .tag-reg{background:var(--surface); color:var(--ink-2); border:1px solid var(--line-strong);}
+  .tag-verdict{background:var(--critical-soft); color:var(--critical); border:1px solid var(--critical-soft-line);}
+
+  .not-disclosed{color:var(--ink-mute); font-style:italic;}
+
+  /* ---- callouts ---- */
+  .callout{border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:4px; padding:14px 18px; background:var(--surface-2);}
+  .callout h3{font-family:"Source Serif 4",serif; font-size:16px; font-weight:600; margin-bottom:8px;}
+  .callout.gap{border-left-color:var(--ink-mute);}
+  .callout ul{margin:0; padding-left:20px;}
+  .callout li{margin-bottom:6px;}
+  .callout li:last-child{margin-bottom:0;}
+
+  /* ---- chart chrome ---- */
+  figure{margin:0; padding:0;}
+  figcaption{font-size:12.5px; color:var(--ink-mute); margin-top:8px; max-width:68ch;}
+  .chart-title{font-size:13px; font-weight:600; color:var(--ink-2); margin-bottom:10px; font-family:"IBM Plex Mono",monospace; letter-spacing:.01em;}
+  .legend{display:flex; flex-wrap:wrap; gap:14px; margin-top:10px; font-size:12px; color:var(--ink-2);}
+  .legend .sw{display:inline-flex; align-items:center; gap:6px;}
+  .legend .dot{width:9px; height:9px; border-radius:2px; display:inline-block;}
+  .chart-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media (max-width:680px){ .chart-grid{grid-template-columns:1fr;} }
+
+  /* meters */
+  .meter{margin-bottom:16px;}
+  .meter:last-child{margin-bottom:0;}
+  .meter-head{display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;}
+  .meter-head .name{color:var(--ink);}
+  .meter-head .val{font-family:"IBM Plex Mono",monospace; font-weight:600;}
+  .meter-track{height:10px; border-radius:5px; background:var(--surface); border:1px solid var(--line); overflow:hidden;}
+  .meter-fill{height:100%; border-radius:5px 0 0 5px;}
+  .meter-cap{font-size:11.5px; color:var(--ink-mute); margin-top:5px;}
+
+  /* tip card */
+  .tip-card{border:1px solid var(--line-strong); border-radius:8px; overflow:hidden; box-shadow:var(--shadow); background:var(--surface-2);}
+  .tip-card .tip-head{background:var(--accent); color:var(--accent-ink); padding:10px 16px; font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.04em; display:flex; justify-content:space-between;}
+  .tip-body{padding:16px 18px 18px;}
+  .tip-quote{font-family:"Source Serif 4",serif; font-style:italic; font-size:15.5px; color:var(--ink); border-left:3px solid var(--line-strong); padding-left:14px; margin:0 0 16px;}
+  .tip-quote .en{display:block; font-style:normal; font-size:12.5px; color:var(--ink-mute); margin-top:6px; font-family:"IBM Plex Sans",sans-serif;}
+  .tip-block{padding:12px 0; border-top:1px solid var(--line);}
+  .tip-block:first-of-type{border-top:none;}
+  .tip-block .k{font-family:"IBM Plex Mono",monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-weight:600; margin-bottom:6px; display:block;}
+  .tip-block.claims .k{color:var(--ink-mute);}
+  .tip-block.data .k{color:var(--accent);}
+  .tip-block.gap .k{color:var(--ink-mute);}
+  .tip-block p{margin:0; font-size:14px; max-width:none;}
+
+  /* cutoff divider */
+  .cutoff{
+    display:flex; align-items:center; gap:14px; margin:46px 0 10px; color:var(--critical);
+  }
+  .cutoff::before, .cutoff::after{content:""; flex:1; height:1px; background:repeating-linear-gradient(90deg,var(--critical) 0 6px, transparent 6px 11px);}
+  .cutoff span{font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.04em; text-align:center; white-space:nowrap;}
+  .cutoff-sub{text-align:center; font-size:12.5px; color:var(--ink-mute); margin-bottom:26px;}
+
+  footer{margin-top:56px; padding-top:18px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-mute);}
+  footer p{max-width:68ch;}
+</style>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="eyebrow">QuantumEdge — verification framework · retrospective prototype</div>
+    <h1>ROS — FLC Faros Construction JSC</h1>
+    <p class="dek">A ticker-page read of the public record, reconstructed as of <strong>31 December 2021</strong> — the last trading day before the January 2022 events that ended the company. No pipeline or agents exist yet; every figure below is sourced by hand to demonstrate what the framework would surface.</p>
+    <div class="meta-row">
+      <span class="meta-chip">TICKER <b>ROS</b></span>
+      <span class="meta-chip">EXCHANGE <b>HOSE</b></span>
+      <span class="meta-chip">SECTOR <b>Construction / Real estate</b></span>
+      <span class="meta-chip">SNAPSHOT <b>31 Dec 2021</b></span>
+      <span class="meta-chip">STATUS <b>Delisted Sep 2022</b></span>
+    </div>
+    <p class="scope-note">Scope note: QuantumEdge's intended coverage spans HOSE, HNX and UPCOM across quantitative, technical and qualitative signal. This dossier covers one HOSE case because it is the best-documented Vietnamese small/mid-cap collapse available — not because coverage stops at HOSE.</p>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><span class="val">~2,867×</span><span class="lbl">Charter capital growth, 2011 → Sep 2016 listing (VND 1.5bn → 4.3tn)</span></div>
+    <div class="kpi"><span class="val">94.5%</span><span class="lbl">Share of total equity that is charter capital, FY2020 year-end</span></div>
+    <div class="kpi"><span class="val neg">−93.6%</span><span class="lbl">Price vs. Nov-2017 peak, as of 31 Dec 2021 close (214,000 → 13,600 VND)</span></div>
+    <div class="kpi"><span class="val neg">−99.96%</span><span class="lbl">FY2020 net profit, pre-audit (2,027bn) → audited (0.857bn)</span></div>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2 class="sec-title">What the business is</h2></div>
+    <p>FLC Faros Construction JSC (ROS) was a construction and real-estate contracting arm of the FLC Group, registered in 2011 with VND 1.5 billion in charter capital and listed on HOSE in September 2016. By this snapshot date it traded as one of seven tickers Vietnamese retail forums and financial media grouped together as <em>"cổ phiếu họ FLC"</em> — the "FLC family stocks": FLC, ROS, HAI, AMD, GAB, ART and KLF — under common leadership, with ART (BOS Securities) acting as the group's own affiliated brokerage.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2 class="sec-title">Quantitative read</h2></div>
+    <p class="lede">Computed from filed balance-sheet and results data. Sector-median comparisons are marked <span class="not-disclosed">không công bố</span> — this prototype has no Layer-0 schema or live data pipeline to compute them from.</p>
+
+    <div class="chart-grid">
+      <div class="card">
+        <div class="chart-title">Balance sheet composition — FY2020 year-end</div>
+        <svg viewBox="0 0 400 190" role="img" aria-label="Stacked bar: of VND 10,483bn total assets, 42.7% is liabilities, 54.1% is charter capital, 3.2% is other equity">
+          <g transform="translate(20,26)">
+            <rect x="0" y="0" width="152.6" height="34" fill="var(--cat-1)"/>
+            <rect x="152.6" y="0" width="193.5" height="34" fill="var(--cat-2)"/>
+            <rect x="346.1" y="0" width="11.4" height="34" fill="var(--cat-3)"/>
+            <rect x="0" y="0" width="357.5" height="34" fill="none" stroke="var(--surface-2)" stroke-width="2"/>
+            <line x1="152.6" y1="0" x2="152.6" y2="34" stroke="var(--surface-2)" stroke-width="2"/>
+            <line x1="346.1" y1="0" x2="346.1" y2="34" stroke="var(--surface-2)" stroke-width="2"/>
+            <text x="76" y="21" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" font-weight="600" fill="#fff">42.7%</text>
+            <text x="249" y="21" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" font-weight="600" fill="#fff">54.1%</text>
+
+            <line x1="0" y1="50" x2="0" y2="60" stroke="var(--line-strong)"/>
+            <text x="0" y="72" font-family="IBM Plex Mono" font-size="10.5" fill="var(--ink-2)">Liabilities</text>
+            <text x="0" y="86" font-family="IBM Plex Mono" font-size="10.5" fill="var(--ink-mute)">4,474bn</text>
+
+            <line x1="152.6" y1="50" x2="152.6" y2="60" stroke="var(--line-strong)"/>
+            <text x="152.6" y="72" font-family="IBM Plex Mono" font-size="10.5" fill="var(--ink-2)">Charter capital</text>
+            <text x="152.6" y="86" font-family="IBM Plex Mono" font-size="10.5" fill="var(--ink-mute)">5,676bn</text>
+
+          </g>
+          <text x="20" y="168" font-family="IBM Plex Mono" font-size="10.5" fill="var(--ink-mute)">Total assets: VND 10,483bn</text>
+        </svg>
+        <div class="legend">
+          <span class="sw"><span class="dot" style="background:var(--cat-3)"></span>Other equity — 333bn (3.2%)</span>
+        </div>
+        <figcaption>Other equity — retained earnings and reserves accumulated since 2011 — is a 3.2% sliver. Charter capital alone, the disputed-origin figure from the 2016 listing, outweighs it roughly seventeen to one.</figcaption>
+      </div>
+
+      <div class="card">
+        <div class="chart-title">FY2020 net profit after tax — log scale</div>
+        <svg viewBox="0 0 400 190" role="img" aria-label="Log-scale bar chart: pre-audit net profit 2,027 billion VND versus audited net profit 0.857 billion VND">
+          <g transform="translate(52,18)">
+            <line x1="0" y1="0" x2="0" y2="130" stroke="var(--line-strong)"/>
+            <text x="-6" y="19.4" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" fill="var(--ink-mute)">1,000bn</text>
+            <text x="-6" y="53.8" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" fill="var(--ink-mute)">100bn</text>
+            <text x="-6" y="88.2" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" fill="var(--ink-mute)">10bn</text>
+            <text x="-6" y="122.6" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" fill="var(--ink-mute)">1bn</text>
+            <line x1="-3" y1="16.4" x2="290" y2="16.4" stroke="var(--line)"/>
+            <line x1="-3" y1="50.8" x2="290" y2="50.8" stroke="var(--line)"/>
+            <line x1="-3" y1="85.2" x2="290" y2="85.2" stroke="var(--line)"/>
+            <line x1="-3" y1="119.6" x2="290" y2="119.6" stroke="var(--line)"/>
+
+            <rect x="40" y="5.9" width="56" height="124.1" rx="3" fill="var(--cat-2)"/>
+            <text x="68" y="-4" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" font-weight="600" fill="var(--ink)">2,027bn</text>
+            <text x="68" y="148" text-anchor="middle" font-family="IBM Plex Sans" font-size="10" fill="var(--ink-2)">Pre-audit</text>
+
+            <rect x="164" y="121.9" width="56" height="8.1" rx="3" fill="var(--critical)"/>
+            <text x="192" y="111" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" font-weight="600" fill="var(--critical)">0.857bn</text>
+            <text x="192" y="148" text-anchor="middle" font-family="IBM Plex Sans" font-size="10" fill="var(--ink-2)">Audited</text>
+
+            <line x1="0" y1="130" x2="290" y2="130" stroke="var(--line-strong)"/>
+          </g>
+        </svg>
+        <figcaption>Same fiscal year, same entity. The audited figure retained 0.04% of the pre-audit number, after auditors excluded related-party interest-expense benefits and added subsidiary provisions.</figcaption>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px;">
+      <div class="chart-title">FY2021 guidance vs. 9-month actual (pre-tax basis)</div>
+      <div class="meter">
+        <div class="meter-head"><span class="name">Revenue</span><span class="val">53% of plan</span></div>
+        <div class="meter-track"><div class="meter-fill" style="width:53%; background:var(--cat-1);"></div></div>
+        <div class="meter-cap">9M-2021 actual VND 1,808bn (+16% YoY) against a full-year plan of VND 2,900bn (+44% YoY)</div>
+      </div>
+      <div class="meter">
+        <div class="meter-head"><span class="name">Pre-tax profit</span><span class="val">60% of plan</span></div>
+        <div class="meter-track"><div class="meter-fill" style="width:60%; background:var(--warning);"></div></div>
+        <div class="meter-cap">9M-2021 actual VND 33bn against a full-year plan of VND 58bn (+115% YoY) — Q1 alone had already delivered over 40% of that plan, so Q2+Q3 combined added comparatively little</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2 class="sec-title">Price, in three points</h2></div>
+    <div class="card">
+      <svg viewBox="0 0 860 130" role="img" aria-label="Timeline of ROS share price milestones from November 2017 peak of 214,000 dong to 31 December 2021 close of 13,600 dong">
+        <line x1="20" y1="65" x2="840" y2="65" stroke="var(--line-strong)" stroke-width="2"/>
+        <!-- Nov 2017 peak -->
+        <circle cx="60" cy="65" r="5" fill="var(--cat-2)"/>
+        <text x="60" y="40" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" font-weight="600" fill="var(--ink)">214,000 đ</text>
+        <text x="60" y="54" text-anchor="middle" font-family="IBM Plex Sans" font-size="10" fill="var(--ink-mute)">Nov 2017 — all-time peak</text>
+        <!-- Jan 2020 below par -->
+        <circle cx="330" cy="65" r="5" fill="var(--warning)"/>
+        <text x="330" y="92" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" font-weight="600" fill="var(--ink)">&lt; 10,000 đ</text>
+        <text x="330" y="106" text-anchor="middle" font-family="IBM Plex Sans" font-size="10" fill="var(--ink-mute)">31 Jan 2020 — first close below par</text>
+        <!-- most of 2021 below par bracket -->
+        <line x1="330" y1="65" x2="760" y2="65" stroke="var(--warning)" stroke-width="4" opacity="0.4"/>
+        <text x="545" y="40" text-anchor="middle" font-family="IBM Plex Sans" font-size="10" fill="var(--ink-mute)">below par for ~all of 2020–Nov 2021</text>
+        <!-- Dec 15 crosses par -->
+        <circle cx="770" cy="65" r="5" fill="var(--cat-3)"/>
+        <text x="742" y="40" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" font-weight="600" fill="var(--ink)">&gt; 10,000 đ</text>
+        <text x="742" y="54" text-anchor="middle" font-family="IBM Plex Sans" font-size="9.5" fill="var(--ink-mute)">15 Dec 2021 — crosses par,</text>
+        <text x="742" y="65" text-anchor="middle" font-family="IBM Plex Sans" font-size="9.5" fill="var(--ink-mute)" dy="14">first time in ~2 years</text>
+        <!-- Dec 31 cutoff -->
+        <circle cx="820" cy="65" r="6" fill="var(--critical)"/>
+        <line x1="820" y1="20" x2="820" y2="110" stroke="var(--critical)" stroke-dasharray="3 3"/>
+        <text x="820" y="120" text-anchor="middle" font-family="IBM Plex Mono" font-size="12" font-weight="600" fill="var(--critical)">13,600 đ</text>
+        <text x="20" y="14" font-family="IBM Plex Mono" font-size="10" fill="var(--ink-mute)">SEP 2016 — LISTING</text>
+        <text x="820" y="14" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="var(--critical)">31 DEC 2021 — CUTOFF</text>
+      </svg>
+      <figcaption>By this snapshot, ROS had spent nearly two years trading below its own par value before a rally in the final two weeks of December — a 36% run into the cutoff date, immediately ahead of the January 2022 events in §07.</figcaption>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2 class="sec-title">Active flags as of 31 Dec 2021</h2></div>
+    <p class="lede">Tagged to the closed event-type enum from the pipeline spec (<code class="mono">dilution</code>, <code class="mono">related_party</code>, <code class="mono">board_change</code>, <code class="mono">profit_warning</code>, …). No match found for <code class="mono">auditor_change</code> or <code class="mono">share_pledge</code> before this date in sources reviewed — recorded as absent, not as clean.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>Flag</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="date">Sep 2016</td>
+            <td><span class="tag tag-dilution">Dilution</span></td>
+            <td>Charter capital reaches VND 4.3tn at listing — ~2,867× its VND 1.5bn base five years earlier, for a firm with a short operating history.</td>
+            <td class="src-link"><a href="https://vnexpress.net/5-nam-tao-song-co-phieu-ho-flc-cua-ong-trinh-van-quyet-4716298.html" target="_blank" rel="noopener">VnExpress ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">2016–May 2018</td>
+            <td><span class="tag tag-dilution">Dilution</span></td>
+            <td>Charter capital raised again to VND 5,676bn, within 18 months of listing.</td>
+            <td class="src-link"><a href="https://finance.vietstock.vn/ros/ho-so-doanh-nghiep.htm?languageid=2" target="_blank" rel="noopener">VietStock ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">FY2020 (pub. 2021)</td>
+            <td><span class="tag tag-related">Related party</span></td>
+            <td>Audited FY2020 net profit fell from a pre-audit VND 2,027bn to VND 0.857bn (−99.96%) after auditors excluded interest-expense benefits tied to related-party transactions and added subsidiary provisions.</td>
+            <td class="src-link"><a href="https://tuoitre.vn/vi-sao-loi-nhuan-cua-flc-faros-giam-gan-58-20210331163000014.htm" target="_blank" rel="noopener">Tuổi Trẻ ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">2020</td>
+            <td><span class="tag tag-related">Related party</span></td>
+            <td>Same-ecosystem ticker GAB rose ~1,110% (16,250 → 196,800 VND) in 2020 on sessions of only a few hundred to a few thousand shares — a thin-float, one-way-price pattern.</td>
+            <td class="src-link"><a href="https://cafeland.vn/tin-tuc/co-phieu-thi-gia-cao-nhat-ho-flc-bi-huy-niem-yet-120821.html" target="_blank" rel="noopener">CafeLand ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">2020</td>
+            <td><span class="tag tag-board">Board change</span></td>
+            <td>GAB's chairman resigns around the time the stock hits its record high and comes under exchange scrutiny.</td>
+            <td class="src-link"><a href="https://vietnamnet.vn/co-muc-gia-ky-luc-gab-bi-kiem-soat-chu-tich-xin-tu-nhiem-2062846.html" target="_blank" rel="noopener">VietNamNet ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">Late 2021</td>
+            <td><span class="tag tag-guidance">Guidance flag</span></td>
+            <td>FY2021 plan of VND 58bn pre-tax profit (+115% YoY) set against a company that had just posted ~VND 27bn pre-tax the year before, with no new disclosed contracts explaining the jump.</td>
+            <td class="src-link"><a href="https://www.tinnhanhchungkhoan.vn/flc-faros-ros-chot-muc-tieu-doanh-thu-2900-ty-dong-loi-nhuan-truoc-thue-gap-hon-2-lan-nam-2020-post270193.html" target="_blank" rel="noopener">ĐTCK ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">9M 2021</td>
+            <td><span class="tag tag-guidance">Guidance flag</span></td>
+            <td>Q1 alone delivered &gt;40% of the full-year profit plan; nine months in, cumulative achievement is only 53% of the revenue plan and 60% of the profit plan — a sharp mid-year deceleration from the opening pace.</td>
+            <td class="src-link"><a href="https://vietnambiz.vn/hon-300-co-phieu-vuot-menh-gia-trong-nam-2021-no-luc-lon-tu-bsr-flc-ros-hag--20220101205134023.htm" target="_blank" rel="noopener">VietnamBiz ↗</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="chart-grid" style="margin-top:34px;">
+    <section style="margin-top:0;">
+      <div class="sec-head"><span class="sec-num">05</span><h2 class="sec-title">What would have to be true</h2></div>
+      <div class="callout">
+        <ul>
+          <li>A firm that grew charter capital ~2,867× in five years, then again within 18 months of listing, has a real balance sheet behind that capital rather than one built mostly on paper.</li>
+          <li>A company whose audited profit was erased by 99.96% in the same year it was earned can plausibly guide +115% pre-tax growth the next year with no new disclosed business driving it.</li>
+          <li>Seven correlated "họ FLC" tickers — one already showing a near-identical thin-volume rally pattern (GAB) — reflect independent fundamentals rather than common control of trading.</li>
+          <li>The group's captive brokerage (ART/BOS) financing accounts that trade the other six ecosystem tickers creates no conflict of interest.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section style="margin-top:0;">
+      <div class="sec-head"><span class="sec-num">06</span><h2 class="sec-title">Disclosure gaps</h2></div>
+      <div class="callout gap">
+        <ul>
+          <li><span class="not-disclosed">không công bố</span> — independent free-float / beneficial-ownership breakdown for ROS</li>
+          <li><span class="not-disclosed">không công bố</span> — live sector-median comparison (no data pipeline in this prototype)</li>
+          <li><span class="not-disclosed">không công bố</span> — mechanism behind the 2016 capital increase (its scale was visible; the fraud behind it was not yet public)</li>
+          <li><span class="not-disclosed">không công bố</span> — quantified financing terms between ART/BOS and the other ecosystem tickers</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">07</span><h2 class="sec-title">A tip, run through the checker</h2></div>
+    <p class="lede">A plausible Zalo-group tip from late December 2021, verified in code against §02–§04 rather than judged.</p>
+    <div class="tip-card">
+      <div class="tip-head"><span>QUANTUMEDGE · TIP CHECK</span><span>ROS</span></div>
+      <div class="tip-body">
+        <p class="tip-quote">"ROS sắp bứt phá! Vừa vượt mệnh giá sau 2 năm, kế hoạch lợi nhuận 2022 tăng khủng, cả họ FLC đang kéo trần. Vào hàng sớm trước khi tăng tiếp!"
+          <span class="en">"ROS is about to break out! Just crossed par value after 2 years, the 2022 profit plan is surging, the whole FLC family is hitting ceiling. Get in early before it runs further!"</span>
+        </p>
+        <div class="tip-block claims"><span class="k">Claims</span><p>ROS crossed above par value; a large forward profit increase is planned; the wider FLC-linked group is rallying together; the rally should continue.</p></div>
+        <div class="tip-block data"><span class="k">What the data shows</span><p>The par-value crossing and group-wide rally are confirmed (§03, §04). The profit-plan claim matches the company's own guidance — no corresponding disclosure found that independently substantiates its operating basis. No disclosure found explaining why seven related tickers move together beyond common ownership — itself a <span class="tag tag-related" style="vertical-align:1px;">related party</span> flag, not a fundamentals signal.</p></div>
+        <div class="tip-block gap"><span class="k">What it doesn't tell you</span><p>Nearly two years below par value before this rally; a ~2,867× capital increase at listing with no sector-median context available; GAB already showing an identical thin-volume pattern a year earlier. No conclusion of "scam" or "don't buy" — only that the excitement isn't yet supported by anything beyond what's flagged above.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="cutoff"><span>31 DECEMBER 2021 — CUTOFF</span></div>
+  <p class="cutoff-sub">Everything above was on the public record by this date. Everything below is what happened next.</p>
+
+  <section style="margin-top:14px;">
+    <div class="sec-head"><span class="sec-num">08</span><h2 class="sec-title">Epilogue</h2></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Type</th><th>What happened</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="date">5–10 Jan 2022</td>
+            <td><span class="tag tag-insider">Insider sale</span></td>
+            <td>Chairman Trịnh Văn Quyết sells 74.8M FLC shares; disclosure paperwork completed after the shares were already sold and after market close. HOSE cancels the transaction.</td>
+            <td class="src-link"><a href="https://vietnamnet.vn/en/trinh-van-quyets-transaction-canceled-securities-accounts-blocked-808363.html" target="_blank" rel="noopener">VietNamNet ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">18 Jan 2022</td>
+            <td><span class="tag tag-reg">Regulatory</span></td>
+            <td>State Securities Commission fines Quyết VND 1.5bn and bans him from trading for five months.</td>
+            <td class="src-link"><a href="https://vir.com.vn/flc-chairman-trinh-van-quyet-to-be-heavily-fined-for-negligence-to-publicly-report-stocks-sale-90609.html" target="_blank" rel="noopener">VIR ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">29 Mar 2022</td>
+            <td><span class="tag tag-reg">Regulatory</span></td>
+            <td>Quyết arrested; Ministry of Public Security opens a manipulation and information-concealment investigation.</td>
+            <td class="src-link"><a href="https://e.vnexpress.net/news/companies/flc-chairman-arrested-for-stock-market-manipulation-4445018.html" target="_blank" rel="noopener">VnExpress ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">2022, per investigation</td>
+            <td><span class="tag tag-related">Related party</span></td>
+            <td>~500 trading accounts opened under 45 family members and 20 shell companies since 2017 to manipulate 5 ecosystem tickers; BOS/ART extended ~VND 170,500bn in fake margin credit across 1,500+ transactions.</td>
+            <td class="src-link"><a href="https://theinvestor.vn/seven-officials-accused-of-helping-former-flc-chairman-manipulate-stock-market-d8728.html" target="_blank" rel="noopener">The Investor ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">Sep 2022</td>
+            <td><span class="tag tag-audit">Auditor change</span></td>
+            <td>FLC cannot secure an auditor willing to sign FY2021 statements; a later dispute with UHY leaves FY2021–2023 statements unpublished.</td>
+            <td class="src-link"><a href="https://vietnambiz.vn/nhung-vuong-mac-nghin-ty-khien-flc-chua-the-cong-bo-bao-cao-tai-chinh-du-da-lam-viec-voi-kiem-toan-trong-nhieu-thang-2023360109312.htm" target="_blank" rel="noopener">VietnamBiz ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">5 Sep 2022</td>
+            <td><span class="tag tag-reg">Regulatory</span></td>
+            <td>ROS forcibly delisted from HOSE for serious disclosure violations — no H1 2022 statements, no AGM, insufficient board.</td>
+            <td class="src-link"><a href="https://english.thesaigontimes.vn/ros-forced-to-delist-from-hose-from-early-next-month/" target="_blank" rel="noopener">Saigon Times ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">Feb 2023</td>
+            <td><span class="tag tag-reg">Regulatory</span></td>
+            <td>FLC itself is delisted from HOSE.</td>
+            <td class="src-link"><a href="https://tuoitrenews.vn/news/business/20230215/vietnams-flc-shares-to-be-delisted-next-week/71561.html" target="_blank" rel="noopener">Tuoi Tre News ↗</a></td>
+          </tr>
+          <tr>
+            <td class="date">Aug 2024 / appeal 2025</td>
+            <td><span class="tag tag-verdict">Court verdict</span></td>
+            <td>Hanoi People's Court finds capital falsified from VND 1.5bn to VND 4.3tn (2014–Sep 2016); 391M+ shares built on it sold 2016–2022 for ~VND 4.8tn, of which ~VND 3.6tn ruled misappropriated. Quyết convicted; sentence later reduced on appeal to 7 years plus a fine.</td>
+            <td class="src-link"><a href="https://theinvestor.vn/prison-sentence-reduced-by-14-years-for-former-flc-chairman-trinh-van-quyet-d16125.html" target="_blank" rel="noopener">The Investor ↗</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:16px; max-width:68ch;">Every flag in §04 — the ~2,867× capital growth, two years below par value, the 99.96% audit adjustment, the guidance-vs-actual deceleration, the ecosystem-wide thin-volume rallies — was public before 31 December 2021. None of it required the 2024 verdict to see.</p>
+  </section>
+
+  <footer>
+    <p><strong>Reviewed by:</strong> prototype — no named reviewer; produced as a written framework demonstration, not a published product page. <strong>Personal position</strong> in FLC / ROS / HAI / AMD / GAB / ART / KLF or any related entity: none. This page makes no investment recommendation and states no conclusion beyond what the cited sources report.</p>
+  </footer>
+
+</div>

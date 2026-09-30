@@ -1,0 +1,100 @@
+flowchart TD
+
+    subgraph SRC["1 · NGUỒN DỮ LIỆU"]
+        S1["Công bố thông tin HOSE<br/>+ trang IR doanh nghiệp"]
+        S2["RSS báo chí<br/>CafeF, VietStock, VnExpress"]
+        S3["vnstock<br/>BCTC · giá · thanh khoản"]
+    end
+
+    subgraph ING["2 · THU THẬP · chạy hàng ngày"]
+        I1["Lưu thô + timestamp<br/>không tải lại"]
+        I2["Bóc tách xác định<br/>số liệu · không dùng LLM"]
+    end
+
+    subgraph A1["3 · AGENT 1 — Bóc tách sự kiện"]
+        AG1["LLM đọc tin và công bố<br/>xuất JSON có cấu trúc"]
+        AG1O["loại sự kiện · mã · ngày<br/>mức quan trọng · link nguồn"]
+    end
+
+    DB[("4 · KHO DỮ LIỆU<br/>Postgres<br/>BCTC · giá · bảng sự kiện")]
+
+    subgraph CALC["5 · LỚP TÍNH TOÁN — code xác định, KHÔNG LLM"]
+        C1["Chỉ số<br/>EV/EBITDA · P/E · FCF · nợ"]
+        C2["Trung vị ngành<br/>+ dải 3 năm của mã"]
+        C3["Quy tắc cờ đỏ<br/>từ file spec"]
+    end
+
+    FS{{"6 · FACT SHEET JSON<br/>một file cho mỗi mã<br/>đầu vào DUY NHẤT của mọi agent"}}
+
+    subgraph AGENTS["7 · CÁC AGENT ỨNG DỤNG"]
+        AG2["AGENT 2<br/>Diễn đạt phân tích<br/>LLM → tiếng Việt đời thường"]
+        AG3["AGENT 3<br/>Phân tích tin phím<br/>LLM bóc tách + code đối chiếu"]
+        AG4["AGENT 4<br/>Soi danh mục<br/>mô tả · không kê đơn"]
+        AG5["AGENT 5<br/>Rủi ro thanh khoản<br/>thuần code"]
+    end
+
+    subgraph QA["8 · KIỂM ĐỊNH"]
+        Q1["Máy loại bản nháp<br/>số không khớp nguồn<br/>thiếu mục · sai mã"]
+        Q2["Richard duyệt<br/>đóng dấu ngày + vị thế"]
+    end
+
+    subgraph OUT["9 · XUẤT BẢN"]
+        O1["Trang mã cổ phiếu<br/>tĩnh · SEO"]
+        O2["Thẻ ảnh chia sẻ<br/>lan qua Zalo"]
+        O3["Bot Zalo/Telegram"]
+        O4["Cảnh báo<br/>cờ đỏ đổi trạng thái"]
+        O5["Báo cáo danh mục"]
+    end
+
+    USER(["NGƯỜI DÙNG<br/>dán tin phím hoặc danh mục"])
+
+    S1 --> I1
+    S2 --> I1
+    S3 --> I1
+    I1 --> I2
+    I1 --> AG1
+    AG1 --> AG1O
+    I2 --> DB
+    AG1O --> DB
+
+    DB --> C1
+    DB --> C2
+    DB --> C3
+    C1 --> FS
+    C2 --> FS
+    C3 --> FS
+
+    FS --> AG2
+    FS --> AG3
+    FS --> AG4
+    FS --> AG5
+
+    USER -.->|tin nhắn Zalo| AG3
+    USER -.->|danh mục tự nhập| AG4
+
+    AG2 --> Q1
+    AG3 --> Q1
+    Q1 -->|đạt| Q2
+    Q1 -.->|loại → sửa prompt| AG2
+
+    AG5 --> O1
+    Q2 --> O1
+    Q2 --> O2
+    O1 --> O3
+    AG4 --> O5
+    DB -->|sự kiện mới| O4
+    C3 -->|cờ đổi trạng thái| O4
+
+    O2 -.->|chuyển tiếp về nhóm Zalo| USER
+    O4 -.-> USER
+    O3 -.-> USER
+
+    classDef det fill:#1e3a5f,stroke:#4a90d9,color:#fff
+    classDef llm fill:#4a2c5e,stroke:#a970d9,color:#fff
+    classDef human fill:#5e3a1e,stroke:#d99a4a,color:#fff
+    classDef store fill:#1e4a3a,stroke:#4ad99a,color:#fff
+
+    class I2,C1,C2,C3,AG5 det
+    class AG1,AG2,AG3,AG4 llm
+    class Q2 human
+    class DB,FS store

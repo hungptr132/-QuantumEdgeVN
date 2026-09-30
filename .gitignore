@@ -1,0 +1,47 @@
+# --- secrets ---
+.env
+.env.*
+!.env.example
+web/.env*.local
+!web/.env.local.example
+
+# --- python ---
+.venv/
+pipeline/.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- raw ingested data + logs (immutable but large, reproducible from source) ---
+pipeline/data/
+pipeline/logs/
+
+# --- node / next ---
+node_modules/
+web/.next/
+web/out/
+web/next-env.d.ts
+*.tsbuildinfo
+
+# --- local postgres (binaries + data live off-repo on NTFS; see docs/DECISIONS.md) ---
+infra/pgsql/
+infra/pgdata/
+
+# --- editor / os ---
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Deliberately TRACKED, do not ignore:
+#   contracts/*.json          the fact sheet contract
+#   factsheets/**/*.json      generated sheets - the review diff artifact
+#   pipeline/rules/*.yaml     flag/metric spec files
+#   pipeline/seeds/*.yaml     reference seed data
+#   pipeline/tests/fixtures/  recorded source payloads

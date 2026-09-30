@@ -1,0 +1,28 @@
+# Normalize to LF in the repo for everything text.
+# This protects the reproducibility proof: committed factsheet JSON must be
+# byte-stable across machines, so a rule change produces a clean, readable diff
+# rather than one polluted by line-ending churn.
+* text=auto eol=lf
+
+# Artifacts whose byte-stability is load-bearing
+*.json   text eol=lf
+*.yaml   text eol=lf
+*.yml    text eol=lf
+*.sql    text eol=lf
+*.py     text eol=lf
+*.ts     text eol=lf
+*.tsx    text eol=lf
+*.md     text eol=lf
+
+# Windows-only scripts keep CRLF
+*.ps1    text eol=crlf
+*.bat    text eol=crlf
+*.cmd    text eol=crlf
+
+# Binary: never touch
+*.pdf    binary
+*.xlsx   binary
+*.xls    binary
+*.png    binary
+*.jpg    binary
+*.ico    binary
