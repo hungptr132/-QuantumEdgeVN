@@ -26,6 +26,10 @@ extract_app = typer.Typer(help="Parse stored raw documents into typed rows.", no
 app.add_typer(extract_app, name="extract")
 calc_app = typer.Typer(help="Deterministic metrics, benchmarks, and flags.", no_args_is_help=True)
 app.add_typer(calc_app, name="calc")
+fs_app = typer.Typer(help="Build, validate and export fact sheets.", no_args_is_help=True)
+app.add_typer(fs_app, name="factsheet")
+review_app = typer.Typer(help="The human review gate.", no_args_is_help=True)
+app.add_typer(review_app, name="review")
 
 console = Console()
 
@@ -498,6 +502,211 @@ def calc_flags(
             f"unknown [yellow]{outcome.unknown}[/yellow] · "
             f"transitions {outcome.transitions}"
         )
+
+
+@fs_app.command("build")
+def factsheet_build(
+    tickers: str = typer.Option("", help="Comma-separated symbols. Default: all covered."),
+    as_of: str = typer.Option("", help="Valuation date YYYY-MM-DD. Default: latest metrics."),
+) -> None:
+    """Assemble fact sheets. An unchanged rebuild writes nothing and keeps its review stamp."""
+    from datetime import date  # noqa: PLC0415
+
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.factsheet.build import build_fact_sheet  # noqa: PLC0415
+    from quantumedge.factsheet.store import store_fact_sheet  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    with session_scope() as session:
+        if as_of:
+            as_of_date = date.fromisoformat(as_of)
+        else:
+            latest = session.execute(
+                sql("SELECT max(as_of_date) FROM metric_value")
+            ).scalar_one_or_none()
+            if latest is None:
+                console.print("[yellow]no metrics yet - run: qe calc liquidity[/yellow]")
+                raise typer.Exit(code=1)
+            as_of_date = latest
+
+        if tickers:
+            symbols = [s.strip().upper() for s in tickers.split(",") if s.strip()]
+        else:
+            symbols = list(
+                session.execute(
+                    sql("SELECT symbol FROM ticker WHERE is_covered ORDER BY symbol")
+                ).scalars()
+            )
+
+        table = Table(
+            "symbol", "version", "QA", "result", title=f"qe factsheet build - {as_of_date}"
+        )
+        with run_scope(
+            session,
+            PipelineStage.FACTSHEET,
+            "build",
+            as_of=as_of_date,
+            params={"symbols": symbols},
+        ) as (run_id, stats):
+            created = unchanged = failed_qa = 0
+            for symbol in symbols:
+                sheet = build_fact_sheet(session, symbol, as_of_date, run_id)
+                outcome = store_fact_sheet(session, sheet, run_id)
+                created += int(outcome.created)
+                unchanged += int(not outcome.created)
+                failed_qa += int(not outcome.qa_passed)
+                table.add_row(
+                    outcome.symbol,
+                    f"v{outcome.version}",
+                    "[green]pass[/green]" if outcome.qa_passed else "[red]FAIL[/red]",
+                    outcome.note,
+                )
+            stats.update({"created": created, "unchanged": unchanged, "qa_failed": failed_qa})
+
+        console.print(table)
+        console.print(f"new [green]{created}[/green] · unchanged [dim]{unchanged}[/dim]")
+
+
+@fs_app.command("export-schema")
+def factsheet_export_schema() -> None:
+    """Write the JSON Schema the web app generates its types from."""
+    import json  # noqa: PLC0415
+
+    from quantumedge.config import load_settings  # noqa: PLC0415
+    from quantumedge.factsheet.schema import FactSheet  # noqa: PLC0415
+
+    settings = load_settings()
+    settings.contracts_dir.mkdir(parents=True, exist_ok=True)
+    out = settings.contracts_dir / "factsheet.v1.schema.json"
+    out.write_text(
+        json.dumps(FactSheet.model_json_schema(), indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    console.print(f"[green]wrote[/green] {out}")
+
+
+@fs_app.command("show")
+def factsheet_show(symbol: str) -> None:
+    """Print one sheet's QA report and flag summary."""
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+
+    with session_scope() as session:
+        row = (
+            session.execute(
+                sql(
+                    "SELECT fs.version, fs.status, fs.qa_passed, fs.qa_report, fs.payload "
+                    "FROM fact_sheet fs JOIN ticker t ON t.id = fs.ticker_id "
+                    "WHERE t.symbol = :s ORDER BY fs.version DESC LIMIT 1"
+                ),
+                {"s": symbol.upper()},
+            )
+            .mappings()
+            .first()
+        )
+        if row is None:
+            console.print(f"[yellow]no fact sheet for {symbol}[/yellow]")
+            raise typer.Exit(code=1)
+
+        console.print(f"[bold]{symbol.upper()}[/bold] v{row['version']} · {row['status']}")
+        qa = Table("check", "result", title="machine QA")
+        for check in row["qa_report"]["checks"]:
+            qa.add_row(
+                check["check"],
+                "[green]pass[/green]" if check["passed"] else f"[red]FAIL[/red] {check['detail']}",
+            )
+        console.print(qa)
+
+        payload = row["payload"]
+        flags = Table("flag", "state", "severity", title="flags")
+        for f in payload["flags"]:
+            colour = {"active": "red", "inactive": "green", "unknown": "yellow"}[f["state"]]
+            flags.add_row(f["code"], f"[{colour}]{f['state']}[/{colour}]", f["severity"])
+        console.print(flags)
+        console.print(f"disclosure gaps: {len(payload['disclosure_gaps'])}")
+        console.print(f"allowed_numbers: {len(payload['allowed_numbers'])} entries")
+
+
+@review_app.command("list")
+def review_list(status: str = typer.Option("", help="Filter by status.")) -> None:
+    """Show the review queue."""
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.review.service import queue  # noqa: PLC0415
+
+    with session_scope() as session:
+        rows = queue(session, status or None)
+
+    table = Table("symbol", "ver", "status", "QA", "flags", "reviewed by", title="review queue")
+    for r in rows:
+        table.add_row(
+            r["symbol"],
+            f"v{r['version']}",
+            r["status"],
+            "[green]pass[/green]" if r["qa_passed"] else "[red]FAIL[/red]",
+            str(r["flags"]),
+            r["reviewed_by"] or "-",
+        )
+    console.print(table)
+
+
+@review_app.command("approve")
+def review_approve(
+    symbol: str,
+    reviewer: str = typer.Option(..., "--as", help="Reviewer slug, e.g. richard."),
+    note: str = typer.Option("", help="What you checked."),
+) -> None:
+    """Approve a sheet. Requires passing machine QA and a real reviewer."""
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.review.service import ReviewError, approve  # noqa: PLC0415
+
+    try:
+        with session_scope() as session:
+            result = approve(session, symbol.upper(), reviewer, note=note or None)
+    except ReviewError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]approved[/green] {result.symbol} v{result.version} by {reviewer}")
+
+
+@review_app.command("publish")
+def review_publish(
+    symbol: str,
+    reviewer: str = typer.Option(..., "--as", help="Who is publishing. Required."),
+) -> None:
+    """Publish an approved sheet. Any previously published version is superseded."""
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.review.service import ReviewError, publish  # noqa: PLC0415
+
+    try:
+        with session_scope() as session:
+            result = publish(session, symbol.upper(), reviewer)
+    except ReviewError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]published[/green] {result.symbol} v{result.version}")
+
+
+@review_app.command("reject")
+def review_reject(
+    symbol: str,
+    reviewer: str = typer.Option(..., "--as", help="Reviewer slug."),
+    reason: str = typer.Option(..., help="Why. This log is how the process improves."),
+) -> None:
+    """Reject a sheet with a stated reason."""
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.review.service import ReviewError, reject  # noqa: PLC0415
+
+    try:
+        with session_scope() as session:
+            result = reject(session, symbol.upper(), reviewer, reason)
+    except ReviewError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[yellow]rejected[/yellow] {result.symbol} v{result.version}")
 
 
 if __name__ == "__main__":

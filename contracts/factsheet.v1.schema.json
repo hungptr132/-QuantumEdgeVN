@@ -1,0 +1,596 @@
+{
+  "$defs": {
+    "CompanyRef": {
+      "additionalProperties": false,
+      "properties": {
+        "legal_name_vi": {
+          "title": "Legal Name Vi",
+          "type": "string"
+        },
+        "short_name": {
+          "title": "Short Name",
+          "type": "string"
+        },
+        "sector_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sector Code"
+        },
+        "sector_name_vi": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sector Name Vi"
+        },
+        "description_vi": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description Vi"
+        },
+        "website": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Website"
+        },
+        "ir_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ir Url"
+        }
+      },
+      "required": [
+        "legal_name_vi",
+        "short_name"
+      ],
+      "title": "CompanyRef",
+      "type": "object"
+    },
+    "DisclosureGap": {
+      "additionalProperties": false,
+      "description": "Something a complete page would show and this one cannot.\n\nGaps are first-class content, not an error state. The spec is explicit that saying what\nis missing is part of the value.",
+      "properties": {
+        "field": {
+          "title": "Field",
+          "type": "string"
+        },
+        "label_vi": {
+          "title": "Label Vi",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "display": {
+          "default": "không công bố",
+          "title": "Display",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field",
+        "label_vi",
+        "reason"
+      ],
+      "title": "DisclosureGap",
+      "type": "object"
+    },
+    "ExitEstimate": {
+      "additionalProperties": false,
+      "properties": {
+        "position_label": {
+          "title": "Position Label",
+          "type": "string"
+        },
+        "sessions": {
+          "title": "Sessions",
+          "type": "string"
+        }
+      },
+      "required": [
+        "position_label",
+        "sessions"
+      ],
+      "title": "ExitEstimate",
+      "type": "object"
+    },
+    "Figure": {
+      "additionalProperties": false,
+      "description": "One number, or an explicit statement that there isn't one.",
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "label_vi": {
+          "title": "Label Vi",
+          "type": "string"
+        },
+        "definition_vi": {
+          "title": "Definition Vi",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        },
+        "display": {
+          "title": "Display",
+          "type": "string"
+        },
+        "available": {
+          "title": "Available",
+          "type": "boolean"
+        },
+        "unavailable_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unavailable Reason"
+        },
+        "provenance": {
+          "items": {
+            "$ref": "#/$defs/Provenance"
+          },
+          "title": "Provenance",
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "label_vi",
+        "definition_vi",
+        "value",
+        "unit",
+        "display",
+        "available"
+      ],
+      "title": "Figure",
+      "type": "object"
+    },
+    "FlagItem": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "name_vi": {
+          "title": "Name Vi",
+          "type": "string"
+        },
+        "category": {
+          "title": "Category",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "watch",
+            "high"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "active",
+            "inactive",
+            "unknown"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "state_label_vi": {
+          "title": "State Label Vi",
+          "type": "string"
+        },
+        "explanation_vi": {
+          "title": "Explanation Vi",
+          "type": "string"
+        },
+        "rule_summary": {
+          "title": "Rule Summary",
+          "type": "string"
+        },
+        "triggered_values": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Triggered Values",
+          "type": "object"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Provenance"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        }
+      },
+      "required": [
+        "code",
+        "name_vi",
+        "category",
+        "severity",
+        "state",
+        "state_label_vi",
+        "explanation_vi",
+        "rule_summary"
+      ],
+      "title": "FlagItem",
+      "type": "object"
+    },
+    "Lineage": {
+      "additionalProperties": false,
+      "description": "Enough to answer \"why did this number change\" with a join rather than a guess.",
+      "properties": {
+        "rule_spec_version": {
+          "title": "Rule Spec Version",
+          "type": "string"
+        },
+        "calc_run_id": {
+          "title": "Calc Run Id",
+          "type": "integer"
+        },
+        "git_commit": {
+          "title": "Git Commit",
+          "type": "string"
+        },
+        "code_version": {
+          "title": "Code Version",
+          "type": "string"
+        },
+        "data_sources": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Data Sources",
+          "type": "array"
+        },
+        "as_of_date": {
+          "format": "date",
+          "title": "As Of Date",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_spec_version",
+        "calc_run_id",
+        "git_commit",
+        "code_version",
+        "data_sources",
+        "as_of_date"
+      ],
+      "title": "Lineage",
+      "type": "object"
+    },
+    "LiquidityBlock": {
+      "additionalProperties": false,
+      "description": "Agent 5's output. `framing_note_vi` travels with it so the numbers cannot be\npresented as a trading signal by omission.",
+      "properties": {
+        "figures": {
+          "items": {
+            "$ref": "#/$defs/Figure"
+          },
+          "title": "Figures",
+          "type": "array"
+        },
+        "exit_estimates": {
+          "items": {
+            "$ref": "#/$defs/ExitEstimate"
+          },
+          "title": "Exit Estimates",
+          "type": "array"
+        },
+        "participation_rate": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Participation Rate"
+        },
+        "framing_note_vi": {
+          "title": "Framing Note Vi",
+          "type": "string"
+        }
+      },
+      "required": [
+        "figures",
+        "framing_note_vi"
+      ],
+      "title": "LiquidityBlock",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "metric",
+            "benchmark",
+            "price_bar",
+            "financial_fact",
+            "event",
+            "filing",
+            "news",
+            "manual"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "ref": {
+          "title": "Ref",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Url"
+        }
+      },
+      "required": [
+        "kind",
+        "ref",
+        "label"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "TickerRef": {
+      "additionalProperties": false,
+      "properties": {
+        "symbol": {
+          "title": "Symbol",
+          "type": "string"
+        },
+        "exchange": {
+          "title": "Exchange",
+          "type": "string"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "listing_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Listing Date"
+        },
+        "par_value_vnd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Par Value Vnd"
+        },
+        "shares_outstanding": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Shares Outstanding"
+        },
+        "coverage": {
+          "enum": [
+            "shallow",
+            "deep"
+          ],
+          "title": "Coverage",
+          "type": "string"
+        }
+      },
+      "required": [
+        "symbol",
+        "exchange",
+        "status",
+        "par_value_vnd",
+        "coverage"
+      ],
+      "title": "TickerRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "factsheet/v1",
+      "default": "factsheet/v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "as_of_date": {
+      "format": "date",
+      "title": "As Of Date",
+      "type": "string"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "ticker": {
+      "$ref": "#/$defs/TickerRef"
+    },
+    "company": {
+      "$ref": "#/$defs/CompanyRef"
+    },
+    "headline_metrics": {
+      "items": {
+        "$ref": "#/$defs/Figure"
+      },
+      "title": "Headline Metrics",
+      "type": "array"
+    },
+    "other_metrics": {
+      "items": {
+        "$ref": "#/$defs/Figure"
+      },
+      "title": "Other Metrics",
+      "type": "array"
+    },
+    "liquidity": {
+      "$ref": "#/$defs/LiquidityBlock"
+    },
+    "flags": {
+      "items": {
+        "$ref": "#/$defs/FlagItem"
+      },
+      "title": "Flags",
+      "type": "array"
+    },
+    "recent_events": {
+      "items": {
+        "$ref": "#/$defs/Provenance"
+      },
+      "title": "Recent Events",
+      "type": "array"
+    },
+    "news": {
+      "items": {
+        "$ref": "#/$defs/Provenance"
+      },
+      "title": "News",
+      "type": "array"
+    },
+    "disclosure_gaps": {
+      "items": {
+        "$ref": "#/$defs/DisclosureGap"
+      },
+      "title": "Disclosure Gaps",
+      "type": "array"
+    },
+    "what_would_have_to_be_true": {
+      "items": {
+        "type": "string"
+      },
+      "title": "What Would Have To Be True",
+      "type": "array"
+    },
+    "allowed_numbers": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Numbers",
+      "type": "array"
+    },
+    "lineage": {
+      "$ref": "#/$defs/Lineage"
+    }
+  },
+  "required": [
+    "as_of_date",
+    "generated_at",
+    "ticker",
+    "company",
+    "headline_metrics",
+    "liquidity",
+    "flags",
+    "disclosure_gaps",
+    "allowed_numbers",
+    "lineage"
+  ],
+  "title": "FactSheet",
+  "type": "object"
+}
