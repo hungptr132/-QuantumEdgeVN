@@ -142,6 +142,33 @@ def seed_reference(session: Session, settings: Settings) -> dict[str, int]:
     return counts
 
 
+def seed_sources(session: Session, settings: Settings) -> int:
+    """Provider rows. `robots_note` carries the access justification with the code."""
+    data = _load(settings.seeds_dir / "reference.yaml")
+    rows = data.get("sources", [])
+    for row in rows:
+        session.execute(
+            text(
+                "INSERT INTO source (code, kind, name, base_url, rate_limit_per_min, "
+                " robots_note) "
+                "VALUES (:code, :kind, :name, :base_url, :rate_limit_per_min, :robots_note) "
+                "ON CONFLICT (code) DO UPDATE SET kind = EXCLUDED.kind, "
+                "name = EXCLUDED.name, base_url = EXCLUDED.base_url, "
+                "rate_limit_per_min = EXCLUDED.rate_limit_per_min, "
+                "robots_note = EXCLUDED.robots_note"
+            ),
+            {
+                "code": row["code"],
+                "kind": row["kind"],
+                "name": row["name"],
+                "base_url": row.get("base_url"),
+                "rate_limit_per_min": row.get("rate_limit_per_min", 20),
+                "robots_note": (row.get("robots_note") or "").strip() or None,
+            },
+        )
+    return len(rows)
+
+
 def seed_fact_codes(session: Session, settings: Settings) -> int:
     data = _load(settings.rules_dir / "fact_codes.yaml")
     rows = data.get("fact_codes", [])
@@ -248,6 +275,7 @@ def seed_flags(session: Session, settings: Settings) -> int:
 
 def seed_all(session: Session, settings: Settings) -> dict[str, int]:
     counts = seed_reference(session, settings)
+    counts["source"] = seed_sources(session, settings)
     counts["financial_fact_def"] = seed_fact_codes(session, settings)
     counts["metric_def"] = seed_metrics(session, settings)
     counts["flag_def"] = seed_flags(session, settings)

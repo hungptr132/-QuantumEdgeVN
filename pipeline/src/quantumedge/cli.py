@@ -18,6 +18,10 @@ app = typer.Typer(
 )
 db_app = typer.Typer(help="Schema and seed management.", no_args_is_help=True)
 app.add_typer(db_app, name="db")
+ingest_app = typer.Typer(
+    help="Fetch external sources into immutable storage.", no_args_is_help=True
+)
+app.add_typer(ingest_app, name="ingest")
 
 console = Console()
 
@@ -179,6 +183,82 @@ def db_seed() -> None:
         table.add_row(name, str(n))
     console.print(table)
     console.print(f"rule_spec_version [dim]{rule_spec_version(settings)[:16]}…[/dim]")
+
+
+@ingest_app.command("prices")
+def ingest_prices(
+    tickers: str = typer.Option("", help="Comma-separated symbols. Default: all covered."),
+    days: int = typer.Option(1100, help="How far back to fetch, in calendar days (~3y)."),
+    start: str = typer.Option("", help="Explicit start date YYYY-MM-DD, overrides --days."),
+    end: str = typer.Option("", help="Explicit end date YYYY-MM-DD. Default: today."),
+) -> None:
+    """Fetch daily OHLCV into raw_document. Safe to re-run: unchanged content is skipped."""
+    from datetime import date, timedelta  # noqa: PLC0415
+
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.ingest import vndirect  # noqa: PLC0415
+    from quantumedge.ingest.base import StoreResult, store_raw  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    end_date = date.fromisoformat(end) if end else date.today()
+    start_date = date.fromisoformat(start) if start else end_date - timedelta(days=days)
+
+    with session_scope() as session:
+        if tickers:
+            symbols = [s.strip().upper() for s in tickers.split(",") if s.strip()]
+        else:
+            symbols = list(
+                session.execute(
+                    sql("SELECT symbol FROM ticker WHERE is_covered ORDER BY symbol")
+                ).scalars()
+            )
+        if not symbols:
+            console.print("[yellow]no covered tickers - run: qe db seed[/yellow]")
+            raise typer.Exit(code=1)
+
+        limit = (
+            session.execute(
+                sql("SELECT rate_limit_per_min FROM source WHERE code = :c"),
+                {"c": vndirect.SOURCE_CODE},
+            ).scalar_one_or_none()
+            or 20
+        )
+
+        with run_scope(
+            session,
+            PipelineStage.INGEST,
+            "vndirect_prices",
+            source_code=vndirect.SOURCE_CODE,
+            as_of=end_date,
+            params={"symbols": symbols, "from": str(start_date), "to": str(end_date)},
+        ) as (run_id, stats):
+            fetched = vndirect.fetch_prices(
+                symbols, start_date, end_date, rate_limit_per_min=int(limit)
+            )
+            result = StoreResult()
+            empty: list[str] = []
+            for f in fetched:
+                if f.payload is None:
+                    empty.append(f.symbol)
+                    continue
+                store_raw(session, run_id, [f.payload], result=result)
+            stats.update(result.as_stats())
+            stats["symbols"] = len(symbols)
+            if empty:
+                stats["no_data"] = empty
+
+            table = Table("symbol", "bars", title="qe ingest prices")
+            for f in fetched:
+                table.add_row(f.symbol, str(f.bars) if f.bars else f"[dim]{f.note}[/dim]")
+            console.print(table)
+            console.print(
+                f"new [green]{result.inserted}[/green] · "
+                f"unchanged [dim]{result.unchanged}[/dim] · "
+                f"{start_date} to {end_date}"
+            )
 
 
 if __name__ == "__main__":

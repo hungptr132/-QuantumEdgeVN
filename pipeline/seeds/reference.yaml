@@ -67,6 +67,28 @@ companies:
     sector: food_agri
     ticker: { symbol: AGM, exchange: HOSE }
 
+# Data sources. One row per provider; `robots_note` records the access basis we verified,
+# so the justification travels with the code rather than living in someone's memory.
+sources:
+  - code: vndirect_dchart
+    kind: market_data
+    name: VNDirect dchart (daily OHLCV)
+    base_url: https://dchart-api.vndirect.com.vn/dchart/history
+    rate_limit_per_min: 20
+    robots_note: >-
+      Public endpoint, no credentials, no challenge. Verified returning real daily bars
+      for all 9 covered tickers on 2026-10-01. Prices arrive in thousands of VND and are
+      scaled during extraction, not here.
+  - code: hose_disclosure
+    kind: disclosure
+    name: HOSE disclosures and statement attachments
+    base_url: https://www.hsx.vn
+    rate_limit_per_min: 10
+    robots_note: >-
+      hsx.vn/robots.txt is "User-agent: * / Disallow:" - an empty Disallow, i.e. full
+      crawl permission explicitly granted. Site is a client-side SPA; backend endpoints
+      must be discovered by observing real traffic (milestone M8), never guessed.
+
 # The reviewer whose name goes on every published page. The stamp is the product, so this
 # must be a real person with a real foreign key, not a free-text string.
 users:
