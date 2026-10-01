@@ -1,9 +1,14 @@
+from typing import TYPE_CHECKING
+
 import typer
 from rich.console import Console
 from rich.table import Table
 
 from quantumedge import __version__
 from quantumedge.config import Settings
+
+if TYPE_CHECKING:
+    from alembic.config import Config
 
 app = typer.Typer(
     name="qe",
@@ -120,6 +125,42 @@ def _check_database(table: Table, settings: Settings) -> bool:
         "alembic_version present" if migrated else "run: qe db upgrade",
     )
     return True
+
+
+def _alembic_config() -> "Config":
+    from alembic.config import Config  # noqa: PLC0415
+
+    from quantumedge.config import REPO_ROOT  # noqa: PLC0415
+
+    cfg = Config(str(REPO_ROOT / "pipeline" / "alembic.ini"))
+    cfg.set_main_option("script_location", str(REPO_ROOT / "pipeline" / "migrations"))
+    return cfg
+
+
+@db_app.command("upgrade")
+def db_upgrade(revision: str = "head") -> None:
+    """Apply migrations up to REVISION (default: head)."""
+    from alembic import command  # noqa: PLC0415
+
+    command.upgrade(_alembic_config(), revision)
+    console.print(f"[green]migrated to {revision}[/green]")
+
+
+@db_app.command("downgrade")
+def db_downgrade(revision: str) -> None:
+    """Revert migrations down to REVISION. Destructive — name the target explicitly."""
+    from alembic import command  # noqa: PLC0415
+
+    command.downgrade(_alembic_config(), revision)
+    console.print(f"[yellow]reverted to {revision}[/yellow]")
+
+
+@db_app.command("current")
+def db_current() -> None:
+    """Show the applied revision."""
+    from alembic import command  # noqa: PLC0415
+
+    command.current(_alembic_config(), verbose=False)
 
 
 if __name__ == "__main__":

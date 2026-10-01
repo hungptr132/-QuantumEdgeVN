@@ -19,6 +19,9 @@ the "reverses if" column is how you know it's time to revisit rather than re-lit
 | 2026-10-01 | Prices from **VNDirect dchart**; fundamentals from **HOSE/IR filings** | Only verified-working sources with a clear legal basis (HOSE robots.txt grants full permission). No unaffiliated wrapper in the critical path | Either source breaks, or an official data licence is acquired |
 | 2026-10-01 | Extraction (Arc B) sequenced **after** a working published page (Arc A) | The spec's own "~3x longer than expected" warning applies to PDF extraction; a bad fortnight there must not leave the project with nothing running | Arc A proves trivial and fundamentals become the only blocker |
 | 2026-10-01 | `.gitattributes` pins **LF** for text artifacts | Committed factsheet JSON must be byte-stable across machines or the reproducibility diff is polluted by line-ending churn | Never |
+| 2026-10-01 | Enums declared `create_type=False` in models; **created explicitly in the migration** | Autogenerate inlines `sa.Enum` per column, so a type shared by several tables gets created repeatedly and the migration fails on the second one. Explicit creation also fixes ordering: types exist before any table references them | Never |
+| 2026-10-01 | Tests run against **real Postgres** (`quantumedge_test`), never SQLite | Native enums, partial indexes, triggers, CHECK constraints and a privilege-limited view are exactly the guarantees worth testing, and SQLite can express none of them | Never |
+| 2026-10-01 | `migrations/versions/` excluded from ruff | Generated DDL; reformatting risks changing semantics for no benefit. `migrations/env.py` is still linted | Migrations start being hand-written |
 
 ## Kill criteria
 

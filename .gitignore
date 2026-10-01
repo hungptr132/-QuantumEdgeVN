@@ -32,6 +32,9 @@ web/next-env.d.ts
 infra/pgsql/
 infra/pgdata/
 
+# --- exported conversation transcripts (may contain credentials) ---
+/*.txt
+
 # --- editor / os ---
 .idea/
 .vscode/
