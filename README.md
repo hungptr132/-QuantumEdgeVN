@@ -14,7 +14,7 @@ Two codebases, one Postgres database.
 - **`pipeline/`** — Python. The only writer. Ingests raw sources immutably, extracts
   numbers deterministically, computes metrics/flags, and assembles one **Fact Sheet JSON**
   per ticker. Owns the schema (SQLAlchemy + Alembic).
-- **`web/`** — Next.js. Read-only consumer, and not yet scaffolded. Queries a single
+- **`web/`** — Next.js 16. Read-only consumer. Queries a single
   Postgres view through a role with no privilege on any base table.
 
 The governing rule, carried from the spec: **code computes, models only ever express.**
@@ -94,6 +94,40 @@ pipeline\.venv\Scripts\qe doctor
 `qe doctor` reports repo root, `.env`, database connectivity, server timezone, required
 extensions, and migration state. It exits non-zero until the environment is usable, which
 makes it safe as the first line of any script.
+
+### 4. The web app
+
+```powershell
+cd web
+npm install
+npm run gen:types          # TypeScript from contracts/factsheet.v1.schema.json
+copy .env.local.example .env.local   # then fill in the qe_web password
+npm run dev                # http://localhost:3000
+```
+
+`web/.env.local` carries one variable, deliberately: the app connects as **`qe_web`**, which
+holds exactly one privilege in the whole database — `SELECT` on `published_ticker_page`. It
+cannot read `fact_sheet` or `ticker` at all, so a forgotten filter raises a permission error
+instead of leaking a draft.
+
+Types are generated from the committed JSON Schema, never hand-written. Re-run
+`qe factsheet export-schema` then `npm run gen:types` after changing the contract.
+
+## Producing a page end to end
+
+```powershell
+pipeline\.venv\Scripts\qe ingest prices          # VNDirect -> raw_document
+pipeline\.venv\Scripts\qe extract prices         # -> price_bar + trading calendar
+pipeline\.venv\Scripts\qe calc liquidity         # Agent 5
+pipeline\.venv\Scripts\qe calc flags             # three-valued flag states
+pipeline\.venv\Scripts\qe factsheet build        # -> fact_sheet (draft) + machine QA
+pipeline\.venv\Scripts\qe review list
+pipeline\.venv\Scripts\qe review approve AGM --as richard --note "what you checked"
+pipeline\.venv\Scripts\qe review publish AGM --as richard
+```
+
+Only after that last command does a page exist. `npm run build` prerenders exactly the
+published tickers; an unpublished symbol is absent from the output and 404s.
 
 ### Checks
 
