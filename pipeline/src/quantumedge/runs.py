@@ -138,10 +138,18 @@ def run_scope(
         params=params,
         rule_spec_version=rule_spec_version,
     )
+    # Commit the open row immediately: if the body fails we roll back, and an uncommitted
+    # run row would vanish along with the work - leaving no record that anything was tried.
+    session.commit()
     stats: dict[str, Any] = {}
     try:
         yield run_id, stats
     except Exception as exc:
+        # Roll back FIRST. A failing statement leaves the transaction aborted, so without
+        # this the manifest UPDATE is itself rejected and InFailedSqlTransaction masks the
+        # error that actually mattered. The run row survives because it was committed on
+        # open, below.
+        session.rollback()
         finish_run(session, run_id, RunStatus.FAILED, stats, error=str(exc)[:2000])
         session.commit()
         raise

@@ -18,9 +18,7 @@ def _counts(session: Session) -> dict[str, int]:
         "metric_def",
         "flag_def",
     )
-    return {
-        t: int(session.execute(text(f"SELECT count(*) FROM {t}")).scalar_one()) for t in tables
-    }
+    return {t: int(session.execute(text(f"SELECT count(*) FROM {t}")).scalar_one()) for t in tables}
 
 
 def test_seeding_twice_changes_nothing(session: Session) -> None:
@@ -35,9 +33,9 @@ def test_seeding_twice_changes_nothing(session: Session) -> None:
 def test_every_covered_ticker_is_marked_covered(session: Session) -> None:
     settings = load_settings()
     seed_all(session, settings)
-    uncovered = session.execute(
-        text("SELECT symbol FROM ticker WHERE NOT is_covered")
-    ).scalars().all()
+    uncovered = (
+        session.execute(text("SELECT symbol FROM ticker WHERE NOT is_covered")).scalars().all()
+    )
     assert not uncovered, f"coverage.yaml listed these but they are not covered: {uncovered}"
 
 
@@ -61,13 +59,17 @@ def test_every_flag_rule_names_its_required_metrics(session: Session) -> None:
     so it could never honestly produce `unknown`."""
     settings = load_settings()
     seed_all(session, settings)
-    bad = session.execute(
-        text(
-            "SELECT code FROM flag_def "
-            "WHERE rule_kind IN ('metric_threshold', 'metric_vs_benchmark') "
-            "AND cardinality(requires_metrics) = 0"
+    bad = (
+        session.execute(
+            text(
+                "SELECT code FROM flag_def "
+                "WHERE rule_kind IN ('metric_threshold', 'metric_vs_benchmark') "
+                "AND cardinality(requires_metrics) = 0"
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert not bad, f"metric rules with no declared inputs: {bad}"
 
 
@@ -75,12 +77,16 @@ def test_flag_required_metrics_all_exist(session: Session) -> None:
     """A rule referencing a metric that was never defined would silently never fire."""
     settings = load_settings()
     seed_all(session, settings)
-    missing = session.execute(
-        text(
-            "SELECT DISTINCT m FROM flag_def f, unnest(f.requires_metrics) AS m "
-            "WHERE m NOT IN (SELECT code FROM metric_def)"
+    missing = (
+        session.execute(
+            text(
+                "SELECT DISTINCT m FROM flag_def f, unnest(f.requires_metrics) AS m "
+                "WHERE m NOT IN (SELECT code FROM metric_def)"
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert not missing, f"flag rules reference undefined metrics: {missing}"
 
 

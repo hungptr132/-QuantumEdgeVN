@@ -137,9 +137,7 @@ class TestRunManifest:
         commit = git_commit()
         assert commit == "unknown" or len(commit.split("-")[0]) == 40
 
-    def test_failure_is_recorded_not_swallowed(
-        self, session: Session, ingest_run_id: int
-    ) -> None:
+    def test_failure_is_recorded_not_swallowed(self, session: Session, ingest_run_id: int) -> None:
         finish_run(session, ingest_run_id, RunStatus.FAILED, {"new": 0}, error="boom")
         row = session.execute(
             text("SELECT status, error, finished_at FROM ingest_run WHERE id = :i"),
@@ -164,9 +162,7 @@ class TestRecordedFixtureShape:
         fails, the provider changed units and the extractor x1000 scaling is now wrong."""
         assert all(0 < c < 100 for c in agm_body["c"])
 
-    def test_zero_volume_sessions_survive_in_the_raw_data(
-        self, agm_body: dict[str, Any]
-    ) -> None:
+    def test_zero_volume_sessions_survive_in_the_raw_data(self, agm_body: dict[str, Any]) -> None:
         """The entire point of Agent 5. If these were absent or nulled upstream, liquidity
         analysis would have nothing to measure."""
         assert 0 in agm_body["v"]

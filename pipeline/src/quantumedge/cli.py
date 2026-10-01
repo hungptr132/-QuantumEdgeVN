@@ -22,6 +22,8 @@ ingest_app = typer.Typer(
     help="Fetch external sources into immutable storage.", no_args_is_help=True
 )
 app.add_typer(ingest_app, name="ingest")
+extract_app = typer.Typer(help="Parse stored raw documents into typed rows.", no_args_is_help=True)
+app.add_typer(extract_app, name="extract")
 
 console = Console()
 
@@ -259,6 +261,42 @@ def ingest_prices(
                 f"unchanged [dim]{result.unchanged}[/dim] · "
                 f"{start_date} to {end_date}"
             )
+
+
+@extract_app.command("prices")
+def extract_prices_cmd(
+    tickers: str = typer.Option("", help="Comma-separated symbols. Default: every stored one."),
+) -> None:
+    """Parse stored price payloads into price_bar, then rebuild the trading calendar."""
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.extract.calendar import rebuild_calendar  # noqa: PLC0415
+    from quantumedge.extract.prices import extract_prices  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    symbols = [s.strip().upper() for s in tickers.split(",") if s.strip()] or None
+
+    with (
+        session_scope() as session,
+        run_scope(
+            session, PipelineStage.EXTRACT, "prices", params={"symbols": symbols or "all"}
+        ) as (run_id, stats),
+    ):
+        result = extract_prices(session, run_id, symbols=symbols)
+        stats.update(result.as_stats())
+
+        # The calendar depends on the bars just written, so it always follows them.
+        cal = rebuild_calendar(session)
+        stats["calendar_days"] = cal.rows_written
+
+        table = Table("step", "result", title="qe extract prices")
+        table.add_row("documents read", str(result.documents_read))
+        table.add_row("bars written", str(result.rows_written))
+        table.add_row("skipped", str(result.skipped))
+        table.add_row("trading calendar", cal.notes[0] if cal.notes else "-")
+        console.print(table)
+        for note in result.notes:
+            console.print(f"  [yellow]{note}[/yellow]")
 
 
 if __name__ == "__main__":
