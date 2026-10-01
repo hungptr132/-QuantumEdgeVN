@@ -3,6 +3,7 @@ from rich.console import Console
 from rich.table import Table
 
 from quantumedge import __version__
+from quantumedge.config import Settings
 
 app = typer.Typer(
     name="qe",
@@ -25,7 +26,7 @@ def version() -> None:
 @app.command()
 def doctor() -> None:
     """Report environment and configuration health."""
-    from quantumedge.config import REPO_ROOT, load_settings
+    from quantumedge.config import REPO_ROOT, load_settings  # noqa: PLC0415
 
     table = Table("check", "status", "detail", title="qe doctor")
 
@@ -62,7 +63,64 @@ def doctor() -> None:
     table.add_row("database_url", "[green]set[/green]", f"…@{safe_dsn}")
     table.add_row("timezone", "[green]ok[/green]", settings.timezone)
 
+    db_ok = _check_database(table, settings)
+
     console.print(table)
+    if not db_ok:
+        console.print(
+            "\nDatabase unreachable. Start the local cluster:\n"
+            "  .\\pipeline\\scripts\\pg.ps1 start"
+        )
+        raise typer.Exit(code=1)
+
+
+def _check_database(table: Table, settings: Settings) -> bool:
+    """Probe the database and record findings in the report table."""
+    from sqlalchemy import text
+
+    from quantumedge.db.session import get_engine
+
+    try:
+        with get_engine(settings).connect() as conn:
+            server, tz = conn.execute(
+                text("select current_setting('server_version'), current_setting('TimeZone')")
+            ).one()
+            user, db = conn.execute(text("select current_user, current_database()")).one()
+            exts = conn.execute(
+                text(
+                    "select string_agg(extname, ', ' order by extname) from pg_extension "
+                    "where extname in ('pg_trgm', 'unaccent')"
+                )
+            ).scalar()
+            migrated = conn.execute(
+                text(
+                    "select exists (select 1 from information_schema.tables "
+                    "where table_name = 'alembic_version')"
+                )
+            ).scalar()
+    except Exception as exc:  # noqa: BLE001
+        table.add_row("database", "[red]unreachable[/red]", str(exc).splitlines()[0][:70])
+        return False
+
+    table.add_row("database", "[green]connected[/green]", f"postgres {server} as {user}/{db}")
+    # Storage must be UTC; the business timezone is applied only in Python.
+    table.add_row(
+        "server timezone",
+        "[green]UTC[/green]" if tz == "UTC" else f"[yellow]{tz}[/yellow]",
+        "storage is UTC by design" if tz == "UTC" else "expected UTC",
+    )
+    have_exts = bool(exts) and "pg_trgm" in str(exts) and "unaccent" in str(exts)
+    table.add_row(
+        "extensions",
+        "[green]ok[/green]" if have_exts else "[red]missing[/red]",
+        str(exts) if exts else "none",
+    )
+    table.add_row(
+        "migrations",
+        "[green]applied[/green]" if migrated else "[yellow]none yet[/yellow]",
+        "alembic_version present" if migrated else "run: qe db upgrade",
+    )
+    return True
 
 
 if __name__ == "__main__":

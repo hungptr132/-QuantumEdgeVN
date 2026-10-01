@@ -36,22 +36,64 @@ code — the web role literally cannot read an unpublished row. The
 
 ## Getting set up
 
+Prerequisites: `git` and `uv`. Both install per-user, no administrator rights needed.
+
+### 1. Python environment
+
 ```powershell
-# Prerequisites: git, uv, and a local Postgres (see docs/DECISIONS.md for why it must
-# live on an NTFS volume, not this repo's exFAT drive).
-
 cd pipeline
-uv venv                      # Python 3.12 — see docs/DECISIONS.md
+uv venv                      # Python 3.12 — see docs/DECISIONS.md for why not 3.14
 uv pip install -e ".[dev]"
+```
 
-cd ..
+### 2. Local Postgres
+
+A portable PostgreSQL 17.6 cluster, no Docker and no admin rights. It lives **outside the
+repo** at `C:\QuantumEdgePg\`, because this repo sits on an exFAT volume and exFAT lacks
+the journaling and fsync guarantees PostgreSQL needs.
+
+```powershell
+# One-time: download and extract the binaries
+curl.exe -L -o pg.zip https://get.enterprisedb.com/postgresql/postgresql-17.6-1-windows-x64-binaries.zip
+Expand-Archive pg.zip -DestinationPath C:\QuantumEdgePg
+
+# One-time: create the cluster (UTF8 + ICU vi-VN for Vietnamese collation)
+C:\QuantumEdgePg\pgsql\bin\initdb.exe -D C:\QuantumEdgePg\data -U postgres `
+  -A scram-sha-256 --pwfile=<file-with-password> -E UTF8 `
+  --locale-provider=icu --icu-locale=vi-VN
+
+# Then append to C:\QuantumEdgePg\data\postgresql.conf:
+#   port = 55432
+#   timezone = 'UTC'
+#   log_timezone = 'UTC'
+```
+
+Roles and databases come from the committed bootstrap SQL. Passwords are passed as psql
+variables, never stored in the files:
+
+```powershell
+$init = "infra\postgres\init"
+psql -U postgres -d postgres -v owner_pw='...' -v web_pw='...' -f "$init\01_roles_databases.sql"
+psql -U postgres -d quantumedge      -f "$init\02_database_setup.sql"
+psql -U postgres -d quantumedge_test -f "$init\02_database_setup.sql"
+```
+
+Day-to-day the cluster is managed with:
+
+```powershell
+.\pipeline\scripts\pg.ps1 start | stop | restart | status | log
+```
+
+### 3. Configure and check
+
+```powershell
 copy .env.example .env       # then fill in the passwords
-
 pipeline\.venv\Scripts\qe doctor
 ```
 
-`qe doctor` reports what is configured and what is missing. It exits non-zero until the
-environment is usable, which makes it safe to run first in any script.
+`qe doctor` reports repo root, `.env`, database connectivity, server timezone, required
+extensions, and migration state. It exits non-zero until the environment is usable, which
+makes it safe as the first line of any script.
 
 ### Checks
 
