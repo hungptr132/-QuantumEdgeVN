@@ -414,5 +414,91 @@ def calc_liquidity(
         )
 
 
+@calc_app.command("flags")
+def calc_flags(
+    as_of: str = typer.Option("", help="Valuation date YYYY-MM-DD. Default: latest session."),
+    tickers: str = typer.Option("", help="Comma-separated symbols. Default: all covered."),
+) -> None:
+    """Evaluate every active flag rule. Missing inputs report unknown, never inactive."""
+    from datetime import date  # noqa: PLC0415
+
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.calc.flags import evaluate_flags  # noqa: PLC0415
+    from quantumedge.config import load_settings  # noqa: PLC0415
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.seed import rule_spec_version  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    symbols = [s.strip().upper() for s in tickers.split(",") if s.strip()] or None
+    spec_version = rule_spec_version(load_settings())
+
+    with session_scope() as session:
+        if as_of:
+            as_of_date = date.fromisoformat(as_of)
+        else:
+            latest = session.execute(
+                sql("SELECT max(as_of_date) FROM metric_value")
+            ).scalar_one_or_none()
+            if latest is None:
+                console.print("[yellow]no metrics yet - run: qe calc liquidity[/yellow]")
+                raise typer.Exit(code=1)
+            as_of_date = latest
+
+        with run_scope(
+            session,
+            PipelineStage.CALC,
+            "flags",
+            as_of=as_of_date,
+            rule_spec_version=spec_version,
+            params={"symbols": symbols or "all"},
+        ) as (run_id, stats):
+            outcome = evaluate_flags(session, run_id, as_of_date, symbols=symbols)
+            stats.update(outcome.as_stats())
+
+        rows = session.execute(
+            sql(
+                """
+                SELECT t.symbol, fi.flag_code, fi.state, fi.severity, fi.reason,
+                       jsonb_array_length(fi.evidence) AS evidence_count
+                FROM flag_instance fi JOIN ticker t ON t.id = fi.ticker_id
+                WHERE fi.as_of_date = :d AND fi.state = 'active'
+                ORDER BY fi.severity DESC, t.symbol
+                """
+            ),
+            {"d": as_of_date},
+        ).mappings()
+
+        table = Table(
+            "symbol", "flag", "severity", "evidence", title=f"Active flags - {as_of_date}"
+        )
+        for r in rows:
+            table.add_row(
+                r["symbol"], r["flag_code"], r["severity"], f"{r['evidence_count']} item(s)"
+            )
+        console.print(table)
+
+        unknown = session.execute(
+            sql(
+                "SELECT fi.flag_code, fi.reason, count(*) AS n FROM flag_instance fi "
+                "WHERE fi.as_of_date = :d AND fi.state = 'unknown' "
+                "GROUP BY fi.flag_code, fi.reason ORDER BY fi.flag_code"
+            ),
+            {"d": as_of_date},
+        ).mappings()
+        unknown_table = Table("flag", "why unknown", "tickers", title="Not assessable yet")
+        for r in unknown:
+            unknown_table.add_row(r["flag_code"], r["reason"] or "-", str(r["n"]))
+        console.print(unknown_table)
+
+        console.print(
+            f"active [red]{outcome.active}[/red] · "
+            f"inactive [green]{outcome.inactive}[/green] · "
+            f"unknown [yellow]{outcome.unknown}[/yellow] · "
+            f"transitions {outcome.transitions}"
+        )
+
+
 if __name__ == "__main__":
     app()

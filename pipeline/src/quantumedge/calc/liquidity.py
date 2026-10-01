@@ -232,9 +232,7 @@ def median_turnover_20s_vnd(ctx: MetricContext) -> MetricResult:
             "block_trade_distortion": str(
                 (mean / median).quantize(Decimal("0.1")) if median > 0 else "mean_over_zero_median"
             ),
-            "sessions_with_turnover": sum(
-                1 for s in window if (s.turnover or Decimal(0)) > 0
-            ),
+            "sessions_with_turnover": sum(1 for s in window if (s.turnover or Decimal(0)) > 0),
         },
     )
 

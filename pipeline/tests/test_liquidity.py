@@ -115,9 +115,7 @@ class TestWindowsCountSessionsNotRows:
 
 
 class TestZeroTradeVersusMissingBar:
-    def test_the_two_are_counted_separately(
-        self, session: Session, ctx: MetricContext
-    ) -> None:
+    def test_the_two_are_counted_separately(self, session: Session, ctx: MetricContext) -> None:
         """63 sessions: 20 zero-volume, 10 absent, 33 traded. These are three different
         facts and conflating any two would misreport liquidity."""
         volumes: list[int | None] = [1000] * 33 + [0] * 20 + [None] * 10
@@ -263,9 +261,7 @@ class TestRunnerPersistsEveryOutcome:
         contexts = load_contexts(session, AS_OF, symbols=["TST"])
         for _ in range(2):
             run_id = start_run(session, PipelineStage.CALC, "t")
-            run_metrics(
-                session, run_id, liquidity.CALC_VERSION, contexts, codes=["avg_volume_20s"]
-            )
+            run_metrics(session, run_id, liquidity.CALC_VERSION, contexts, codes=["avg_volume_20s"])
         count = session.execute(
             text("SELECT count(*) FROM metric_value WHERE metric_code = 'avg_volume_20s'")
         ).scalar_one()
@@ -282,8 +278,6 @@ class TestRunnerPersistsEveryOutcome:
             session, run_id, liquidity.CALC_VERSION, contexts, codes=["avg_turnover_20s_vnd"]
         )
         inputs = session.execute(
-            text(
-                "SELECT inputs FROM metric_value WHERE metric_code = 'avg_turnover_20s_vnd'"
-            )
+            text("SELECT inputs FROM metric_value WHERE metric_code = 'avg_turnover_20s_vnd'")
         ).scalar_one()
         assert {"sessions", "bars_present", "total_turnover_vnd"} <= set(inputs)
