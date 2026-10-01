@@ -1,0 +1,166 @@
+# Flag rules — the spec's "flag rules from a spec file".
+#
+# The content hash of this directory becomes `rule_spec_version`. Change a threshold here
+# and every derived row carrying the old version is marked stale, which is the mechanism
+# for "change a rule at ticker 80 and regenerate all 80".
+#
+# `on_missing` is the honesty dial. `unknown` means a rule whose inputs are absent reports
+# "không tìm thấy công bố tương ứng" rather than silently reading as clean.
+#
+# Rules whose required metrics come from financial statements will sit at `unknown` until
+# Arc B lands. That is correct and visible, not a gap to paper over.
+
+spec_id: quantumedge.flags
+min_benchmark_sample: 3
+
+flags:
+  # ---------- live now: price and liquidity only ----------
+  - code: price_below_par_value
+    name_vi: Giá dưới mệnh giá
+    name_en: Trading below par value
+    category: valuation
+    severity: watch
+    rule_kind: metric_threshold
+    rule_version: v1
+    requires_metrics: [price_to_par]
+    on_missing: unknown
+    expr: { metric: price_to_par, op: "<", value: 1.0 }
+    explanation_vi: >-
+      Thị trường đang trả cho mỗi cổ phiếu ít hơn mệnh giá ghi trên sổ sách. Điều này
+      không tự động là xấu, nhưng nó đặt ra một câu hỏi cần câu trả lời: vì sao?
+
+  - code: thin_liquidity_turnover_below_1bn
+    name_vi: Thanh khoản mỏng - giá trị giao dịch dưới 1 tỷ/phiên
+    name_en: Thin liquidity - turnover below VND 1bn per session
+    category: liquidity
+    severity: high
+    rule_kind: metric_threshold
+    rule_version: v1
+    requires_metrics: [avg_turnover_20s_vnd]
+    on_missing: unknown
+    expr: { metric: avg_turnover_20s_vnd, op: "<", value: 1000000000 }
+    explanation_vi: >-
+      Giá trị giao dịch bình quân dưới 1 tỷ đồng mỗi phiên. Với mức này, một vị thế vài
+      trăm triệu đồng có thể cần nhiều phiên để thoát, và việc bán ra có thể tự đẩy giá
+      xuống.
+
+  - code: zero_trade_sessions_over_5pct_3m
+    name_vi: Nhiều phiên không có giao dịch
+    name_en: Frequent zero-trade sessions
+    category: liquidity
+    severity: high
+    rule_kind: metric_threshold
+    rule_version: v1
+    requires_metrics: [zero_trade_ratio_3m]
+    on_missing: unknown
+    expr: { metric: zero_trade_ratio_3m, op: ">", value: 0.05 }
+    explanation_vi: >-
+      Hơn 5% số phiên trong ba tháng qua không có một cổ phiếu nào được khớp. Khi cần
+      bán, có thể không có người mua ở bất kỳ giá nào.
+
+  - code: price_near_52w_low
+    name_vi: Giá gần đáy 52 tuần
+    name_en: Price near 52-week low
+    category: valuation
+    severity: info
+    rule_kind: metric_threshold
+    rule_version: v1
+    requires_metrics: [pct_from_52w_high]
+    on_missing: unknown
+    expr: { metric: pct_from_52w_high, op: "<", value: -0.5 }
+    explanation_vi: >-
+      Giá đang thấp hơn đỉnh 52 tuần trên 50%. Đây là mô tả trạng thái giá, không phải
+      nhận định rằng cổ phiếu rẻ hay đắt.
+
+  # ---------- await Arc B: these sit at `unknown` until statements are extracted ----------
+  - code: interest_coverage_below_2x
+    name_vi: Khả năng trả lãi dưới 2 lần
+    name_en: Interest coverage below 2x
+    category: leverage
+    severity: high
+    rule_kind: metric_threshold
+    rule_version: v1
+    requires_metrics: [interest_coverage]
+    on_missing: unknown
+    expr: { metric: interest_coverage, op: "<", value: 2.0 }
+    explanation_vi: >-
+      Lợi nhuận trước lãi vay và thuế chỉ đủ trả lãi dưới 2 lần. Doanh nghiệp phụ thuộc
+      vào việc tiếp tục vay được để phục vụ khoản nợ hiện tại.
+
+  - code: net_debt_ebitda_above_4x
+    name_vi: Nợ ròng trên 4 lần EBITDA
+    name_en: Net debt above 4x EBITDA
+    category: leverage
+    severity: high
+    rule_kind: metric_threshold
+    rule_version: v1
+    requires_metrics: [net_debt_ebitda]
+    on_missing: unknown
+    expr: { metric: net_debt_ebitda, op: ">", value: 4.0 }
+    explanation_vi: >-
+      Cần hơn bốn năm lợi nhuận để trả hết nợ ròng. Mức này khiến doanh nghiệp rất ít
+      chịu được một năm kinh doanh xấu.
+
+  - code: dilution_shares_up_25pct_3y
+    name_vi: Pha loãng - số cổ phiếu tăng trên 25% trong 3 năm
+    name_en: Dilution - share count up over 25% in 3 years
+    category: dilution
+    severity: watch
+    rule_kind: metric_threshold
+    rule_version: v1
+    requires_metrics: [shares_cagr_3y]
+    on_missing: unknown
+    expr: { metric: shares_cagr_3y, op: ">", value: 0.077 }
+    explanation_vi: >-
+      Số cổ phiếu lưu hành tăng khoảng 25% hoặc hơn trong ba năm. Phần sở hữu của cổ đông
+      cũ bị pha loãng tương ứng; câu hỏi cần trả lời là tiền thu được đã dùng vào việc gì.
+
+  - code: pe_above_2x_sector_median
+    name_vi: P/E cao hơn 2 lần trung vị ngành
+    name_en: P/E above 2x sector median
+    category: valuation
+    severity: watch
+    rule_kind: metric_vs_benchmark
+    rule_version: v1
+    requires_metrics: [pe]
+    on_missing: unknown
+    expr:
+      metric: pe
+      op: ">"
+      benchmark: { scope: sector, window: current, stat: median }
+      multiple: 2.0
+    explanation_vi: >-
+      Cổ phiếu đang được định giá cao gấp hơn hai lần trung vị ngành. Cần kiểm tra xem
+      điều gì biện minh cho mức chênh lệch đó.
+
+  # ---------- await Agent 1: no event source exists yet ----------
+  - code: auditor_change_within_24m
+    name_vi: Thay đổi đơn vị kiểm toán trong 24 tháng
+    name_en: Auditor change within 24 months
+    category: governance
+    severity: high
+    rule_kind: event_presence
+    rule_version: v1
+    on_missing: unknown
+    expr: { event_type: auditor_change, within_months: 24 }
+    explanation_vi: >-
+      Doanh nghiệp đã thay đổi đơn vị kiểm toán trong hai năm qua. Bản thân việc này
+      không phải vi phạm, nhưng nó là một trong những dấu hiệu đáng kiểm tra kỹ nhất.
+
+  - code: no_audited_annual_statement_18m
+    name_vi: Không có báo cáo kiểm toán năm trong 18 tháng
+    name_en: No audited annual statement in 18 months
+    category: disclosure
+    severity: high
+    rule_kind: data_absence
+    rule_version: v1
+    on_missing: unknown
+    expr:
+      absent: financial_period
+      period_type: Y
+      is_audited: true
+      within_months: 18
+    explanation_vi: >-
+      Không tìm thấy báo cáo tài chính năm đã được kiểm toán trong 18 tháng gần nhất.
+      Việc chậm công bố là chỉ dấu rủi ro quản trị rõ ràng nhất mà nhà đầu tư nhỏ có thể
+      tự kiểm tra.

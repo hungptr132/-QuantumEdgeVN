@@ -163,5 +163,23 @@ def db_current() -> None:
     command.current(_alembic_config(), verbose=False)
 
 
+@db_app.command("seed")
+def db_seed() -> None:
+    """Load reference data and rule specs from YAML. Idempotent — safe to re-run."""
+    from quantumedge.config import load_settings  # noqa: PLC0415
+    from quantumedge.db.seed import rule_spec_version, seed_all  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+
+    settings = load_settings()
+    with session_scope() as session:
+        counts = seed_all(session, settings)
+
+    table = Table("table", "rows", title="qe db seed")
+    for name, n in counts.items():
+        table.add_row(name, str(n))
+    console.print(table)
+    console.print(f"rule_spec_version [dim]{rule_spec_version(settings)[:16]}…[/dim]")
+
+
 if __name__ == "__main__":
     app()

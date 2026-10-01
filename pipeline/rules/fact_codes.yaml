@@ -1,0 +1,136 @@
+# Statement line items the extractor may produce, and their glossary text.
+#
+# A closed registry rather than free-form column names: it is what lets the long-format
+# `financial_fact` table absorb provider renames in a mapping file instead of a migration.
+
+fact_codes:
+  # ---------- income statement ----------
+  - code: revenue
+    label_vi: Doanh thu thuần
+    label_en: Net revenue
+    unit: VND
+    statement: income
+    definition_vi: Doanh thu bán hàng và cung cấp dịch vụ sau khi trừ các khoản giảm trừ.
+
+  - code: gross_profit
+    label_vi: Lợi nhuận gộp
+    unit: VND
+    statement: income
+    definition_vi: Doanh thu thuần trừ giá vốn hàng bán.
+
+  - code: ebit
+    label_vi: Lợi nhuận trước lãi vay và thuế
+    label_en: EBIT
+    unit: VND
+    statement: derived
+    is_derived: true
+    formula_text: profit_before_tax + interest_expense
+    definition_vi: >-
+      Lợi nhuận từ hoạt động kinh doanh trước khi trừ chi phí lãi vay và thuế.
+
+  - code: ebitda
+    label_vi: EBITDA
+    unit: VND
+    statement: derived
+    is_derived: true
+    formula_text: ebit + depreciation_amortisation
+    definition_vi: Lợi nhuận trước lãi vay, thuế và khấu hao.
+
+  - code: interest_expense
+    label_vi: Chi phí lãi vay
+    unit: VND
+    statement: income
+    definition_vi: Số tiền lãi phải trả cho các khoản vay trong kỳ.
+
+  - code: profit_before_tax
+    label_vi: Lợi nhuận trước thuế
+    unit: VND
+    statement: income
+    definition_vi: Lợi nhuận kế toán trước khi trừ chi phí thuế thu nhập doanh nghiệp.
+
+  - code: net_profit_after_tax
+    label_vi: Lợi nhuận sau thuế
+    unit: VND
+    statement: income
+    definition_vi: >-
+      Lợi nhuận còn lại sau khi trừ thuế. Cần phân biệt báo cáo riêng lẻ và hợp nhất,
+      cũng như trước và sau kiểm toán — các con số này có thể chênh nhau rất lớn.
+
+  - code: depreciation_amortisation
+    label_vi: Khấu hao
+    unit: VND
+    statement: cashflow
+    definition_vi: Chi phí khấu hao tài sản cố định và phân bổ tài sản vô hình trong kỳ.
+
+  # ---------- balance sheet ----------
+  - code: total_assets
+    label_vi: Tổng tài sản
+    unit: VND
+    statement: balance
+    definition_vi: Tổng giá trị tài sản doanh nghiệp đang nắm giữ.
+
+  - code: total_equity
+    label_vi: Vốn chủ sở hữu
+    unit: VND
+    statement: balance
+    definition_vi: >-
+      Phần tài sản thuộc về cổ đông sau khi trừ toàn bộ nợ. Nên so sánh với vốn điều lệ:
+      nếu vốn điều lệ chiếm gần như toàn bộ vốn chủ sở hữu, doanh nghiệp hầu như chưa
+      tích lũy được lợi nhuận nào từ khi thành lập.
+
+  - code: charter_capital
+    label_vi: Vốn điều lệ
+    unit: VND
+    statement: balance
+    definition_vi: >-
+      Số vốn cổ đông đã đăng ký góp. Tốc độ tăng vốn điều lệ bất thường so với quy mô
+      hoạt động thực tế là một dấu hiệu cần kiểm tra kỹ.
+
+  - code: short_term_debt
+    label_vi: Nợ ngắn hạn
+    unit: VND
+    statement: balance
+    definition_vi: Các khoản vay và nợ phải trả trong vòng 12 tháng.
+
+  - code: long_term_debt
+    label_vi: Nợ dài hạn
+    unit: VND
+    statement: balance
+    definition_vi: Các khoản vay có thời hạn trên 12 tháng.
+
+  - code: cash_and_equivalents
+    label_vi: Tiền và tương đương tiền
+    unit: VND
+    statement: balance
+    definition_vi: Tiền mặt, tiền gửi và các khoản đầu tư ngắn hạn có tính thanh khoản cao.
+
+  - code: related_party_receivables
+    label_vi: Phải thu từ các bên liên quan
+    unit: VND
+    statement: balance
+    definition_vi: >-
+      Số tiền doanh nghiệp đang cho các bên liên quan nợ. Khoản mục này đáng chú ý vì nó
+      là nơi dòng tiền có thể rời khỏi doanh nghiệp mà không phải là hoạt động kinh doanh.
+
+  # ---------- cash flow ----------
+  - code: cfo
+    label_vi: Dòng tiền từ hoạt động kinh doanh
+    label_en: Cash flow from operations
+    unit: VND
+    statement: cashflow
+    definition_vi: >-
+      Tiền thực sự thu được từ hoạt động kinh doanh. Lợi nhuận cao nhưng dòng tiền âm kéo
+      dài là một trong những cảnh báo đáng tin cậy nhất.
+
+  - code: capex
+    label_vi: Chi đầu tư tài sản cố định
+    unit: VND
+    statement: cashflow
+    definition_vi: Tiền chi ra để mua sắm, xây dựng tài sản cố định.
+
+  # ---------- meta ----------
+  - code: shares_outstanding
+    label_vi: Số cổ phiếu đang lưu hành
+    unit: share
+    statement: meta
+    definition_vi: Số cổ phiếu hiện đang lưu hành trên thị trường.

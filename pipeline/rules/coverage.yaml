@@ -1,0 +1,47 @@
+# Which tickers the pipeline actually processes.
+#
+# Selection criteria: HOSE-listed, outside VN30, small/mid-cap, three per sector so that
+# sector medians are not degenerate, and spanning a wide liquidity range so Agent 5's
+# output is not uniform.
+#
+# VERIFIED LIVE 2026-10-01 against VNDirect dchart. Every symbol returned real daily bars.
+# Observed state at verification (price in VND, par value 10,000):
+#
+#   VHC  48,500  healthy, liquid              0 zero-volume sessions of 15
+#   CTF  18,200  above par                    0
+#   ANV  15,550  above par                    0
+#   TMT  11,250  above par                    0
+#   SMC  10,050  AT par - threshold edge      0
+#   NKG   9,490  BELOW par                    0
+#   HAX   8,490  BELOW par                    0
+#   POM   3,300  far below par, near-frozen  12   <- liquidity stress case
+#   AGM   2,100  far below par, near-frozen  12   <- liquidity stress case
+#
+# Four of nine trade below par, so price_below_par_value fires on real data rather than
+# needing a contrived fixture. POM and AGM barely trade at all, which is what makes the
+# sessions-to-exit estimate meaningful instead of theoretical.
+#
+# Re-verify before adding a symbol: a suspended or delisted ticker should not enter the
+# covered set silently.
+
+min_benchmark_sample: 3
+
+covered:
+  - symbol: SMC
+    coverage: shallow
+  - symbol: NKG
+    coverage: shallow
+  - symbol: POM
+    coverage: shallow
+  - symbol: HAX
+    coverage: shallow
+  - symbol: CTF
+    coverage: shallow
+  - symbol: TMT
+    coverage: shallow
+  - symbol: ANV
+    coverage: shallow
+  - symbol: VHC
+    coverage: shallow
+  - symbol: AGM
+    coverage: shallow

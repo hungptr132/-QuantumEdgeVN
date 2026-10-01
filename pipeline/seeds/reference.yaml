@@ -1,0 +1,75 @@
+# Reference data: exchanges, sectors, companies, tickers, reviewers.
+#
+# `description_vi` is deliberately absent from every company. The schema reserves that
+# prose for a person (see models.Company), so it is left NULL here and will surface as a
+# disclosure gap on the ticker page until a human writes it. That is the honest state,
+# not an oversight.
+
+exchanges:
+  - code: HOSE
+    name: Ho Chi Minh Stock Exchange
+  - code: HNX
+    name: Hanoi Stock Exchange
+  - code: UPCOM
+    name: Unlisted Public Company Market
+
+# Three sectors, three tickers each. A "sector median" of one or two peers is not a
+# median, so min_benchmark_sample is 3 and the coverage set is built to satisfy it.
+sectors:
+  - code: steel
+    name_vi: Thép
+    name_en: Steel
+  - code: auto_retail
+    name_vi: Ô tô và phân phối ô tô
+    name_en: Automotive and dealerships
+  - code: food_agri
+    name_vi: Thủy sản và nông sản
+    name_en: Aquaculture and agriculture
+
+# Legal names are facts and are seeded. Business descriptions are editorial and are not.
+companies:
+  - short_name: SMC
+    legal_name_vi: Công ty Cổ phần Đầu tư Thương mại SMC
+    sector: steel
+    ticker: { symbol: SMC, exchange: HOSE }
+  - short_name: Nam Kim
+    legal_name_vi: Công ty Cổ phần Thép Nam Kim
+    sector: steel
+    ticker: { symbol: NKG, exchange: HOSE }
+  - short_name: Pomina
+    legal_name_vi: Công ty Cổ phần Thép Pomina
+    sector: steel
+    ticker: { symbol: POM, exchange: HOSE }
+
+  - short_name: Hàng Xanh
+    legal_name_vi: Công ty Cổ phần Dịch vụ Ô tô Hàng Xanh
+    sector: auto_retail
+    ticker: { symbol: HAX, exchange: HOSE }
+  - short_name: City Auto
+    legal_name_vi: Công ty Cổ phần City Auto
+    sector: auto_retail
+    ticker: { symbol: CTF, exchange: HOSE }
+  - short_name: TMT Motors
+    legal_name_vi: Công ty Cổ phần Ô tô TMT
+    sector: auto_retail
+    ticker: { symbol: TMT, exchange: HOSE }
+
+  - short_name: Nam Việt
+    legal_name_vi: Công ty Cổ phần Nam Việt
+    sector: food_agri
+    ticker: { symbol: ANV, exchange: HOSE }
+  - short_name: Vĩnh Hoàn
+    legal_name_vi: Công ty Cổ phần Vĩnh Hoàn
+    sector: food_agri
+    ticker: { symbol: VHC, exchange: HOSE }
+  - short_name: Angimex
+    legal_name_vi: Công ty Cổ phần Xuất nhập khẩu An Giang
+    sector: food_agri
+    ticker: { symbol: AGM, exchange: HOSE }
+
+# The reviewer whose name goes on every published page. The stamp is the product, so this
+# must be a real person with a real foreign key, not a free-text string.
+users:
+  - slug: richard
+    display_name: Richard
+    role: reviewer

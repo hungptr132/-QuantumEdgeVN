@@ -1,0 +1,206 @@
+# Metric definitions. `definition_vi` is the glossary text the ticker page links to —
+# the spec's real financial-literacy component, and it is cheap to carry here.
+#
+# `is_headline: true` marks the five metrics the page leads with.
+# `requires_facts` declares inputs so a metric can report WHICH input was missing rather
+# than just failing.
+
+metrics:
+  # ---------- market / liquidity (Agent 5, pure code, no statements needed) ----------
+  - code: close_price
+    label_vi: Giá đóng cửa
+    label_en: Closing price
+    unit: VND
+    category: price
+    formula_text: close of the most recent trading session
+    definition_vi: >-
+      Giá khớp lệnh cuối cùng của phiên giao dịch gần nhất.
+    precision: 0
+
+  - code: price_to_par
+    label_vi: Giá so với mệnh giá
+    label_en: Price to par value
+    unit: ratio
+    category: valuation
+    formula_text: close / par_value
+    is_headline: true
+    definition_vi: >-
+      Giá thị trường chia cho mệnh giá (thường là 10.000 đồng). Dưới 1 nghĩa là thị
+      trường đang định giá mỗi cổ phiếu thấp hơn mệnh giá ghi trên sổ sách — không tự
+      động là xấu, nhưng là điều cần giải thích.
+    precision: 2
+
+  - code: avg_volume_20s
+    label_vi: Khối lượng bình quân 20 phiên
+    label_en: 20-session average volume
+    unit: share
+    category: liquidity_market
+    formula_text: mean(volume) over the last 20 trading sessions
+    definition_vi: >-
+      Số cổ phiếu được giao dịch bình quân mỗi phiên, tính trên 20 phiên giao dịch gần
+      nhất theo lịch giao dịch thực tế (không phải 20 dòng dữ liệu).
+    precision: 0
+
+  - code: avg_turnover_20s_vnd
+    label_vi: Giá trị giao dịch bình quân 20 phiên
+    label_en: 20-session average turnover
+    unit: VND
+    category: liquidity_market
+    formula_text: mean(close * volume) over the last 20 trading sessions
+    is_headline: true
+    definition_vi: >-
+      Giá trị tiền thực sự đổi chủ mỗi phiên. Đây là thước đo thanh khoản quan trọng hơn
+      khối lượng, vì nó cho biết bạn có thể mua hoặc bán bao nhiêu tiền mà không tự đẩy
+      giá.
+    precision: 0
+
+  - code: zero_trade_sessions_3m
+    label_vi: Số phiên không có giao dịch (3 tháng)
+    label_en: Zero-trade sessions (3 months)
+    unit: session
+    category: liquidity_market
+    formula_text: count of trading-calendar sessions in the last 63 where volume = 0
+    definition_vi: >-
+      Số phiên mà thị trường mở nhưng không có một cổ phiếu nào được khớp. Phân biệt rõ
+      với phiên thiếu dữ liệu: đây là phiên có thật và không ai giao dịch.
+    precision: 0
+
+  - code: zero_trade_ratio_3m
+    label_vi: Tỷ lệ phiên không giao dịch (3 tháng)
+    label_en: Zero-trade session ratio (3 months)
+    unit: pct
+    category: liquidity_market
+    formula_text: zero_trade_sessions_3m / trading_sessions_3m
+    is_headline: true
+    definition_vi: >-
+      Tỷ lệ phiên không có giao dịch nào. Tỷ lệ cao nghĩa là cổ phiếu gần như đóng băng:
+      khi cần bán, có thể không có người mua ở bất kỳ giá nào.
+    precision: 4
+
+  - code: missing_bar_sessions_3m
+    label_vi: Số phiên thiếu dữ liệu (3 tháng)
+    label_en: Missing bars (3 months)
+    unit: session
+    category: liquidity_market
+    formula_text: trading-calendar sessions in the last 63 with no price bar at all
+    definition_vi: >-
+      Số phiên mà lịch giao dịch có nhưng dữ liệu giá bị thiếu. Chỉ số này tồn tại để
+      không nhầm lẫn giữa "không ai giao dịch" và "chúng tôi không có dữ liệu".
+    precision: 0
+
+  - code: price_range_52w_pct
+    label_vi: Biên độ giá 52 tuần
+    label_en: 52-week price range
+    unit: pct
+    category: price
+    formula_text: (high_52w - low_52w) / low_52w
+    definition_vi: >-
+      Khoảng cách giữa giá cao nhất và thấp nhất trong 52 tuần, tính theo phần trăm so
+      với giá thấp nhất. Biên độ rất rộng ở một cổ phiếu thanh khoản mỏng thường phản
+      ánh việc thiếu người giao dịch hơn là thay đổi giá trị doanh nghiệp.
+    precision: 4
+
+  - code: pct_from_52w_high
+    label_vi: Cách đỉnh 52 tuần
+    label_en: Below 52-week high
+    unit: pct
+    category: price
+    formula_text: (close - high_52w) / high_52w
+    definition_vi: >-
+      Giá hiện tại thấp hơn đỉnh 52 tuần bao nhiêu phần trăm.
+    precision: 4
+
+  - code: bid_ask_spread_pct
+    label_vi: Chênh lệch mua - bán
+    label_en: Bid-ask spread
+    unit: pct
+    category: liquidity_market
+    formula_text: (best_ask - best_bid) / midpoint
+    definition_vi: >-
+      Khoảng cách giữa giá chào mua cao nhất và giá chào bán thấp nhất. Chênh lệch rộng
+      là một loại chi phí ẩn: bạn mất phần đó ngay khi vừa mua xong.
+    precision: 4
+
+  - code: sessions_to_exit
+    label_vi: Số phiên cần để thoát vị thế
+    label_en: Sessions to exit
+    unit: session
+    category: liquidity_market
+    formula_text: position_vnd / (avg_turnover_20s_vnd * participation_rate)
+    definition_vi: >-
+      Ước tính số phiên giao dịch cần thiết để bán hết một vị thế, với giả định bạn
+      không chiếm quá một tỷ lệ nhất định của giá trị giao dịch mỗi phiên (tỷ lệ này
+      luôn được ghi rõ kèm kết quả). Đây là thước đo RỦI RO, không phải tín hiệu mua bán.
+    precision: 1
+
+  # ---------- fundamentals (require statements; Arc B) ----------
+  - code: pe
+    label_vi: P/E
+    label_en: Price to earnings
+    unit: x
+    category: valuation
+    formula_text: market_cap / net_profit_after_tax_ttm
+    requires_facts: [net_profit_after_tax, shares_outstanding]
+    is_headline: true
+    definition_vi: >-
+      Giá cổ phiếu chia cho lợi nhuận trên mỗi cổ phiếu. Khi doanh nghiệp lỗ, chỉ số này
+      không có ý nghĩa và sẽ được ghi là không công bố thay vì hiển thị một số âm.
+    precision: 2
+
+  - code: ev_ebitda
+    label_vi: EV/EBITDA
+    unit: x
+    category: valuation
+    formula_text: (market_cap + net_debt) / ebitda
+    requires_facts: [ebitda, short_term_debt, long_term_debt, cash_and_equivalents]
+    definition_vi: >-
+      Giá trị toàn doanh nghiệp (gồm cả nợ) so với lợi nhuận trước lãi vay, thuế và khấu
+      hao. Hữu ích khi so sánh các doanh nghiệp có mức nợ khác nhau.
+    precision: 2
+
+  - code: interest_coverage
+    label_vi: Khả năng trả lãi
+    label_en: Interest coverage
+    unit: x
+    category: leverage
+    formula_text: ebit / interest_expense
+    requires_facts: [ebit, interest_expense]
+    is_headline: true
+    definition_vi: >-
+      Lợi nhuận trước lãi vay và thuế chia cho chi phí lãi vay. Dưới 2 lần nghĩa là
+      doanh nghiệp phụ thuộc vào việc tiếp tục vay được để trả lãi khoản vay hiện tại.
+    precision: 2
+
+  - code: net_debt_ebitda
+    label_vi: Nợ ròng / EBITDA
+    unit: x
+    category: leverage
+    formula_text: (short_term_debt + long_term_debt - cash_and_equivalents) / ebitda
+    requires_facts: [short_term_debt, long_term_debt, cash_and_equivalents, ebitda]
+    definition_vi: >-
+      Số năm lợi nhuận cần có để trả hết nợ ròng. Càng cao thì doanh nghiệp càng ít chịu
+      được một năm kinh doanh xấu.
+    precision: 2
+
+  - code: roe
+    label_vi: ROE
+    label_en: Return on equity
+    unit: pct
+    category: profitability
+    formula_text: net_profit_after_tax / total_equity
+    requires_facts: [net_profit_after_tax, total_equity]
+    definition_vi: >-
+      Lợi nhuận tạo ra trên mỗi đồng vốn chủ sở hữu.
+    precision: 4
+
+  - code: shares_cagr_3y
+    label_vi: Tăng trưởng số lượng cổ phiếu (3 năm)
+    label_en: Share count CAGR (3y)
+    unit: pct
+    category: ownership
+    formula_text: (shares_now / shares_3y_ago) ^ (1/3) - 1
+    requires_facts: [shares_outstanding]
+    definition_vi: >-
+      Tốc độ tăng số lượng cổ phiếu đang lưu hành. Tăng nhanh nghĩa là phần sở hữu của
+      cổ đông hiện hữu bị pha loãng — cần đối chiếu xem tiền thu được đã dùng vào việc gì.
+    precision: 4
