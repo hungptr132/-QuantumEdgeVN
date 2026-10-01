@@ -39,6 +39,11 @@ and are imported by stages, never the reverse.
 These are enforced by database constraints and tests, not by discipline. If a change
 requires relaxing one, that is a design discussion, not a refactor.
 
+> **Status as of M1:** only #5's privilege half is live — the `qe_web` role genuinely
+> cannot read any base table. The constraints backing #1–#4, #6 and #7 arrive with the
+> schema in M2. Until then these are design commitments, not active guarantees, so do
+> not assume the database is protecting you yet.
+
 1. **Raw data is append-only.** A trigger rejects `UPDATE`/`DELETE` on `raw_document`.
 2. **Every figure traces to its source.** `financial_fact.source_field_path` is `NOT NULL`.
    No row may exist without naming the exact field it came from.

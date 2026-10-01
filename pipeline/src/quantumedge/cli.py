@@ -68,8 +68,7 @@ def doctor() -> None:
     console.print(table)
     if not db_ok:
         console.print(
-            "\nDatabase unreachable. Start the local cluster:\n"
-            "  .\\pipeline\\scripts\\pg.ps1 start"
+            "\nDatabase unreachable. Start the local cluster:\n  .\\pipeline\\scripts\\pg.ps1 start"
         )
         raise typer.Exit(code=1)
 
