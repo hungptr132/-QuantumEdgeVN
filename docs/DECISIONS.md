@@ -22,6 +22,9 @@ the "reverses if" column is how you know it's time to revisit rather than re-lit
 | 2026-10-01 | Enums declared `create_type=False` in models; **created explicitly in the migration** | Autogenerate inlines `sa.Enum` per column, so a type shared by several tables gets created repeatedly and the migration fails on the second one. Explicit creation also fixes ordering: types exist before any table references them | Never |
 | 2026-10-01 | Tests run against **real Postgres** (`quantumedge_test`), never SQLite | Native enums, partial indexes, triggers, CHECK constraints and a privilege-limited view are exactly the guarantees worth testing, and SQLite can express none of them | Never |
 | 2026-10-01 | `migrations/versions/` excluded from ruff | Generated DDL; reformatting risks changing semantics for no benefit. `migrations/env.py` is still linted | Migrations start being hand-written |
+| 2026-10-02 | Exit-capacity estimates use the **median** session turnover, not the mean | Found in live data: POM had 16 of 20 sessions with zero volume and four block trades. The mean implied a position could be exited in under one session; there is no such session. A zero median reports "cannot estimate" instead | Never - the mean describes a stock that trades evenly, which is precisely the case this is protecting against |
+| 2026-10-02 | Liquidity windows count **calendar trading sessions**, never rows of price data | Dividing by bars present would shorten the window for exactly the illiquid stocks these metrics describe, flattering them | Never |
+| 2026-10-02 | `run_key` carries **microsecond** precision | It is UNIQUE, and an orchestrator chaining stages starts two runs of the same stage inside one second | Never |
 
 ## Kill criteria
 

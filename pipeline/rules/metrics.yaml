@@ -54,6 +54,20 @@ metrics:
       giá.
     precision: 0
 
+  - code: median_turnover_20s_vnd
+    label_vi: Giá trị giao dịch trung vị 20 phiên
+    label_en: 20-session median turnover
+    unit: VND
+    category: liquidity_market
+    formula_text: median(close * volume) over the last 20 trading sessions
+    is_headline: true
+    definition_vi: >-
+      Giá trị giao dịch của một phiên TIÊU BIỂU. Khác với giá trị bình quân, chỉ số này
+      không bị một vài phiên giao dịch khối lượng lớn làm méo. Nếu trung vị bằng 0 trong
+      khi bình quân rất cao, nghĩa là cổ phiếu hầu như không giao dịch mà chỉ thỉnh thoảng
+      được chuyển nhượng theo lô — hai việc hoàn toàn khác nhau đối với người cần bán.
+    precision: 0
+
   - code: zero_trade_sessions_3m
     label_vi: Số phiên không có giao dịch (3 tháng)
     label_en: Zero-trade sessions (3 months)

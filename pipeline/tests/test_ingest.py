@@ -129,7 +129,8 @@ class TestRunManifest:
         assert stage == "ingest"
         assert label == "vndirect_prices"
         assert stamp.endswith("Z")
-        assert len(stamp) == 16
+        # Microsecond precision: run_key is UNIQUE and stages can start in the same second.
+        assert len(stamp) == 23
 
     def test_commit_is_a_sha_or_unknown(self) -> None:
         """A run built from uncommitted files is not reproducible from any commit, so the

@@ -24,8 +24,27 @@ ingest_app = typer.Typer(
 app.add_typer(ingest_app, name="ingest")
 extract_app = typer.Typer(help="Parse stored raw documents into typed rows.", no_args_is_help=True)
 app.add_typer(extract_app, name="extract")
+calc_app = typer.Typer(help="Deterministic metrics, benchmarks, and flags.", no_args_is_help=True)
+app.add_typer(calc_app, name="calc")
 
 console = Console()
+
+# The metric codes Agent 5 computes. Listed explicitly so `qe calc liquidity` cannot
+# accidentally start evaluating fundamentals that need statements it has no access to.
+_LIQUIDITY_CODES = (
+    "close_price",
+    "price_to_par",
+    "avg_volume_20s",
+    "avg_turnover_20s_vnd",
+    "median_turnover_20s_vnd",
+    "zero_trade_sessions_3m",
+    "zero_trade_ratio_3m",
+    "missing_bar_sessions_3m",
+    "price_range_52w_pct",
+    "pct_from_52w_high",
+    "bid_ask_spread_pct",
+    "sessions_to_exit",
+)
 
 
 @app.command()
@@ -297,6 +316,102 @@ def extract_prices_cmd(
         console.print(table)
         for note in result.notes:
             console.print(f"  [yellow]{note}[/yellow]")
+
+
+@calc_app.command("liquidity")
+def calc_liquidity(
+    as_of: str = typer.Option("", help="Valuation date YYYY-MM-DD. Default: latest session."),
+    tickers: str = typer.Option("", help="Comma-separated symbols. Default: all covered."),
+) -> None:
+    """Agent 5: liquidity risk metrics. Pure code, framed as exit risk, never a signal."""
+    from datetime import date  # noqa: PLC0415
+
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.calc import liquidity  # noqa: PLC0415  (registers the metrics)
+    from quantumedge.calc.registry import load_contexts, run_metrics  # noqa: PLC0415
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    symbols = [s.strip().upper() for s in tickers.split(",") if s.strip()] or None
+
+    with session_scope() as session:
+        if as_of:
+            as_of_date = date.fromisoformat(as_of)
+        else:
+            # Default to the most recent session the calendar knows about, never today():
+            # an explicit date is what keeps the result reproducible.
+            latest = session.execute(
+                sql(
+                    "SELECT max(trade_date) FROM market_calendar "
+                    "WHERE exchange_code = 'HOSE' AND is_trading_day"
+                )
+            ).scalar_one_or_none()
+            if latest is None:
+                console.print("[yellow]no trading calendar - run: qe extract prices[/yellow]")
+                raise typer.Exit(code=1)
+            as_of_date = latest
+
+        contexts = load_contexts(session, as_of_date, symbols=symbols)
+        if not contexts:
+            console.print("[yellow]no covered tickers - run: qe db seed[/yellow]")
+            raise typer.Exit(code=1)
+
+        with run_scope(
+            session,
+            PipelineStage.CALC,
+            "liquidity",
+            as_of=as_of_date,
+            params={"symbols": symbols or "all", "calc_version": liquidity.CALC_VERSION},
+        ) as (run_id, stats):
+            outcome = run_metrics(
+                session, run_id, liquidity.CALC_VERSION, contexts, codes=list(_LIQUIDITY_CODES)
+            )
+            stats.update(outcome.as_stats())
+
+        rows = session.execute(
+            sql(
+                """
+                SELECT t.symbol,
+                       max(mv.value) FILTER (WHERE mv.metric_code = 'close_price') AS close,
+                       max(mv.value) FILTER (WHERE mv.metric_code = 'price_to_par') AS to_par,
+                       max(mv.value) FILTER (WHERE mv.metric_code = 'zero_trade_ratio_3m')
+                           AS zero_ratio,
+                       max(mv.value) FILTER (WHERE mv.metric_code = 'median_turnover_20s_vnd')
+                           AS turnover,
+                       max(mv.value) FILTER (WHERE mv.metric_code = 'sessions_to_exit')
+                           AS exit_100m
+                FROM metric_value mv JOIN ticker t ON t.id = mv.ticker_id
+                WHERE mv.as_of_date = :as_of GROUP BY t.symbol ORDER BY zero_ratio DESC NULLS LAST
+                """
+            ),
+            {"as_of": as_of_date},
+        ).mappings()
+
+        table = Table(
+            "symbol",
+            "close",
+            "x par",
+            "zero-trade",
+            "median turnover",
+            "exit 100mn",
+            title=f"Agent 5 liquidity - as of {as_of_date}",
+        )
+        for r in rows:
+            table.add_row(
+                r["symbol"],
+                f"{r['close']:,.0f}" if r["close"] is not None else "-",
+                f"{r['to_par']:.2f}" if r["to_par"] is not None else "-",
+                f"{r['zero_ratio'] * 100:.1f}%" if r["zero_ratio"] is not None else "-",
+                f"{r['turnover'] / 1_000_000:,.1f}mn" if r["turnover"] is not None else "-",
+                f"{r['exit_100m']:.1f} sessions" if r["exit_100m"] is not None else "khong cong bo",
+            )
+        console.print(table)
+        console.print(
+            f"available [green]{outcome.available}[/green] · "
+            f"unavailable [dim]{outcome.unavailable}[/dim]"
+        )
 
 
 if __name__ == "__main__":

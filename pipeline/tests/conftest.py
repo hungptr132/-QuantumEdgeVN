@@ -105,3 +105,17 @@ def seed_run(session: Session) -> int:
             )
         ).scalar_one()
     )
+
+
+@pytest.fixture
+def metric_defs(session: Session) -> int:
+    """Seed the real metric definitions from rules/metrics.yaml.
+
+    metric_value.metric_code is a foreign key, so a metric cannot be written for a code that
+    was never defined. Tests use the real definitions rather than inventing stubs, which
+    means a metric implemented without a matching rules entry fails here.
+    """
+    from quantumedge.config import load_settings
+    from quantumedge.db.seed import seed_metrics
+
+    return seed_metrics(session, load_settings())

@@ -46,8 +46,12 @@ def git_commit() -> str:
 
 
 def make_run_key(stage: PipelineStage, label: str, when: datetime | None = None) -> str:
-    """e.g. 20261002T084312Z:ingest:vndirect_prices — sortable and self-describing."""
-    stamp = (when or datetime.now(UTC)).strftime("%Y%m%dT%H%M%SZ")
+    """e.g. 20261002T084312.123456Z:ingest:vndirect_prices - sortable and self-describing.
+
+    Microsecond precision, not seconds: run_key is UNIQUE, and an orchestrator chaining
+    stages back-to-back genuinely does start two runs of the same stage within one second.
+    """
+    stamp = (when or datetime.now(UTC)).strftime("%Y%m%dT%H%M%S.%fZ")
     return f"{stamp}:{stage.value}:{label}"
 
 
