@@ -28,9 +28,7 @@ def built(session: Session, seed_ticker: int, metric_defs: int) -> tuple[int, in
 
     Returns (run_id, ticker_id).
     """
-    session.execute(
-        text("INSERT INTO app_user (slug, display_name) VALUES ('richard', 'Richard')")
-    )
+    session.execute(text("INSERT INTO app_user (slug, display_name) VALUES ('richard', 'Richard')"))
     session.execute(
         text(
             "INSERT INTO source (code, kind, name) VALUES ('t', 'market_data', 't') "
@@ -167,9 +165,7 @@ class TestMachineQa:
         failed = [c["check"] for c in report.checks if not c["passed"]]
         assert report.passed, f"unexpected failures: {failed}"
 
-    def test_a_symbol_mismatch_is_caught(
-        self, session: Session, built: tuple[int, int]
-    ) -> None:
+    def test_a_symbol_mismatch_is_caught(self, session: Session, built: tuple[int, int]) -> None:
         """A sheet rendered under the wrong ticker is the worst failure available here."""
         run_id, _ = built
         sheet = build_fact_sheet(session, "TST", AS_OF, run_id)
@@ -177,9 +173,7 @@ class TestMachineQa:
         assert not report.passed
         assert "symbol_matches" in report.as_dict()["failed"]
 
-    def test_prohibited_language_is_caught(
-        self, session: Session, built: tuple[int, int]
-    ) -> None:
+    def test_prohibited_language_is_caught(self, session: Session, built: tuple[int, int]) -> None:
         """Turns 'education, never recommendations' into a failing test rather than a habit
         someone has to remember under deadline."""
         run_id, _ = built
@@ -218,9 +212,7 @@ class TestMachineQa:
 
 
 class TestHashGating:
-    def test_the_hash_ignores_run_metadata(
-        self, session: Session, built: tuple[int, int]
-    ) -> None:
+    def test_the_hash_ignores_run_metadata(self, session: Session, built: tuple[int, int]) -> None:
         """Regression. calc_run_id changes on every build; including it made every rebuild
         look like a data change, which destroyed the review stamp each run."""
         run_id, _ = built
@@ -281,17 +273,13 @@ class TestReviewGate:
     def _stored(self, session: Session, run_id: int) -> None:
         store_fact_sheet(session, build_fact_sheet(session, "TST", AS_OF, run_id), run_id)
 
-    def test_publishing_a_draft_is_refused(
-        self, session: Session, built: tuple[int, int]
-    ) -> None:
+    def test_publishing_a_draft_is_refused(self, session: Session, built: tuple[int, int]) -> None:
         run_id, _ = built
         self._stored(session, run_id)
         with pytest.raises(ReviewError, match="illegal transition draft -> published"):
             publish(session, "TST", "richard")
 
-    def test_an_unknown_reviewer_is_refused(
-        self, session: Session, built: tuple[int, int]
-    ) -> None:
+    def test_an_unknown_reviewer_is_refused(self, session: Session, built: tuple[int, int]) -> None:
         """A stamp naming someone who does not exist is not an audit trail."""
         run_id, _ = built
         self._stored(session, run_id)
@@ -319,9 +307,7 @@ class TestReviewGate:
         with pytest.raises(ReviewError, match="failed machine QA"):
             approve(session, "TST", "richard")
 
-    def test_rejection_requires_a_reason(
-        self, session: Session, built: tuple[int, int]
-    ) -> None:
+    def test_rejection_requires_a_reason(self, session: Session, built: tuple[int, int]) -> None:
         run_id, _ = built
         self._stored(session, run_id)
         with pytest.raises(ReviewError, match="must state a reason"):

@@ -58,9 +58,7 @@ def hash_of(payload: dict[str, Any]) -> str:
     """
     material = {k: v for k, v in payload.items() if k not in VOLATILE_TOP_LEVEL}
     material["lineage"] = {
-        k: v
-        for k, v in (material.get("lineage") or {}).items()
-        if k not in VOLATILE_LINEAGE
+        k: v for k, v in (material.get("lineage") or {}).items() if k not in VOLATILE_LINEAGE
     }
     return hash_payload(material)
 
