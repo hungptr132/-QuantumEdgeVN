@@ -1,0 +1,532 @@
+{
+  "allowed_numbers": [
+    "-0.5",
+    "-0.5075",
+    "-0.507500",
+    "-50.75%",
+    "0",
+    "0.0",
+    "0.0 phiên",
+    "0.00",
+    "0.00%",
+    "0.000000",
+    "0.05",
+    "0.1",
+    "0.1 phiên",
+    "0.100000",
+    "0.5",
+    "0.507500",
+    "1.0",
+    "1.1102",
+    "1.110200",
+    "1.59",
+    "1.590000",
+    "1.59E+4",
+    "1000000000",
+    "111.02",
+    "111.02%",
+    "15,900",
+    "15,900 đ",
+    "15900.000000",
+    "20",
+    "3",
+    "3.8906E+5",
+    "389,060",
+    "389060.000000",
+    "50.75",
+    "52",
+    "6,019,815,000",
+    "6,019,815,000 đ",
+    "6,215,976,000",
+    "6,215,976,000 đ",
+    "6.019815E+9",
+    "6.215976E+9",
+    "6019815000.000000",
+    "6215976000.000000",
+    "<",
+    ">",
+    "avg_turnover_20s_vnd",
+    "không công bố",
+    "pct_from_52w_high",
+    "price_to_par",
+    "zero_trade_ratio_3m"
+  ],
+  "as_of_date": "2026-10-01",
+  "company": {
+    "description_vi": null,
+    "ir_url": null,
+    "legal_name_vi": "Công ty Cổ phần Nam Việt",
+    "sector_code": "food_agri",
+    "sector_name_vi": "Thủy sản và nông sản",
+    "short_name": "Nam Việt",
+    "website": null
+  },
+  "disclosure_gaps": [
+    {
+      "display": "không công bố",
+      "field": "company.description_vi",
+      "label_vi": "Mô tả hoạt động kinh doanh",
+      "reason": "requires_human_authorship"
+    },
+    {
+      "display": "không công bố",
+      "field": "ticker.shares_outstanding",
+      "label_vi": "Số cổ phiếu đang lưu hành",
+      "reason": "not_ingested"
+    },
+    {
+      "display": "không công bố",
+      "field": "metric.bid_ask_spread_pct",
+      "label_vi": "Chênh lệch mua - bán",
+      "reason": "no_intraday_snapshot"
+    },
+    {
+      "display": "không tìm thấy công bố tương ứng",
+      "field": "flag.auditor_change_within_24m",
+      "label_vi": "Thay đổi đơn vị kiểm toán trong 24 tháng",
+      "reason": "no_event_source_configured"
+    },
+    {
+      "display": "không tìm thấy công bố tương ứng",
+      "field": "flag.interest_coverage_below_2x",
+      "label_vi": "Khả năng trả lãi dưới 2 lần",
+      "reason": "metric_not_computed:interest_coverage"
+    },
+    {
+      "display": "không tìm thấy công bố tương ứng",
+      "field": "flag.net_debt_ebitda_above_4x",
+      "label_vi": "Nợ ròng trên 4 lần EBITDA",
+      "reason": "metric_not_computed:net_debt_ebitda"
+    },
+    {
+      "display": "không tìm thấy công bố tương ứng",
+      "field": "flag.no_audited_annual_statement_18m",
+      "label_vi": "Không có báo cáo kiểm toán năm trong 18 tháng",
+      "reason": "no_statement_source_configured"
+    },
+    {
+      "display": "không tìm thấy công bố tương ứng",
+      "field": "flag.dilution_shares_up_25pct_3y",
+      "label_vi": "Pha loãng - số cổ phiếu tăng trên 25% trong 3 năm",
+      "reason": "metric_not_computed:shares_cagr_3y"
+    },
+    {
+      "display": "không tìm thấy công bố tương ứng",
+      "field": "flag.pe_above_2x_sector_median",
+      "label_vi": "P/E cao hơn 2 lần trung vị ngành",
+      "reason": "metric_not_computed:pe"
+    }
+  ],
+  "flags": [
+    {
+      "category": "valuation",
+      "code": "price_near_52w_low",
+      "evidence": [
+        {
+          "kind": "metric",
+          "label": "pct_from_52w_high = -0.507500 (< -0.5)",
+          "ref": "metric_value:20",
+          "source_url": null
+        }
+      ],
+      "explanation_vi": "Giá đang thấp hơn đỉnh 52 tuần trên 50%. Đây là mô tả trạng thái giá, không phải nhận định rằng cổ phiếu rẻ hay đắt.",
+      "name_vi": "Giá gần đáy 52 tuần",
+      "reason": null,
+      "rule_summary": "pct_from_52w_high < -0.5",
+      "severity": "info",
+      "state": "active",
+      "state_label_vi": "Đang có",
+      "triggered_values": {
+        "metric": "pct_from_52w_high",
+        "op": "<",
+        "threshold": "-0.5",
+        "value": "-0.507500"
+      }
+    },
+    {
+      "category": "governance",
+      "code": "auditor_change_within_24m",
+      "evidence": [],
+      "explanation_vi": "Doanh nghiệp đã thay đổi đơn vị kiểm toán trong hai năm qua. Bản thân việc này không phải vi phạm, nhưng nó là một trong những dấu hiệu đáng kiểm tra kỹ nhất.",
+      "name_vi": "Thay đổi đơn vị kiểm toán trong 24 tháng",
+      "reason": "no_event_source_configured",
+      "rule_summary": "auditor_change  24",
+      "severity": "high",
+      "state": "unknown",
+      "state_label_vi": "không tìm thấy công bố tương ứng",
+      "triggered_values": {}
+    },
+    {
+      "category": "leverage",
+      "code": "interest_coverage_below_2x",
+      "evidence": [],
+      "explanation_vi": "Lợi nhuận trước lãi vay và thuế chỉ đủ trả lãi dưới 2 lần. Doanh nghiệp phụ thuộc vào việc tiếp tục vay được để phục vụ khoản nợ hiện tại.",
+      "name_vi": "Khả năng trả lãi dưới 2 lần",
+      "reason": "metric_not_computed:interest_coverage",
+      "rule_summary": "interest_coverage < 2.0",
+      "severity": "high",
+      "state": "unknown",
+      "state_label_vi": "không tìm thấy công bố tương ứng",
+      "triggered_values": {}
+    },
+    {
+      "category": "leverage",
+      "code": "net_debt_ebitda_above_4x",
+      "evidence": [],
+      "explanation_vi": "Cần hơn bốn năm lợi nhuận để trả hết nợ ròng. Mức này khiến doanh nghiệp rất ít chịu được một năm kinh doanh xấu.",
+      "name_vi": "Nợ ròng trên 4 lần EBITDA",
+      "reason": "metric_not_computed:net_debt_ebitda",
+      "rule_summary": "net_debt_ebitda > 4.0",
+      "severity": "high",
+      "state": "unknown",
+      "state_label_vi": "không tìm thấy công bố tương ứng",
+      "triggered_values": {}
+    },
+    {
+      "category": "disclosure",
+      "code": "no_audited_annual_statement_18m",
+      "evidence": [],
+      "explanation_vi": "Không tìm thấy báo cáo tài chính năm đã được kiểm toán trong 18 tháng gần nhất. Việc chậm công bố là chỉ dấu rủi ro quản trị rõ ràng nhất mà nhà đầu tư nhỏ có thể tự kiểm tra.",
+      "name_vi": "Không có báo cáo kiểm toán năm trong 18 tháng",
+      "reason": "no_statement_source_configured",
+      "rule_summary": "financial_period  18",
+      "severity": "high",
+      "state": "unknown",
+      "state_label_vi": "không tìm thấy công bố tương ứng",
+      "triggered_values": {}
+    },
+    {
+      "category": "dilution",
+      "code": "dilution_shares_up_25pct_3y",
+      "evidence": [],
+      "explanation_vi": "Số cổ phiếu lưu hành tăng khoảng 25% hoặc hơn trong ba năm. Phần sở hữu của cổ đông cũ bị pha loãng tương ứng; câu hỏi cần trả lời là tiền thu được đã dùng vào việc gì.",
+      "name_vi": "Pha loãng - số cổ phiếu tăng trên 25% trong 3 năm",
+      "reason": "metric_not_computed:shares_cagr_3y",
+      "rule_summary": "shares_cagr_3y > 0.077",
+      "severity": "watch",
+      "state": "unknown",
+      "state_label_vi": "không tìm thấy công bố tương ứng",
+      "triggered_values": {}
+    },
+    {
+      "category": "valuation",
+      "code": "pe_above_2x_sector_median",
+      "evidence": [],
+      "explanation_vi": "Cổ phiếu đang được định giá cao gấp hơn hai lần trung vị ngành. Cần kiểm tra xem điều gì biện minh cho mức chênh lệch đó.",
+      "name_vi": "P/E cao hơn 2 lần trung vị ngành",
+      "reason": "metric_not_computed:pe",
+      "rule_summary": "pe >",
+      "severity": "watch",
+      "state": "unknown",
+      "state_label_vi": "không tìm thấy công bố tương ứng",
+      "triggered_values": {}
+    },
+    {
+      "category": "liquidity",
+      "code": "thin_liquidity_turnover_below_1bn",
+      "evidence": [],
+      "explanation_vi": "Giá trị giao dịch bình quân dưới 1 tỷ đồng mỗi phiên. Với mức này, một vị thế vài trăm triệu đồng có thể cần nhiều phiên để thoát, và việc bán ra có thể tự đẩy giá xuống.",
+      "name_vi": "Thanh khoản mỏng - giá trị giao dịch dưới 1 tỷ/phiên",
+      "reason": null,
+      "rule_summary": "avg_turnover_20s_vnd < 1000000000",
+      "severity": "high",
+      "state": "inactive",
+      "state_label_vi": "Không có",
+      "triggered_values": {
+        "metric": "avg_turnover_20s_vnd",
+        "op": "<",
+        "threshold": "1000000000",
+        "value": "6215976000.000000"
+      }
+    },
+    {
+      "category": "liquidity",
+      "code": "zero_trade_sessions_over_5pct_3m",
+      "evidence": [],
+      "explanation_vi": "Hơn 5% số phiên trong ba tháng qua không có một cổ phiếu nào được khớp. Khi cần bán, có thể không có người mua ở bất kỳ giá nào.",
+      "name_vi": "Nhiều phiên không có giao dịch",
+      "reason": null,
+      "rule_summary": "zero_trade_ratio_3m > 0.05",
+      "severity": "high",
+      "state": "inactive",
+      "state_label_vi": "Không có",
+      "triggered_values": {
+        "metric": "zero_trade_ratio_3m",
+        "op": ">",
+        "threshold": "0.05",
+        "value": "0.000000"
+      }
+    },
+    {
+      "category": "valuation",
+      "code": "price_below_par_value",
+      "evidence": [],
+      "explanation_vi": "Thị trường đang trả cho mỗi cổ phiếu ít hơn mệnh giá ghi trên sổ sách. Điều này không tự động là xấu, nhưng nó đặt ra một câu hỏi cần câu trả lời: vì sao?",
+      "name_vi": "Giá dưới mệnh giá",
+      "reason": null,
+      "rule_summary": "price_to_par < 1.0",
+      "severity": "watch",
+      "state": "inactive",
+      "state_label_vi": "Không có",
+      "triggered_values": {
+        "metric": "price_to_par",
+        "op": "<",
+        "threshold": "1.0",
+        "value": "1.590000"
+      }
+    }
+  ],
+  "headline_metrics": [
+    {
+      "available": true,
+      "code": "price_to_par",
+      "definition_vi": "Giá thị trường chia cho mệnh giá (thường là 10.000 đồng). Dưới 1 nghĩa là thị trường đang định giá mỗi cổ phiếu thấp hơn mệnh giá ghi trên sổ sách — không tự động là xấu, nhưng là điều cần giải thích.",
+      "display": "1.59",
+      "label_vi": "Giá so với mệnh giá",
+      "provenance": [
+        {
+          "kind": "metric",
+          "label": "price_to_par @ as_of",
+          "ref": "metric_value:13",
+          "source_url": null
+        }
+      ],
+      "unavailable_reason": null,
+      "unit": "ratio",
+      "value": "1.590000"
+    }
+  ],
+  "lineage": {
+    "as_of_date": "2026-10-01",
+    "data_sources": [
+      "vndirect_dchart"
+    ],
+    "rule_spec_version": "ea52c09c098b1d81866e10f01e6661f7068974c01d0f80d7b04a4fc645acc475"
+  },
+  "liquidity": {
+    "exit_estimates": [
+      {
+        "position_label": "1000mn_vnd",
+        "sessions": "0.8"
+      },
+      {
+        "position_label": "100mn_vnd",
+        "sessions": "0.1"
+      },
+      {
+        "position_label": "500mn_vnd",
+        "sessions": "0.4"
+      }
+    ],
+    "figures": [
+      {
+        "available": true,
+        "code": "avg_turnover_20s_vnd",
+        "definition_vi": "Giá trị tiền thực sự đổi chủ mỗi phiên. Đây là thước đo thanh khoản quan trọng hơn khối lượng, vì nó cho biết bạn có thể mua hoặc bán bao nhiêu tiền mà không tự đẩy giá.",
+        "display": "6,215,976,000 đ",
+        "label_vi": "Giá trị giao dịch bình quân 20 phiên",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "avg_turnover_20s_vnd @ 2026-10-01",
+            "ref": "metric_value:15",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "VND",
+        "value": "6215976000.000000"
+      },
+      {
+        "available": true,
+        "code": "median_turnover_20s_vnd",
+        "definition_vi": "Giá trị giao dịch của một phiên TIÊU BIỂU. Khác với giá trị bình quân, chỉ số này không bị một vài phiên giao dịch khối lượng lớn làm méo. Nếu trung vị bằng 0 trong khi bình quân rất cao, nghĩa là cổ phiếu hầu như không giao dịch mà chỉ thỉnh thoảng được chuyển nhượng theo lô — hai việc hoàn toàn khác nhau đối với người cần bán.",
+        "display": "6,019,815,000 đ",
+        "label_vi": "Giá trị giao dịch trung vị 20 phiên",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "median_turnover_20s_vnd @ as_of",
+            "ref": "metric_value:116",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "VND",
+        "value": "6019815000.000000"
+      },
+      {
+        "available": true,
+        "code": "zero_trade_ratio_3m",
+        "definition_vi": "Tỷ lệ phiên không có giao dịch nào. Tỷ lệ cao nghĩa là cổ phiếu gần như đóng băng: khi cần bán, có thể không có người mua ở bất kỳ giá nào.",
+        "display": "0.00%",
+        "label_vi": "Tỷ lệ phiên không giao dịch (3 tháng)",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "zero_trade_ratio_3m @ as_of",
+            "ref": "metric_value:17",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "pct",
+        "value": "0.000000"
+      },
+      {
+        "available": true,
+        "code": "avg_volume_20s",
+        "definition_vi": "Số cổ phiếu được giao dịch bình quân mỗi phiên, tính trên 20 phiên giao dịch gần nhất theo lịch giao dịch thực tế (không phải 20 dòng dữ liệu).",
+        "display": "389,060",
+        "label_vi": "Khối lượng bình quân 20 phiên",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "avg_volume_20s @ 2026-10-01",
+            "ref": "metric_value:14",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "share",
+        "value": "389060.000000"
+      },
+      {
+        "available": false,
+        "code": "bid_ask_spread_pct",
+        "definition_vi": "Khoảng cách giữa giá chào mua cao nhất và giá chào bán thấp nhất. Chênh lệch rộng là một loại chi phí ẩn: bạn mất phần đó ngay khi vừa mua xong.",
+        "display": "không công bố",
+        "label_vi": "Chênh lệch mua - bán",
+        "provenance": [],
+        "unavailable_reason": "no_intraday_snapshot",
+        "unit": "pct",
+        "value": null
+      },
+      {
+        "available": true,
+        "code": "missing_bar_sessions_3m",
+        "definition_vi": "Số phiên mà lịch giao dịch có nhưng dữ liệu giá bị thiếu. Chỉ số này tồn tại để không nhầm lẫn giữa \"không ai giao dịch\" và \"chúng tôi không có dữ liệu\".",
+        "display": "0.0 phiên",
+        "label_vi": "Số phiên thiếu dữ liệu (3 tháng)",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "missing_bar_sessions_3m @ as_of",
+            "ref": "metric_value:18",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "session",
+        "value": "0.000000"
+      },
+      {
+        "available": true,
+        "code": "sessions_to_exit",
+        "definition_vi": "Ước tính số phiên giao dịch cần thiết để bán hết một vị thế, với giả định bạn không chiếm quá một tỷ lệ nhất định của giá trị giao dịch mỗi phiên (tỷ lệ này luôn được ghi rõ kèm kết quả). Đây là thước đo RỦI RO, không phải tín hiệu mua bán.",
+        "display": "0.1 phiên",
+        "label_vi": "Số phiên cần để thoát vị thế",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "sessions_to_exit @ as_of",
+            "ref": "metric_value:22",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "session",
+        "value": "0.100000"
+      },
+      {
+        "available": true,
+        "code": "zero_trade_sessions_3m",
+        "definition_vi": "Số phiên mà thị trường mở nhưng không có một cổ phiếu nào được khớp. Phân biệt rõ với phiên thiếu dữ liệu: đây là phiên có thật và không ai giao dịch.",
+        "display": "0.0 phiên",
+        "label_vi": "Số phiên không có giao dịch (3 tháng)",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "zero_trade_sessions_3m @ as_of",
+            "ref": "metric_value:16",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "session",
+        "value": "0.000000"
+      }
+    ],
+    "framing_note_vi": "Các chỉ số dưới đây đo RỦI RO THOÁT VỊ THẾ - mức độ khó khăn khi cần bán ra. Đây không phải tín hiệu mua hoặc bán, và không dự báo giá.",
+    "participation_rate": "0.20"
+  },
+  "news": [],
+  "other_metrics": [
+    {
+      "available": true,
+      "code": "close_price",
+      "definition_vi": "Giá khớp lệnh cuối cùng của phiên giao dịch gần nhất.",
+      "display": "15,900 đ",
+      "label_vi": "Giá đóng cửa",
+      "provenance": [
+        {
+          "kind": "metric",
+          "label": "close_price @ as_of",
+          "ref": "metric_value:12",
+          "source_url": null
+        }
+      ],
+      "unavailable_reason": null,
+      "unit": "VND",
+      "value": "15900.000000"
+    },
+    {
+      "available": true,
+      "code": "pct_from_52w_high",
+      "definition_vi": "Giá hiện tại thấp hơn đỉnh 52 tuần bao nhiêu phần trăm.",
+      "display": "-50.75%",
+      "label_vi": "Cách đỉnh 52 tuần",
+      "provenance": [
+        {
+          "kind": "metric",
+          "label": "pct_from_52w_high @ as_of",
+          "ref": "metric_value:20",
+          "source_url": null
+        }
+      ],
+      "unavailable_reason": null,
+      "unit": "pct",
+      "value": "-0.507500"
+    },
+    {
+      "available": true,
+      "code": "price_range_52w_pct",
+      "definition_vi": "Khoảng cách giữa giá cao nhất và thấp nhất trong 52 tuần, tính theo phần trăm so với giá thấp nhất. Biên độ rất rộng ở một cổ phiếu thanh khoản mỏng thường phản ánh việc thiếu người giao dịch hơn là thay đổi giá trị doanh nghiệp.",
+      "display": "111.02%",
+      "label_vi": "Biên độ giá 52 tuần",
+      "provenance": [
+        {
+          "kind": "metric",
+          "label": "price_range_52w_pct @ as_of",
+          "ref": "metric_value:19",
+          "source_url": null
+        }
+      ],
+      "unavailable_reason": null,
+      "unit": "pct",
+      "value": "1.110200"
+    }
+  ],
+  "recent_events": [],
+  "schema_version": "factsheet/v1",
+  "ticker": {
+    "coverage": "shallow",
+    "exchange": "HOSE",
+    "listing_date": null,
+    "par_value_vnd": "10000.0000",
+    "shares_outstanding": null,
+    "status": "listed",
+    "symbol": "ANV"
+  },
+  "what_would_have_to_be_true": []
+}

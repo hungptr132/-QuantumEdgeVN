@@ -209,8 +209,29 @@ def reject(
     return ReviewResult(row["id"], symbol, row["version"], row["status"], "rejected")
 
 
-def queue(session: Session, status: str | None = None) -> list[dict[str, Any]]:
-    clause = "WHERE fs.status = CAST(:st AS fact_sheet_status)" if status else ""
+def queue(
+    session: Session, status: str | None = None, *, all_versions: bool = False
+) -> list[dict[str, Any]]:
+    """What needs a decision.
+
+    By default this shows only what is actionable: the newest version per ticker, plus
+    anything currently approved or published. Superseded versions and older drafts are
+    history, not work - listing every version turns a nine-ticker queue into dozens of rows
+    and buries the one sheet actually waiting on a person. Pass all_versions to see them.
+    """
+    filters = []
+    params: dict[str, Any] = {}
+    if status:
+        filters.append("fs.status = CAST(:st AS fact_sheet_status)")
+        params["st"] = status
+    if not all_versions:
+        filters.append(
+            "(fs.version = (SELECT max(f2.version) FROM fact_sheet f2 "
+            " WHERE f2.ticker_id = fs.ticker_id) "
+            " OR fs.status IN ('approved', 'published'))"
+        )
+    clause = ("WHERE " + " AND ".join(filters)) if filters else ""
+
     rows = session.execute(
         text(
             f"""
@@ -220,9 +241,9 @@ def queue(session: Session, status: str | None = None) -> list[dict[str, Any]]:
                    coalesce(fs.qa_report -> 'failed', '[]'::jsonb) AS qa_failed
             FROM fact_sheet fs JOIN ticker t ON t.id = fs.ticker_id
             {clause}
-            ORDER BY fs.status, t.symbol
-            """
+            ORDER BY fs.status, t.symbol, fs.version DESC
+            """  # noqa: S608
         ),
-        {"st": status} if status else {},
+        params,
     ).mappings()
     return [dict(r) | {"qa_failed": json.loads(json.dumps(r["qa_failed"]))} for r in rows]

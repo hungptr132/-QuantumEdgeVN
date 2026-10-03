@@ -1,3 +1,4 @@
+import sys
 from typing import TYPE_CHECKING
 
 import typer
@@ -9,6 +10,15 @@ from quantumedge.config import Settings
 
 if TYPE_CHECKING:
     from alembic.config import Config
+
+# The Windows console defaults to cp1252, which cannot encode Vietnamese - and Vietnamese
+# is this product's output language. Without this, printing a flag name like
+# "Giá dưới mệnh giá" raises UnicodeEncodeError and takes the command down. Found when an
+# arrow character crashed `qe run`; the same fault would have hit any Vietnamese output.
+for _stream in (sys.stdout, sys.stderr):
+    reconfigure = getattr(_stream, "reconfigure", None)
+    if reconfigure is not None:
+        reconfigure(encoding="utf-8", errors="replace")
 
 app = typer.Typer(
     name="qe",
@@ -48,6 +58,18 @@ _LIQUIDITY_CODES = (
     "pct_from_52w_high",
     "bid_ask_spread_pct",
     "sessions_to_exit",
+)
+
+# Valuation, leverage and profitability. Implemented but data-gated: until statements
+# are ingested each one reports the exact fact it is waiting for, which is why they are
+# run rather than skipped - a metric that is never attempted cannot say "không công bố".
+_FUNDAMENTAL_CODES = (
+    "pe",
+    "ev_ebitda",
+    "interest_coverage",
+    "net_debt_ebitda",
+    "roe",
+    "shares_cagr_3y",
 )
 
 
@@ -632,13 +654,18 @@ def factsheet_show(symbol: str) -> None:
 
 
 @review_app.command("list")
-def review_list(status: str = typer.Option("", help="Filter by status.")) -> None:
-    """Show the review queue."""
+def review_list(
+    status: str = typer.Option("", help="Filter by status."),
+    all_versions: bool = typer.Option(
+        False, "--all-versions", help="Include superseded and older drafts."
+    ),
+) -> None:
+    """Show what needs a decision: the newest version per ticker, plus live ones."""
     from quantumedge.db.session import session_scope  # noqa: PLC0415
     from quantumedge.review.service import queue  # noqa: PLC0415
 
     with session_scope() as session:
-        rows = queue(session, status or None)
+        rows = queue(session, status or None, all_versions=all_versions)
 
     table = Table("symbol", "ver", "status", "QA", "flags", "reviewed by", title="review queue")
     for r in rows:
@@ -707,6 +734,139 @@ def review_reject(
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=1) from exc
     console.print(f"[yellow]rejected[/yellow] {result.symbol} v{result.version}")
+
+
+@fs_app.command("export")
+def factsheet_export() -> None:
+    """Write committed JSON snapshots, one per sheet version.
+
+    The diff of these files after a rule change is the review artifact and the regression
+    baseline at once.
+    """
+    from quantumedge.config import load_settings  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.factsheet.export import export_snapshots  # noqa: PLC0415
+
+    settings = load_settings()
+    with session_scope() as session:
+        outcome = export_snapshots(session, settings.factsheets_dir)
+
+    console.print(
+        f"wrote [green]{outcome.written}[/green] · unchanged [dim]{outcome.unchanged}[/dim] "
+        f"→ {settings.factsheets_dir}"
+    )
+    for path in outcome.paths[:12]:
+        console.print(f"  [dim]{path}[/dim]")
+
+
+@calc_app.command("all")
+def calc_all(
+    as_of: str = typer.Option("", help="Valuation date YYYY-MM-DD. Default: latest session."),
+    tickers: str = typer.Option("", help="Comma-separated symbols. Default: all covered."),
+) -> None:
+    """Every registered metric: liquidity (Agent 5) and fundamentals."""
+    from datetime import date  # noqa: PLC0415
+
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.calc import fundamentals, liquidity  # noqa: PLC0415, F401
+    from quantumedge.calc.registry import load_contexts, run_metrics  # noqa: PLC0415
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    symbols = [s.strip().upper() for s in tickers.split(",") if s.strip()] or None
+    codes = [*_LIQUIDITY_CODES, *_FUNDAMENTAL_CODES]
+
+    with session_scope() as session:
+        if as_of:
+            as_of_date = date.fromisoformat(as_of)
+        else:
+            latest = session.execute(
+                sql(
+                    "SELECT max(trade_date) FROM market_calendar "
+                    "WHERE exchange_code = 'HOSE' AND is_trading_day"
+                )
+            ).scalar_one_or_none()
+            if latest is None:
+                console.print("[yellow]no trading calendar - run: qe extract prices[/yellow]")
+                raise typer.Exit(code=1)
+            as_of_date = latest
+
+        contexts = load_contexts(session, as_of_date, symbols=symbols)
+        with run_scope(
+            session,
+            PipelineStage.CALC,
+            "all_metrics",
+            as_of=as_of_date,
+            params={"symbols": symbols or "all", "codes": len(codes)},
+        ) as (run_id, stats):
+            outcome = run_metrics(session, run_id, liquidity.CALC_VERSION, contexts, codes=codes)
+            stats.update(outcome.as_stats())
+
+        rows = session.execute(
+            sql(
+                "SELECT mv.unavailable_reason AS reason, count(*) AS n FROM metric_value mv "
+                "WHERE mv.as_of_date = :d AND NOT mv.is_available "
+                "GROUP BY mv.unavailable_reason ORDER BY n DESC"
+            ),
+            {"d": as_of_date},
+        ).mappings()
+
+        table = Table("why unavailable", "count", title=f"qe calc all - {as_of_date}")
+        for r in rows:
+            table.add_row(r["reason"] or "-", str(r["n"]))
+        console.print(table)
+        console.print(
+            f"available [green]{outcome.available}[/green] · "
+            f"unavailable [yellow]{outcome.unavailable}[/yellow]"
+        )
+
+
+@app.command("run")
+def run_daily(
+    as_of: str = typer.Option("", help="Valuation date YYYY-MM-DD. Default: latest session."),
+    skip_ingest: bool = typer.Option(False, "--skip-ingest", help="Reuse stored raw documents."),
+) -> None:
+    """The whole deterministic chain in order, stopping at the review gate.
+
+    It deliberately does not publish. Nothing reaches a reader without a person running
+    `qe review approve` and `qe review publish` - automating the drafting is fine,
+    automating the verifying is what would destroy the thing being sold.
+    """
+    import os  # noqa: PLC0415
+    import subprocess  # noqa: PLC0415
+
+    steps: list[tuple[str, list[str]]] = []
+    if not skip_ingest:
+        steps.append(("ingest prices", ["ingest", "prices"]))
+    steps += [
+        ("extract prices + calendar", ["extract", "prices"]),
+        ("calc metrics", ["calc", "all"] + (["--as-of", as_of] if as_of else [])),
+        ("calc flags", ["calc", "flags"] + (["--as-of", as_of] if as_of else [])),
+        ("factsheet build", ["factsheet", "build"] + (["--as-of", as_of] if as_of else [])),
+        ("factsheet export", ["factsheet", "export"]),
+    ]
+
+    for label, args in steps:
+        console.print(f"[bold]→ {label}[/bold]")
+        # PYTHONIOENCODING so the child's streams are UTF-8 too, regardless of the
+        # console's code page.
+        result = subprocess.run(
+            [sys.executable, "-m", "quantumedge.cli", *args],
+            check=False,
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+        )
+        if result.returncode != 0:
+            console.print(f"[red]failed at: {label}[/red]")
+            raise typer.Exit(code=result.returncode)
+
+    console.print(
+        "\n[green]chain complete.[/green] Nothing is published yet - review first:\n"
+        "  qe review list\n"
+        '  qe review approve <SYMBOL> --as <reviewer> --note "what you checked"\n'
+        "  qe review publish <SYMBOL> --as <reviewer>"
+    )
 
 
 if __name__ == "__main__":
