@@ -1,5 +1,161 @@
 {
   "$defs": {
+    "BenchmarkRef": {
+      "additionalProperties": false,
+      "description": "One distribution a figure can be read against.\n\nCarries `members` — the symbols that produced a sector median — because at this\nuniverse size the median is three companies, and a comparison a reader cannot audit\nis a comparison they have to take on trust.",
+      "properties": {
+        "scope": {
+          "enum": [
+            "sector",
+            "ticker_history",
+            "exchange"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "window_label": {
+          "title": "Window Label",
+          "type": "string"
+        },
+        "label_vi": {
+          "title": "Label Vi",
+          "type": "string"
+        },
+        "median": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Median"
+        },
+        "p25": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "P25"
+        },
+        "p75": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "P75"
+        },
+        "min_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Min Value"
+        },
+        "max_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Max Value"
+        },
+        "display_median": {
+          "title": "Display Median",
+          "type": "string"
+        },
+        "display_range": {
+          "title": "Display Range",
+          "type": "string"
+        },
+        "sample_size": {
+          "title": "Sample Size",
+          "type": "integer"
+        },
+        "available": {
+          "title": "Available",
+          "type": "boolean"
+        },
+        "unavailable_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unavailable Reason"
+        },
+        "members": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Members",
+          "type": "array"
+        },
+        "provenance": {
+          "items": {
+            "$ref": "#/$defs/Provenance"
+          },
+          "title": "Provenance",
+          "type": "array"
+        }
+      },
+      "required": [
+        "scope",
+        "window_label",
+        "label_vi",
+        "median",
+        "p25",
+        "p75",
+        "min_value",
+        "max_value",
+        "display_median",
+        "display_range",
+        "sample_size",
+        "available"
+      ],
+      "title": "BenchmarkRef",
+      "type": "object"
+    },
     "CompanyRef": {
       "additionalProperties": false,
       "properties": {
@@ -77,6 +233,64 @@
         "short_name"
       ],
       "title": "CompanyRef",
+      "type": "object"
+    },
+    "Comparison": {
+      "additionalProperties": false,
+      "description": "Where a figure sits relative to its peers and its own past.\n\nEvery field here is **positional, never evaluative**. `above` means a larger number,\nnot a better company: turnover above the sector median is more liquid, while a price\nabove par is neither good nor bad on its own. The product describes; the reader judges.\nThat is a licensing boundary as much as an editorial one.",
+      "properties": {
+        "sector": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BenchmarkRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "own_history": {
+          "items": {
+            "$ref": "#/$defs/BenchmarkRef"
+          },
+          "title": "Own History",
+          "type": "array"
+        },
+        "position_vs_sector": {
+          "default": "unknown",
+          "enum": [
+            "above",
+            "below",
+            "in_line",
+            "unknown"
+          ],
+          "title": "Position Vs Sector",
+          "type": "string"
+        },
+        "position_vs_sector_label_vi": {
+          "default": "không công bố",
+          "title": "Position Vs Sector Label Vi",
+          "type": "string"
+        },
+        "position_vs_own_range": {
+          "default": "unknown",
+          "enum": [
+            "near_high",
+            "near_low",
+            "mid_range",
+            "unknown"
+          ],
+          "title": "Position Vs Own Range",
+          "type": "string"
+        },
+        "position_vs_own_range_label_vi": {
+          "default": "không công bố",
+          "title": "Position Vs Own Range Label Vi",
+          "type": "string"
+        }
+      },
+      "title": "Comparison",
       "type": "object"
     },
     "DisclosureGap": {
@@ -189,6 +403,17 @@
           },
           "title": "Provenance",
           "type": "array"
+        },
+        "comparison": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Comparison"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [

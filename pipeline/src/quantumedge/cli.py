@@ -9,7 +9,10 @@ from quantumedge import __version__
 from quantumedge.config import Settings
 
 if TYPE_CHECKING:
+    from datetime import date as date_
+
     from alembic.config import Config
+    from sqlalchemy.orm import Session
 
 # The Windows console defaults to cp1252, which cannot encode Vietnamese - and Vietnamese
 # is this product's output language. Without this, printing a flag name like
@@ -127,6 +130,90 @@ def doctor() -> None:
             "\nDatabase unreachable. Start the local cluster:\n  .\\pipeline\\scripts\\pg.ps1 start"
         )
         raise typer.Exit(code=1)
+
+
+def _min_benchmark_sample(settings: "Settings") -> int:
+    """The minimum sample a median is allowed to be computed from.
+
+    Read from rules/flags.yaml rather than hardcoded, because it is a published-output
+    threshold: raising it changes which comparisons a reader is shown.
+    """
+    import yaml  # noqa: PLC0415
+
+    rules = yaml.safe_load((settings.rules_dir / "flags.yaml").read_text(encoding="utf-8"))
+    return int(rules.get("min_benchmark_sample", 3))
+
+
+def _resolve_as_of(session: "Session", as_of: str) -> "date_":
+    """An explicit date, or the latest date metrics were computed for.
+
+    Defaulting to the newest `metric_value` date rather than today keeps invariant 8
+    intact: the clock is asked in exactly one place, and never by a calc path.
+    """
+    from datetime import date as _date  # noqa: PLC0415
+
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    if as_of:
+        return _date.fromisoformat(as_of)
+    latest = session.execute(sql("SELECT max(as_of_date) FROM metric_value")).scalar_one_or_none()
+    if latest is None:
+        console.print("[yellow]no metrics yet - run: qe calc all[/yellow]")
+        raise typer.Exit(code=1)
+    assert isinstance(latest, _date)
+    return latest
+
+
+def _num(value: object) -> str:
+    """Compact display for a benchmark statistic in a terminal table.
+
+    VND turnover runs to twelve digits, which makes a table unreadable; ratios do not.
+    Scaling by magnitude keeps both legible. This is terminal formatting only - the fact
+    sheet carries its own `display` strings, built in Vietnamese conventions.
+    """
+    from decimal import Decimal as _D  # noqa: PLC0415
+
+    if value is None:
+        return "[dim]-[/dim]"
+    d = _D(str(value))
+    magnitude = abs(d)
+    if magnitude >= 1_000_000_000:
+        return f"{d / _D(1_000_000_000):,.2f}bn"
+    if magnitude >= 1_000_000:
+        return f"{d / _D(1_000_000):,.2f}m"
+    if magnitude >= 1_000:
+        return f"{d:,.0f}"
+    return f"{d:,.4f}".rstrip("0").rstrip(".")
+
+
+def _evaluate_flags_at(session: "Session", as_of: "date_") -> int:
+    """Evaluate flags for one date inside an existing session. Returns the active count."""
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.calc.flags import evaluate_flags  # noqa: PLC0415
+    from quantumedge.config import load_settings  # noqa: PLC0415
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.seed import rule_spec_version  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    spec_version = rule_spec_version(load_settings())
+    with run_scope(
+        session,
+        PipelineStage.CALC,
+        "flags",
+        as_of=as_of,
+        rule_spec_version=spec_version,
+        params={"symbols": "all"},
+    ) as (run_id, stats):
+        outcome = evaluate_flags(session, run_id, as_of)
+        stats.update(outcome.as_stats())
+
+    return int(
+        session.execute(
+            sql("SELECT count(*) FROM flag_instance WHERE as_of_date = :d AND state = 'active'"),
+            {"d": as_of},
+        ).scalar_one()
+    )
 
 
 def _check_database(table: Table, settings: Settings) -> bool:
@@ -871,6 +958,163 @@ def factsheet_export() -> None:
     )
     for path in outcome.paths[:12]:
         console.print(f"  [dim]{path}[/dim]")
+
+
+@calc_app.command("benchmarks")
+def calc_benchmarks(
+    as_of: str = typer.Option("", help="Valuation date YYYY-MM-DD. Default: latest session."),
+) -> None:
+    """Sector distributions and each stock's own trailing range.
+
+    A bare number tells a reader little; the same number beside its sector median and its
+    own three-year range is information. Nothing here ranks or concludes.
+    """
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.calc.benchmarks import (  # noqa: PLC0415
+        CALC_VERSION,
+        build_history_benchmarks,
+        build_sector_benchmarks,
+    )
+    from quantumedge.config import load_settings  # noqa: PLC0415
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    settings = load_settings()
+    minimum = _min_benchmark_sample(settings)
+
+    with session_scope() as session:
+        as_of_date = _resolve_as_of(session, as_of)
+
+        with run_scope(
+            session,
+            PipelineStage.CALC,
+            "benchmarks",
+            as_of=as_of_date,
+            params={"min_sample": minimum, "calc_version": CALC_VERSION},
+        ) as (run_id, stats):
+            sector = build_sector_benchmarks(session, run_id, as_of_date, minimum_sample=minimum)
+            history = build_history_benchmarks(session, run_id, as_of_date, minimum_sample=minimum)
+            stats.update(
+                {
+                    "sector": sector.as_stats(),
+                    "ticker_history": history.as_stats(),
+                }
+            )
+
+        rows = session.execute(
+            sql(
+                "SELECT s.code AS sector, b.metric_code, b.sample_size, b.median, "
+                "       b.p25, b.p75 "
+                "FROM metric_benchmark b JOIN sector s ON s.id = b.sector_id "
+                "WHERE b.as_of_date = :d AND b.scope = 'sector' AND b.is_available "
+                "ORDER BY b.metric_code, s.code"
+            ),
+            {"d": as_of_date},
+        ).mappings()
+
+        table = Table(
+            "sector", "metric", "n", "p25", "median", "p75", title=f"sector medians - {as_of_date}"
+        )
+        for r in rows:
+            table.add_row(
+                r["sector"],
+                r["metric_code"],
+                str(r["sample_size"]),
+                _num(r["p25"]),
+                _num(r["median"]),
+                _num(r["p75"]),
+            )
+        console.print(table)
+        console.print(
+            f"sector [green]{sector.available}[/green]/[dim]{sector.written}[/dim] available · "
+            f"own-history [green]{history.available}[/green]/[dim]{history.written}[/dim]"
+        )
+
+
+@calc_app.command("backfill")
+def calc_backfill(
+    quarters: int = typer.Option(12, help="How many quarter-ends back to compute (~3 years)."),
+    flags: bool = typer.Option(True, help="Also evaluate flags at each date."),
+) -> None:
+    """Compute metrics at past quarter-end sessions, creating real history.
+
+    Own-range benchmarks and flag state changes both need a time series, and the liquidity
+    metrics can produce one from price history already ingested - every calc function takes
+    an explicit `as_of` and reads only rows at or before it, so a past date is as valid as
+    today. This is what makes "worst liquidity in three years" a statement the data
+    supports rather than a claim.
+    """
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.calc import fundamentals, liquidity  # noqa: PLC0415, F401
+    from quantumedge.calc.benchmarks import (  # noqa: PLC0415
+        build_history_benchmarks,
+        build_sector_benchmarks,
+    )
+    from quantumedge.calc.registry import load_contexts, run_metrics  # noqa: PLC0415
+    from quantumedge.config import load_settings  # noqa: PLC0415
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    settings = load_settings()
+    minimum = _min_benchmark_sample(settings)
+    codes = [*_LIQUIDITY_CODES, *_FUNDAMENTAL_CODES]
+
+    with session_scope() as session:
+        # Quarter-end trading sessions, taken from the calendar rather than computed, so
+        # every date is one the market was actually open.
+        dates = list(
+            session.execute(
+                sql(
+                    """
+                    SELECT max(trade_date) AS d
+                    FROM market_calendar
+                    WHERE exchange_code = 'HOSE' AND is_trading_day
+                    GROUP BY date_trunc('quarter', trade_date)
+                    ORDER BY d DESC
+                    LIMIT :n
+                    """
+                ),
+                {"n": quarters},
+            ).scalars()
+        )
+        if not dates:
+            console.print("[yellow]no trading calendar - run: qe extract prices[/yellow]")
+            raise typer.Exit(code=1)
+
+        dates.reverse()  # oldest first, so flag state changes are detected in order
+        table = Table("as of", "metrics", "available", "flags active", title="qe calc backfill")
+
+        for as_of_date in dates:
+            contexts = load_contexts(session, as_of_date)
+            with run_scope(
+                session,
+                PipelineStage.CALC,
+                "backfill",
+                as_of=as_of_date,
+                params={"codes": len(codes)},
+            ) as (run_id, stats):
+                outcome = run_metrics(
+                    session, run_id, liquidity.CALC_VERSION, contexts, codes=codes
+                )
+                build_sector_benchmarks(session, run_id, as_of_date, minimum_sample=minimum)
+                build_history_benchmarks(session, run_id, as_of_date, minimum_sample=minimum)
+                stats.update(outcome.as_stats())
+
+            active = ""
+            if flags:
+                active = str(_evaluate_flags_at(session, as_of_date))
+
+            table.add_row(str(as_of_date), str(outcome.written), str(outcome.available), active)
+
+        console.print(table)
+        console.print(
+            f"[green]{len(dates)}[/green] quarter-ends computed. "
+            "Own-range benchmarks now have a sample."
+        )
 
 
 @calc_app.command("all")

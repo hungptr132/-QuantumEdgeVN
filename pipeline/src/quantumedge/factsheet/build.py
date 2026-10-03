@@ -13,10 +13,12 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from quantumedge.calc.liquidity import FRAMING_NOTE_VI, PARTICIPATION_RATE
+from quantumedge.factsheet.comparisons import build_comparison, load_comparisons
 from quantumedge.factsheet.schema import (
     NO_DISCLOSURE_FOUND,
     NOT_DISCLOSED,
     CompanyRef,
+    Comparison,
     DisclosureGap,
     ExitEstimate,
     FactSheet,
@@ -76,7 +78,7 @@ def _figures(session: Session, ticker_id: int, as_of: date) -> list[dict[str, An
     return [dict(r) for r in rows]
 
 
-def _to_figure(row: dict[str, Any]) -> Figure:
+def _to_figure(row: dict[str, Any], comparison: Comparison | None = None) -> Figure:
     return Figure(
         code=row["metric_code"],
         label_vi=row["label_vi"],
@@ -97,6 +99,7 @@ def _to_figure(row: dict[str, Any]) -> Figure:
         ]
         if row["is_available"]
         else [],
+        comparison=comparison,
     )
 
 
@@ -128,9 +131,18 @@ def build_fact_sheet(session: Session, symbol: str, as_of: date, calc_run_id: in
     if not rows:
         raise LookupError(f"no metrics for {symbol} at {as_of} - run: qe calc liquidity")
 
+    # One query for every benchmark on this page, rather than one per figure.
+    benchmarks = load_comparisons(session, ref["id"], as_of)
+
     headline, other, liquidity_figures = [], [], []
     for row in rows:
-        figure = _to_figure(row)
+        comparison = build_comparison(
+            session,
+            value=row["value"] if row["is_available"] else None,
+            benchmarks=benchmarks.get(row["metric_code"], []),
+            formatter=lambda v, _r=row: _format(v, _r["unit"], _r["precision"]),
+        )
+        figure = _to_figure(row, comparison)
         if row["category"] in LIQUIDITY_CATEGORIES:
             liquidity_figures.append(figure)
         elif row["is_headline"]:
@@ -309,6 +321,25 @@ def collect_allowed_numbers(figures: list[Figure], flags: list[FlagItem]) -> lis
         # Bare numeric runs out of the display string, so "1,234 đ" also permits "1,234".
         for token in _numeric_tokens(figure.display):
             allowed.add(token)
+
+        # Benchmark statistics are on the page, so they are citable. Omitting them would
+        # make Agent 2's validator reject a sector median the sheet itself displays -
+        # treating a legitimate figure as a hallucination.
+        if figure.comparison is None:
+            continue
+        for ref in [figure.comparison.sector, *figure.comparison.own_history]:
+            if ref is None or not ref.available:
+                continue
+            for stat in (ref.median, ref.p25, ref.p75, ref.min_value, ref.max_value):
+                if stat is not None:
+                    allowed.add(str(stat))
+                    allowed.add(str(stat.normalize()))
+            for display in (ref.display_median, ref.display_range):
+                allowed.add(display)
+                for token in _numeric_tokens(display):
+                    allowed.add(token)
+            # The sample size is quoted as "trung vị của 3 mã", so it is citable too.
+            allowed.add(str(ref.sample_size))
 
     for flag in flags:
         # Both sides of the comparison: a value, and the threshold it was tested against.

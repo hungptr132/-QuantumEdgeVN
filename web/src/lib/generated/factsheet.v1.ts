@@ -35,6 +35,26 @@ export type Ref = string;
 export type Label = string;
 export type SourceUrl = string | null;
 export type Provenance = Provenance1[];
+export type Scope = "sector" | "ticker_history" | "exchange";
+export type WindowLabel = string;
+export type LabelVi1 = string;
+export type Median = number | string | null;
+export type P25 = number | string | null;
+export type P75 = number | string | null;
+export type MinValue = number | string | null;
+export type MaxValue = number | string | null;
+export type DisplayMedian = string;
+export type DisplayRange = string;
+export type SampleSize = number;
+export type Available1 = boolean;
+export type UnavailableReason1 = string | null;
+export type Members = string[];
+export type Provenance2 = Provenance1[];
+export type OwnHistory = BenchmarkRef[];
+export type PositionVsSector = "above" | "below" | "in_line" | "unknown";
+export type PositionVsSectorLabelVi = string;
+export type PositionVsOwnRange = "near_high" | "near_low" | "mid_range" | "unknown";
+export type PositionVsOwnRangeLabelVi = string;
 export type HeadlineMetrics = Figure[];
 export type OtherMetrics = Figure[];
 export type Figures = Figure[];
@@ -57,7 +77,7 @@ export type Flags = FlagItem[];
 export type RecentEvents = Provenance1[];
 export type News = Provenance1[];
 export type Field = string;
-export type LabelVi1 = string;
+export type LabelVi2 = string;
 export type Reason1 = string;
 export type Display1 = string;
 export type DisclosureGaps = DisclosureGap[];
@@ -118,12 +138,53 @@ export interface Figure {
   available: Available;
   unavailable_reason?: UnavailableReason;
   provenance?: Provenance;
+  comparison?: Comparison | null;
 }
 export interface Provenance1 {
   kind: Kind;
   ref: Ref;
   label: Label;
   source_url?: SourceUrl;
+}
+/**
+ * Where a figure sits relative to its peers and its own past.
+ *
+ * Every field here is **positional, never evaluative**. `above` means a larger number,
+ * not a better company: turnover above the sector median is more liquid, while a price
+ * above par is neither good nor bad on its own. The product describes; the reader judges.
+ * That is a licensing boundary as much as an editorial one.
+ */
+export interface Comparison {
+  sector?: BenchmarkRef | null;
+  own_history?: OwnHistory;
+  position_vs_sector?: PositionVsSector;
+  position_vs_sector_label_vi?: PositionVsSectorLabelVi;
+  position_vs_own_range?: PositionVsOwnRange;
+  position_vs_own_range_label_vi?: PositionVsOwnRangeLabelVi;
+}
+/**
+ * One distribution a figure can be read against.
+ *
+ * Carries `members` — the symbols that produced a sector median — because at this
+ * universe size the median is three companies, and a comparison a reader cannot audit
+ * is a comparison they have to take on trust.
+ */
+export interface BenchmarkRef {
+  scope: Scope;
+  window_label: WindowLabel;
+  label_vi: LabelVi1;
+  median: Median;
+  p25: P25;
+  p75: P75;
+  min_value: MinValue;
+  max_value: MaxValue;
+  display_median: DisplayMedian;
+  display_range: DisplayRange;
+  sample_size: SampleSize;
+  available: Available1;
+  unavailable_reason?: UnavailableReason1;
+  members?: Members;
+  provenance?: Provenance2;
 }
 /**
  * Agent 5's output. `framing_note_vi` travels with it so the numbers cannot be
@@ -163,7 +224,7 @@ export interface TriggeredValues {
  */
 export interface DisclosureGap {
   field: Field;
-  label_vi: LabelVi1;
+  label_vi: LabelVi2;
   reason: Reason1;
   display?: Display1;
 }

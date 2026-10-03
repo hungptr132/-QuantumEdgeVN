@@ -45,6 +45,53 @@ class Provenance(Strict):
     source_url: str | None = None
 
 
+class BenchmarkRef(Strict):
+    """One distribution a figure can be read against.
+
+    Carries `members` — the symbols that produced a sector median — because at this
+    universe size the median is three companies, and a comparison a reader cannot audit
+    is a comparison they have to take on trust.
+    """
+
+    scope: Literal["sector", "ticker_history", "exchange"]
+    window_label: str
+    label_vi: str
+    median: Decimal | None
+    p25: Decimal | None
+    p75: Decimal | None
+    min_value: Decimal | None
+    max_value: Decimal | None
+    display_median: str
+    display_range: str
+    sample_size: int
+    available: bool
+    unavailable_reason: str | None = None
+    members: list[str] = Field(default_factory=list)
+    provenance: list[Provenance] = Field(default_factory=list)
+
+
+class Comparison(Strict):
+    """Where a figure sits relative to its peers and its own past.
+
+    Every field here is **positional, never evaluative**. `above` means a larger number,
+    not a better company: turnover above the sector median is more liquid, while a price
+    above par is neither good nor bad on its own. The product describes; the reader judges.
+    That is a licensing boundary as much as an editorial one.
+    """
+
+    sector: BenchmarkRef | None = None
+    own_history: list[BenchmarkRef] = Field(default_factory=list)
+
+    # Banded against the interquartile range rather than the median alone, so a figure a
+    # hair above the midpoint is not announced as "above the sector" — with a sample of
+    # three, that would be noise reported as a finding.
+    position_vs_sector: Literal["above", "below", "in_line", "unknown"] = "unknown"
+    position_vs_sector_label_vi: str = "không công bố"
+
+    position_vs_own_range: Literal["near_high", "near_low", "mid_range", "unknown"] = "unknown"
+    position_vs_own_range_label_vi: str = "không công bố"
+
+
 class Figure(Strict):
     """One number, or an explicit statement that there isn't one."""
 
@@ -57,6 +104,9 @@ class Figure(Strict):
     available: bool
     unavailable_reason: str | None = None
     provenance: list[Provenance] = Field(default_factory=list)
+    # Optional because not every figure has peers worth comparing against: a count of
+    # missing bars has no meaningful sector median, and inventing one would be noise.
+    comparison: Comparison | None = None
 
 
 class FlagItem(Strict):

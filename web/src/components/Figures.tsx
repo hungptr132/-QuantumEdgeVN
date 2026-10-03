@@ -1,4 +1,9 @@
-import type { Figure, FlagItem, DisclosureGap } from "@/lib/generated/factsheet.v1";
+import type {
+  Figure,
+  FlagItem,
+  DisclosureGap,
+  Comparison,
+} from "@/lib/generated/factsheet.v1";
 
 /**
  * These components render `display` strings and nothing else.
@@ -7,6 +12,63 @@ import type { Figure, FlagItem, DisclosureGap } from "@/lib/generated/factsheet.
  * All of that happened once in the pipeline, which is what makes it impossible for the page
  * to disagree with the data it was given.
  */
+
+/**
+ * Position is rendered neutrally on purpose.
+ *
+ * A green "above" and a red "below" would turn a description into a verdict, and for
+ * several of these metrics higher is plainly worse — turnover above the sector median
+ * means more liquid, while zero-trade sessions above it mean less. One tint for every
+ * direction keeps the page honest about what it is and is not saying.
+ */
+function ComparisonCell({ comparison }: { comparison: Comparison }) {
+  const sector = comparison.sector;
+  const threeYear = (comparison.own_history ?? []).find((h) => h.window_label === "3y");
+
+  return (
+    <div className="mt-1.5 space-y-1 text-xs font-normal text-slate-500">
+      {sector ? (
+        <div>
+          <span className="text-slate-400">{sector.label_vi}: </span>
+          {sector.available ? (
+            <>
+              <span className="tabular-nums text-slate-600">{sector.display_median}</span>
+              {(sector.members ?? []).length > 0 ? (
+                <span className="text-slate-400">
+                  {" "}
+                  (n={sector.sample_size}: {(sector.members ?? []).join(", ")})
+                </span>
+              ) : null}
+              {comparison.position_vs_sector !== "unknown" ? (
+                <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">
+                  {comparison.position_vs_sector_label_vi}
+                </span>
+              ) : null}
+            </>
+          ) : (
+            /* Say why the comparison is absent. An unexplained blank invites the reader to
+               assume it was unfavourable and withheld. */
+            <span className="text-slate-400 italic">
+              {sector.unavailable_reason ?? sector.display_median}
+            </span>
+          )}
+        </div>
+      ) : null}
+
+      {threeYear?.available ? (
+        <div>
+          <span className="text-slate-400">{threeYear.label_vi}: </span>
+          <span className="tabular-nums text-slate-600">{threeYear.display_range}</span>
+          {comparison.position_vs_own_range !== "unknown" ? (
+            <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">
+              {comparison.position_vs_own_range_label_vi}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function MetricTable({ title, figures }: { title: string; figures: Figure[] }) {
   if (figures.length === 0) return null;
@@ -37,6 +99,9 @@ export function MetricTable({ title, figures }: { title: string; figures: Figure
                       {f.unavailable_reason}
                     </p>
                   ) : null}
+                  {/* A bare number says little. Shown beside its sector median and its own
+                      three-year range, it becomes information. */}
+                  {f.comparison ? <ComparisonCell comparison={f.comparison} /> : null}
                 </td>
               </tr>
             ))}
