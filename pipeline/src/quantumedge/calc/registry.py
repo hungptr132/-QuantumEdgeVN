@@ -44,14 +44,17 @@ class MetricResult:
 class MetricSpec:
     code: str
     fn: Callable[["MetricContext"], MetricResult]
-    requires: tuple[str, ...] = ()
+    # Statement line items the metric cannot run without. Checked by the runner before the
+    # function is called, so a metric need not repeat the guard and the reported reason
+    # names the first missing input rather than whichever one happened to be read first.
+    requires_facts: tuple[str, ...] = ()
 
 
 REGISTRY: dict[str, MetricSpec] = {}
 
 
 def metric(
-    code: str, *, requires: tuple[str, ...] = ()
+    code: str, *, requires_facts: tuple[str, ...] = ()
 ) -> Callable[
     [Callable[["MetricContext"], MetricResult]], Callable[["MetricContext"], MetricResult]
 ]:
@@ -62,10 +65,28 @@ def metric(
     ) -> Callable[["MetricContext"], MetricResult]:
         if code in REGISTRY:
             raise ValueError(f"metric '{code}' is already registered")
-        REGISTRY[code] = MetricSpec(code=code, fn=fn, requires=requires)
+        REGISTRY[code] = MetricSpec(code=code, fn=fn, requires_facts=requires_facts)
         return fn
 
     return decorator
+
+
+def _missing_facts(ctx: "MetricContext", codes: tuple[str, ...]) -> list[str]:
+    """Which of the declared statement facts this ticker has no value for."""
+    if not codes:
+        return []
+    present = set(
+        ctx.session.execute(
+            text(
+                "SELECT DISTINCT ff.fact_code FROM financial_fact ff "
+                "JOIN financial_period fp ON fp.id = ff.financial_period_id "
+                "WHERE fp.ticker_id = :t AND ff.fact_code = ANY(:codes) "
+                "  AND ff.value IS NOT NULL AND fp.period_end <= CAST(:as_of AS date)"
+            ),
+            {"t": ctx.ticker_id, "codes": list(codes), "as_of": ctx.as_of},
+        ).scalars()
+    )
+    return [c for c in codes if c not in present]
 
 
 @dataclass
@@ -122,6 +143,11 @@ def run_metrics(
     for ctx in contexts:
         for spec in selected:
             try:
+                # Pre-flight: a metric whose declared inputs are absent reports that
+                # plainly, without running and without each metric repeating the check.
+                absent = _missing_facts(ctx, spec.requires_facts)
+                if absent:
+                    raise MissingInput("missing_facts:" + ",".join(absent))
                 result = spec.fn(ctx)
                 value, inputs, reason = result.value, result.inputs, None
                 if value is None:

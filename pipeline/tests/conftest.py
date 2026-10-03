@@ -119,3 +119,17 @@ def metric_defs(session: Session) -> int:
     from quantumedge.db.seed import seed_metrics
 
     return seed_metrics(session, load_settings())
+
+
+@pytest.fixture
+def fact_defs(session: Session) -> int:
+    """Seed the real line-item registry from rules/fact_codes.yaml.
+
+    `financial_fact.fact_code` is a foreign key, so a fact cannot be written for a code the
+    registry never declared. Tests use the real codes, which means a metric reading a
+    line item nobody defined fails here rather than in production.
+    """
+    from quantumedge.config import load_settings
+    from quantumedge.db.seed import seed_fact_codes
+
+    return seed_fact_codes(session, load_settings())
