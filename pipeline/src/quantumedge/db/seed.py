@@ -8,6 +8,7 @@ The rule YAML is the source of truth; these tables are a queryable mirror of it.
 """
 
 import json
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from quantumedge.config import Settings
 from quantumedge.hashing import hash_files
+from quantumedge.vietnamese import vn_decimal, vn_money, vn_scaled
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -232,12 +234,61 @@ def seed_metrics(session: Session, settings: Settings) -> int:
     return len(rows)
 
 
+def _render_rule_prose(row: dict[str, Any]) -> dict[str, str]:
+    """Substitute the rule's own numbers into its Vietnamese prose.
+
+    A threshold typed twice - once in `expr`, once in the sentence describing it - drifts
+    the first time it is tuned. That happened: raising thin-liquidity from 1 tỷ to 2 tỷ
+    left every page still reading "dưới 1 tỷ" while the rule tested 2 tỷ, which is a page
+    stating a false threshold. Templating means the number exists once.
+
+    Placeholders, all optional:
+      {threshold}     scaled and idiomatic   - "2 tỷ"
+      {threshold_vnd} scaled with currency    - "2 tỷ đồng"
+      {threshold_raw} grouped digits          - "2.000.000.000"
+      {threshold_pct} a ratio as a percent    - "5%"
+      {threshold_abs} magnitude, sign dropped - "50%" from -0.5
+      {multiple}      a benchmark multiple    - "0,25"
+      {within_months} an event window         - "24"
+    """
+    expr = row.get("expr") or {}
+    values: dict[str, str] = {}
+
+    if "value" in expr:
+        values["threshold"] = vn_scaled(expr["value"])
+        values["threshold_vnd"] = vn_money(expr["value"])
+        values["threshold_raw"] = vn_decimal(expr["value"])
+        # A rule whose metric is a ratio states its threshold as a percentage, because
+        # "hơn 5% số phiên" is how a reader thinks about it, not "hơn 0,05".
+        as_pct = Decimal(str(expr["value"])) * 100
+        values["threshold_pct"] = vn_decimal(as_pct, 2).rstrip("0").rstrip(",") + "%"
+        # A drawdown threshold is stored negative (-0.5 = 50% below the high) but reads
+        # naturally as a magnitude: "thấp hơn đỉnh trên 50%". The sign is carried by the
+        # surrounding words, so repeating it would be wrong, not redundant.
+        values["threshold_abs"] = vn_decimal(abs(as_pct), 2).rstrip("0").rstrip(",") + "%"
+    if "within_months" in expr:
+        values["within_months"] = vn_decimal(expr["within_months"])
+    if "multiple" in expr:
+        values["multiple"] = vn_decimal(expr["multiple"], 2).rstrip("0").rstrip(",")
+
+    out: dict[str, str] = {}
+    for field in ("name_vi", "name_en", "explanation_vi"):
+        text_value = row.get(field)
+        if not isinstance(text_value, str):
+            continue
+        for key, rendered in values.items():
+            text_value = text_value.replace("{" + key + "}", rendered)
+        out[field] = text_value
+    return out
+
+
 def seed_flags(session: Session, settings: Settings) -> int:
     """Mirror flags.yaml into flag_def, stamped with the current rule_spec_version."""
     data = _load(settings.rules_dir / "flags.yaml")
     spec_version = rule_spec_version(settings)
     rows = data.get("flags", [])
     for row in rows:
+        prose = _render_rule_prose(row)
         session.execute(
             text(
                 "INSERT INTO flag_def "
@@ -257,15 +308,15 @@ def seed_flags(session: Session, settings: Settings) -> int:
             ),
             {
                 "code": row["code"],
-                "name_vi": row["name_vi"],
-                "name_en": row.get("name_en"),
+                "name_vi": prose["name_vi"],
+                "name_en": prose.get("name_en"),
                 "category": row["category"],
                 "severity": row["severity"],
                 "rule_kind": row["rule_kind"],
                 "rule_expr": json.dumps(row["expr"]),
                 "requires_metrics": row.get("requires_metrics", []),
                 "on_missing": row.get("on_missing", "unknown"),
-                "explanation_vi": row["explanation_vi"].strip(),
+                "explanation_vi": prose["explanation_vi"].strip(),
                 "rule_version": row.get("rule_version", "v1"),
                 "rule_spec_version": spec_version,
             },
