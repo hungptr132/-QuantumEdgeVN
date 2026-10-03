@@ -431,3 +431,140 @@ def sessions_to_exit(ctx: MetricContext) -> MetricResult:
             "framing": FRAMING_NOTE_VI,
         },
     )
+
+
+# How many of the heaviest sessions the concentration metric looks at. Three, because the
+# failure it exposes is a handful of block trades carrying a quarter's worth of volume -
+# and in the POM data that handful was four.
+TOP_SESSIONS = 3
+
+
+@metric("turnover_concentration_3m")
+def turnover_concentration_3m(ctx: MetricContext) -> MetricResult:
+    """Share of three-month turnover that happened in the three heaviest sessions.
+
+    This is the metric that exposes an average as an illusion. POM's mean turnover of
+    ~1.37bn VND per session reads as a stock you could sell into; it is produced by about
+    four block trades while four sessions in five have no turnover at all. A reader shown
+    only the average draws precisely the wrong conclusion about getting out.
+
+    A high value says the liquidity was *episodic*: it existed on particular days, for
+    particular counterparties, and waiting for such a day is not a plan a retail seller
+    can rely on. It is a description of how turnover arrived, not a forecast that it will
+    arrive again.
+    """
+    window = _require_window(ctx, SESSIONS_3M, "sessions")
+    turnovers = sorted((s.turnover or Decimal(0)) for s in window)
+    # Seed the sum with Decimal so an empty window cannot widen the type to int.
+    total = sum(turnovers, Decimal(0))
+
+    if total <= 0:
+        # Nothing traded in three months. Concentration is undefined rather than 0 or 1,
+        # and `zero_trade_ratio_3m` is the metric that already says this plainly.
+        raise MissingInput("no_turnover_in_3m_concentration_undefined")
+
+    top = sum(turnovers[-TOP_SESSIONS:], Decimal(0))
+    share = (top / total).quantize(Decimal("0.0001"))
+
+    traded = [s for s in window if (s.turnover or Decimal(0)) > 0]
+    return MetricResult(
+        value=share,
+        inputs={
+            "top_sessions": TOP_SESSIONS,
+            "top_sessions_turnover_vnd": str(top.quantize(Decimal("0.01"))),
+            "total_turnover_3m_vnd": str(total.quantize(Decimal("0.01"))),
+            "sessions_in_window": len(window),
+            "sessions_with_turnover": len(traded),
+            "heaviest_session_dates": [
+                str(s.trade_date)
+                for s in sorted(window, key=lambda x: x.turnover or Decimal(0), reverse=True)[
+                    :TOP_SESSIONS
+                ]
+            ],
+            "framing": FRAMING_NOTE_VI,
+        },
+    )
+
+
+@metric("max_drawdown_52w")
+def max_drawdown_52w(ctx: MetricContext) -> MetricResult:
+    """Deepest peak-to-trough fall in closing price over 52 weeks, as a negative ratio.
+
+    Distinct from `pct_from_52w_high`, which measures only the distance from the high to
+    *today*. A stock that fell 70% and recovered half of it has a shallow distance-from-high
+    and a deep drawdown, and the second is the one that describes what holding it was like.
+
+    Peak and trough dates are recorded, so the figure can be checked against the chart
+    rather than taken on trust.
+    """
+    window = _require_window(ctx, SESSIONS_52W, "sessions")
+    # Oldest first: a drawdown is a path, so order is the computation, not a detail.
+    traded = [s for s in reversed(window) if not s.bar_missing and s.close is not None]
+    if len(traded) < 2:
+        raise MissingInput(f"insufficient_bars_for_drawdown:{len(traded)}")
+
+    peak = traded[0]
+    peak_close = traded[0].close
+    assert peak_close is not None
+    worst = Decimal(0)
+    worst_peak, worst_trough = peak, peak
+
+    for session in traded[1:]:
+        close = session.close
+        assert close is not None
+        if close > peak_close:
+            peak, peak_close = session, close
+            continue
+        if peak_close <= 0:
+            continue
+        fall = (close - peak_close) / peak_close
+        if fall < worst:
+            worst, worst_peak, worst_trough = fall, peak, session
+
+    return MetricResult(
+        value=worst.quantize(Decimal("0.0001")),
+        inputs={
+            "peak_date": str(worst_peak.trade_date),
+            "peak_close": str(worst_peak.close),
+            "trough_date": str(worst_trough.trade_date),
+            "trough_close": str(worst_trough.close),
+            "sessions_in_window": len(window),
+            "bars_used": len(traded),
+            "framing": FRAMING_NOTE_VI,
+        },
+    )
+
+
+@metric("sessions_since_52w_high")
+def sessions_since_52w_high(ctx: MetricContext) -> MetricResult:
+    """Trading sessions elapsed since the highest close of the last 52 weeks.
+
+    Answers "how long has this been under water", which `pct_from_52w_high` cannot: a
+    stock 40% off its high last month and one 40% off a high set a year ago are different
+    situations. Counted in calendar trading sessions, not rows, for the same reason every
+    other window here is.
+    """
+    window = _require_window(ctx, SESSIONS_52W, "sessions")
+    traded = [s for s in window if not s.bar_missing and s.close is not None]
+    if not traded:
+        raise MissingInput("no_bars_in_52w")
+
+    # `window` is newest-first, so the index of the peak IS the number of sessions since.
+    best_index, best = 0, traded[0]
+    best_close = best.close
+    assert best_close is not None
+    for index, session in enumerate(window):
+        close = session.close
+        if close is not None and close > best_close:
+            best_index, best, best_close = index, session, close
+
+    return MetricResult(
+        value=Decimal(best_index),
+        inputs={
+            "high_date": str(best.trade_date),
+            "high_close": str(best_close),
+            "as_of": str(ctx.as_of),
+            "sessions_in_window": len(window),
+            "framing": FRAMING_NOTE_VI,
+        },
+    )

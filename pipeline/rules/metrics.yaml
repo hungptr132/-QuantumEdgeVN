@@ -124,6 +124,45 @@ metrics:
       Giá hiện tại thấp hơn đỉnh 52 tuần bao nhiêu phần trăm.
     precision: 4
 
+  - code: turnover_concentration_3m
+    label_vi: Mức độ tập trung giao dịch (3 tháng)
+    label_en: Turnover concentration (3 months)
+    # A share of turnover, so it reads as a percentage - same as zero_trade_ratio_3m.
+    # "52,21%" is a figure a reader acts on; "0,5221" is one they have to convert first.
+    unit: pct
+    category: liquidity_market
+    formula_text: turnover of 3 heaviest sessions / total turnover over 63 sessions
+    definition_vi: >-
+      Tỷ lệ giá trị giao dịch của ba phiên lớn nhất so với tổng giá trị giao dịch trong ba
+      tháng. Tỷ lệ cao có nghĩa thanh khoản chỉ xuất hiện vào vài phiên riêng lẻ - thường
+      là các giao dịch lô lớn - chứ không đều đặn. Khi đó, con số giao dịch bình quân
+      không phản ánh khả năng bán ra trong một phiên thông thường.
+    precision: 4
+    is_headline: true
+
+  - code: max_drawdown_52w
+    label_vi: Mức sụt giảm sâu nhất (52 tuần)
+    label_en: Maximum drawdown (52 weeks)
+    unit: pct
+    category: price
+    formula_text: min over window of (close - running_peak) / running_peak
+    definition_vi: >-
+      Mức giảm sâu nhất từ một đỉnh xuống đáy tiếp theo trong 52 tuần. Khác với "cách đỉnh
+      52 tuần", chỉ số này đo cả đoạn đường đã đi qua, không chỉ khoảng cách tới hiện tại.
+    precision: 4
+
+  - code: sessions_since_52w_high
+    label_vi: Số phiên kể từ đỉnh 52 tuần
+    label_en: Sessions since the 52-week high
+    unit: session
+    category: price
+    formula_text: count of trading sessions between the 52w high and as_of
+    definition_vi: >-
+      Số phiên giao dịch đã trôi qua kể từ phiên có giá đóng cửa cao nhất trong 52 tuần.
+      Một mã thấp hơn đỉnh 40% từ tháng trước và một mã thấp hơn đỉnh 40% từ một năm trước
+      là hai trạng thái khác nhau.
+    precision: 0
+
   - code: bid_ask_spread_pct
     label_vi: Chênh lệch mua - bán
     label_en: Bid-ask spread

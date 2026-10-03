@@ -33,6 +33,10 @@ FORBIDDEN_PATTERNS = (
 )
 
 
+# The spec's own commitment: the ticker page leads with five metrics.
+MIN_HEADLINE_METRICS = 5
+
+
 @dataclass
 class QaReport:
     passed: bool = True
@@ -70,6 +74,16 @@ def validate(session: Session, sheet: FactSheet, expected_symbol: str) -> QaRepo
 
     # 3. Required sections present.
     report.record("has_liquidity_block", bool(sheet.liquidity.figures))
+    # The spec commits the page to leading with five metrics. This was specified and never
+    # implemented, and the gap was invisible: a sheet leading with three figures passed QA.
+    # Presence is checked, NOT availability - requiring five *available* figures would
+    # refuse to publish an honest sheet about a company that discloses little, which
+    # inverts the product's own rule that an absent figure is cheaper than a wrong one.
+    report.record(
+        "headline_has_at_least_five_metrics",
+        len(sheet.headline_metrics) >= MIN_HEADLINE_METRICS,
+        f"{len(sheet.headline_metrics)} of {MIN_HEADLINE_METRICS}",
+    )
     report.record("has_flags_section", sheet.flags is not None)
     report.record("has_disclosure_gaps_section", sheet.disclosure_gaps is not None)
     report.record("has_lineage", bool(sheet.lineage.git_commit))

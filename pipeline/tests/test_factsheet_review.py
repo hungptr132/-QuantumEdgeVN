@@ -60,8 +60,17 @@ def built(session: Session, seed_ticker: int, metric_defs: int) -> tuple[int, in
         ),
         {"t": seed_ticker, "d": AS_OF, "src": doc_id, "r": run_id},
     )
+    # Every is_headline metric, because QA requires the page to lead with at least five -
+    # which is the spec's own commitment. A fixture with fewer would test a sheet the
+    # pipeline is not allowed to publish.
     for code, value, available, reason in (
         ("price_to_par", Decimal("0.21"), True, None),
+        ("avg_turnover_20s_vnd", Decimal("40435850"), True, None),
+        ("median_turnover_20s_vnd", Decimal(0), True, None),
+        ("zero_trade_ratio_3m", Decimal("0.7937"), True, None),
+        ("turnover_concentration_3m", Decimal("0.5221"), True, None),
+        ("pe", None, False, "missing_facts:net_profit_after_tax,shares_outstanding"),
+        ("interest_coverage", None, False, "missing_facts:ebit,interest_expense"),
         ("sessions_to_exit", None, False, "no_turnover_in_a_typical_session"),
     ):
         session.execute(
@@ -460,3 +469,64 @@ class TestRuleVersionIsProvenanceNotContent:
         fired = {"flags": [{"code": "f", "state": "active"}], "lineage": {}}
 
         assert hash_of(base) != hash_of(fired)
+
+
+class TestHeadlineMustLeadWithFive:
+    """The spec commits the page to leading with five metrics. The check was specified and
+    never implemented, and the gap was invisible: a sheet leading with three figures — two
+    of them "không công bố" — passed QA and published."""
+
+    def test_a_sheet_with_too_few_headline_metrics_fails_qa(
+        self, session: Session, built: tuple[int, int]
+    ) -> None:
+        run_id, _ = built
+        sheet = build_fact_sheet(session, "TST", AS_OF, run_id)
+        starved = sheet.model_copy(update={"headline_metrics": sheet.headline_metrics[:3]})
+
+        report = validate(session, starved, "TST")
+
+        assert not report.passed
+        assert "headline_has_at_least_five_metrics" in report.as_dict()["failed"]
+
+    def test_presence_is_required_but_availability_is_not(
+        self, session: Session, built: tuple[int, int]
+    ) -> None:
+        """Requiring five *available* figures would refuse to publish an honest sheet about
+        a company that discloses little — inverting the product's own rule that an absent
+        figure is cheaper than a wrong one. So a headline of five unavailable metrics is
+        allowed, and reads as five "không công bố"."""
+        run_id, _ = built
+        sheet = build_fact_sheet(session, "TST", AS_OF, run_id)
+        blanked = [
+            f.model_copy(
+                update={
+                    "available": False,
+                    "value": None,
+                    "display": NOT_DISCLOSED,
+                    "unavailable_reason": "test",
+                    "provenance": [],
+                }
+            )
+            for f in sheet.headline_metrics
+        ]
+        all_blank = sheet.model_copy(update={"headline_metrics": blanked})
+
+        report = validate(session, all_blank, "TST")
+
+        assert "headline_has_at_least_five_metrics" not in report.as_dict()["failed"]
+
+    def test_liquidity_headline_metrics_appear_in_both_places(
+        self, session: Session, built: tuple[int, int]
+    ) -> None:
+        """Deliberate overlap, not a duplication bug: the headline is a summary, and the
+        liquidity block must stay complete because its Vietnamese framing note travels with
+        the full set of figures."""
+        run_id, _ = built
+        sheet = build_fact_sheet(session, "TST", AS_OF, run_id)
+
+        headline = {f.code for f in sheet.headline_metrics}
+        block = {f.code for f in sheet.liquidity.figures}
+
+        assert "avg_turnover_20s_vnd" in headline
+        assert "avg_turnover_20s_vnd" in block
+        assert len(sheet.headline_metrics) >= 5

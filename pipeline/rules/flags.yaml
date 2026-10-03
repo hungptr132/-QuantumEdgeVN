@@ -145,6 +145,23 @@ flags:
       Cổ phiếu đang được định giá cao gấp hơn hai lần trung vị ngành. Cần kiểm tra xem
       điều gì biện minh cho mức chênh lệch đó.
 
+  - code: turnover_concentrated_in_few_sessions
+    name_vi: Thanh khoản dồn vào vài phiên - ba phiên chiếm trên {threshold_pct} giá trị ba tháng
+    name_en: Turnover concentrated - top three sessions above {threshold_pct} of three-month value
+    category: liquidity
+    severity: high
+    rule_kind: metric_threshold
+    rule_version: v1
+    requires_metrics: [turnover_concentration_3m]
+    on_missing: unknown
+    expr: { metric: turnover_concentration_3m, op: ">", value: 0.40 }
+    explanation_vi: >-
+      Ba phiên giao dịch gần nhất chiếm hơn {threshold_pct} toàn bộ giá trị giao
+      dịch trong ba tháng. Thanh khoản của mã này không đều: nó xuất hiện vào vài phiên riêng
+      lẻ, thường là giao dịch lô lớn giữa các bên đã biết nhau trước. Con số giao dịch
+      bình quân vì vậy không phản ánh khả năng bán ra trong một phiên thông thường, và
+      việc chờ một phiên như thế không phải là kế hoạch mà người bán lẻ có thể dựa vào.
+
   # Relative liquidity. An absolute turnover threshold treats every sector alike, but
   # 1 tỷ/phiên is unremarkable in steel and near-dead in food/agri. These compare a stock
   # against its own peers at the same date, which is what the benchmark layer is for.

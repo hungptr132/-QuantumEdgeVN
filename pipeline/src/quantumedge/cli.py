@@ -61,6 +61,9 @@ _LIQUIDITY_CODES = (
     "pct_from_52w_high",
     "bid_ask_spread_pct",
     "sessions_to_exit",
+    "turnover_concentration_3m",
+    "max_drawdown_52w",
+    "sessions_since_52w_high",
 )
 
 # Valuation, leverage and profitability. Implemented but data-gated: until statements

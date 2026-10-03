@@ -31,6 +31,7 @@ from quantumedge.factsheet.schema import (
     TickerRef,
 )
 from quantumedge.runs import git_commit
+from quantumedge.vietnamese import vn_decimal
 
 LIQUIDITY_CATEGORIES = {"liquidity_market", "liquidity_balance_sheet"}
 
@@ -43,22 +44,26 @@ STATE_LABEL_VI = {
 
 
 def _format(value: Decimal | None, unit: str, precision: int) -> str:
-    """Pre-format for display, so the page never formats a number itself."""
+    """Pre-format for display, so the page never formats a number itself.
+
+    Vietnamese conventions throughout, via `vietnamese.py`: dot for thousands, comma for
+    the decimal. This is not a stylistic preference — `1,5` and `1.5` denote different
+    values in the two systems, so printing English grouping to a Vietnamese reader is
+    ambiguous about the figure, not merely unidiomatic.
+    """
     if value is None:
         return NOT_DISCLOSED
     if unit == "pct":
-        return f"{value * 100:,.2f}%"
+        return f"{vn_decimal(value * 100, 2)}%"
     if unit == "VND":
-        return f"{value:,.0f} đ"
+        return f"{vn_decimal(value, 0)} đ"
     if unit == "share":
-        return f"{value:,.0f}"
+        return vn_decimal(value, 0)
     if unit == "x":
-        return f"{value:,.2f} lần"
+        return f"{vn_decimal(value, 2)} lần"
     if unit == "session":
-        return f"{value:,.1f} phiên"
-    if unit == "ratio":
-        return f"{value:,.{precision}f}"
-    return f"{value:,.{precision}f}"
+        return f"{vn_decimal(value, 1)} phiên"
+    return vn_decimal(value, precision)
 
 
 def _figures(session: Session, ticker_id: int, as_of: date) -> list[dict[str, Any]]:
@@ -144,11 +149,21 @@ def build_fact_sheet(session: Session, symbol: str, as_of: date, calc_run_id: in
             formatter=lambda v, _r=row: _format(v, _r["unit"], _r["precision"]),
         )
         figure = _to_figure(row, comparison)
+
+        # A headline metric leads the page whatever its category. Routing by category
+        # first starved the headline: the four liquidity metrics marked is_headline were
+        # diverted into the liquidity block, leaving a stock with no statements leading
+        # with three figures of which two read "không công bố". For exactly those stocks
+        # the liquidity figures ARE the substance, so they belong at the top.
+        #
+        # The overlap with the liquidity block is deliberate, not a duplication bug: the
+        # headline is a summary and the block is the detail, and the block has to stay
+        # complete because its Vietnamese framing note travels with the full set.
+        if row["is_headline"]:
+            headline.append(figure)
         if row["category"] in LIQUIDITY_CATEGORIES:
             liquidity_figures.append(figure)
-        elif row["is_headline"]:
-            headline.append(figure)
-        else:
+        elif not row["is_headline"]:
             other.append(figure)
 
     # The exit ladder lives in sessions_to_exit's inputs; surface it only when the metric
