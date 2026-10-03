@@ -498,6 +498,38 @@
           ],
           "default": null,
           "title": "Reason"
+        },
+        "active_since": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Active Since"
+        },
+        "active_since_label_vi": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Active Since Label Vi"
+        },
+        "history": {
+          "items": {
+            "$ref": "#/$defs/StateChange"
+          },
+          "title": "History",
+          "type": "array"
         }
       },
       "required": [
@@ -643,6 +675,47 @@
         "label"
       ],
       "title": "Provenance",
+      "type": "object"
+    },
+    "StateChange": {
+      "additionalProperties": false,
+      "description": "One recorded transition of a flag.",
+      "properties": {
+        "changed_on": {
+          "format": "date",
+          "title": "Changed On",
+          "type": "string"
+        },
+        "from_state": {
+          "enum": [
+            "active",
+            "inactive",
+            "unknown"
+          ],
+          "title": "From State",
+          "type": "string"
+        },
+        "to_state": {
+          "enum": [
+            "active",
+            "inactive",
+            "unknown"
+          ],
+          "title": "To State",
+          "type": "string"
+        },
+        "label_vi": {
+          "title": "Label Vi",
+          "type": "string"
+        }
+      },
+      "required": [
+        "changed_on",
+        "from_state",
+        "to_state",
+        "label_vi"
+      ],
+      "title": "StateChange",
       "type": "object"
     },
     "TickerRef": {

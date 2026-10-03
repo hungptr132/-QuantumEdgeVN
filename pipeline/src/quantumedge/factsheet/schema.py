@@ -109,6 +109,15 @@ class Figure(Strict):
     comparison: Comparison | None = None
 
 
+class StateChange(Strict):
+    """One recorded transition of a flag."""
+
+    changed_on: date
+    from_state: Literal["active", "inactive", "unknown"]
+    to_state: Literal["active", "inactive", "unknown"]
+    label_vi: str
+
+
 class FlagItem(Strict):
     code: str
     name_vi: str
@@ -121,6 +130,14 @@ class FlagItem(Strict):
     triggered_values: dict[str, str] = Field(default_factory=dict)
     evidence: list[Provenance] = Field(default_factory=list)
     reason: str | None = None
+
+    # How long this has been true, and how it has moved. A flag that has been active
+    # for two years and one that turned active last quarter are different situations,
+    # and a static snapshot cannot tell them apart. Empty until metrics have been
+    # computed at more than one as_of date.
+    active_since: date | None = None
+    active_since_label_vi: str | None = None
+    history: list[StateChange] = Field(default_factory=list)
 
 
 class ExitEstimate(Strict):

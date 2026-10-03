@@ -1,0 +1,2309 @@
+{
+  "allowed_numbers": [
+    "-0.096425",
+    "-0.18875",
+    "-0.188750",
+    "-0.204",
+    "-0.204000",
+    "-0.2706",
+    "-0.270600",
+    "-0.2789",
+    "-0.278900",
+    "-0.2884",
+    "-0.288400",
+    "-0.3418",
+    "-0.341800",
+    "-0.37695",
+    "-0.376950",
+    "-0.475",
+    "-0.475000",
+    "-0.49125",
+    "-0.491250",
+    "-0.5",
+    "-0.5075",
+    "-0.507500",
+    "-0.5184",
+    "-0.518400",
+    "-18.88%",
+    "-34.18%",
+    "-47.50%",
+    "-50.75%",
+    "-50.75% – -27.89%",
+    "-51.84% – -20.40%",
+    "-51.84% – 0.00%",
+    "0",
+    "0 đ – 13,621,500,000 đ",
+    "0.0",
+    "0.0 phiên",
+    "0.0 phiên – 0.0 phiên",
+    "0.0 phiên – 0.1 phiên",
+    "0.0 phiên – 50.0 phiên",
+    "0.00",
+    "0.00%",
+    "0.00% – 0.00%",
+    "0.00% – 79.37%",
+    "0.000000",
+    "0.05",
+    "0.1",
+    "0.1 phiên",
+    "0.100000",
+    "0.21",
+    "0.21 – 4.99",
+    "0.210000",
+    "0.25",
+    "0.39685",
+    "0.396850",
+    "0.4342",
+    "0.434200",
+    "0.5",
+    "0.5064",
+    "0.506400",
+    "0.507500",
+    "0.5863",
+    "0.586300",
+    "0.73745",
+    "0.737450",
+    "0.7692",
+    "0.769200",
+    "0.7722",
+    "0.772200",
+    "0.7937",
+    "0.793700",
+    "0.9",
+    "0.900000",
+    "0E-7",
+    "1,177,544",
+    "1,348,262",
+    "1.0",
+    "1.0632962E+10",
+    "1.1102",
+    "1.110200",
+    "1.1662",
+    "1.166200",
+    "1.1714",
+    "1.171400",
+    "1.2222",
+    "1.222200",
+    "1.36215E+10",
+    "1.5049948E+10",
+    "1.538",
+    "1.538000",
+    "1.538E+4",
+    "1.54",
+    "1.54 – 2.79",
+    "1.555",
+    "1.555000",
+    "1.555E+4",
+    "1.56",
+    "1.56 – 2.57",
+    "1.59",
+    "1.590000",
+    "1.591875",
+    "1.59E+4",
+    "1.6896",
+    "1.689600",
+    "1.787",
+    "1.787000",
+    "1.787E+4",
+    "1.79",
+    "1000000000",
+    "1060315",
+    "1060315.000000",
+    "10632962000.000000",
+    "10776241956.25",
+    "10776241956.250000",
+    "11,015,257,875",
+    "11,015,257,875 đ",
+    "11015257875",
+    "11015257875.000000",
+    "111.02",
+    "111.02%",
+    "1177543.5",
+    "1177543.500000",
+    "12",
+    "122.22",
+    "13,621,500,000",
+    "1348261.75",
+    "1348261.750000",
+    "13621500000.000000",
+    "15,049,948,000",
+    "15,380",
+    "15,380 đ – 27,930 đ",
+    "15,550",
+    "15,550 đ – 25,700 đ",
+    "15,900",
+    "15,900 đ",
+    "15049948000.000000",
+    "15380.000000",
+    "1553994000.00000000",
+    "15550.000000",
+    "15900.000000",
+    "15918.75",
+    "15918.750000",
+    "159287.925",
+    "159287.925000",
+    "168.96",
+    "17,870",
+    "17,870 đ",
+    "17870.000000",
+    "18.88",
+    "2,100",
+    "2,100 đ – 49,900 đ",
+    "2.12",
+    "2.125",
+    "2.125000",
+    "2.125E+4",
+    "2.1825",
+    "2.182500",
+    "2.1E+3",
+    "2.355",
+    "2.355000",
+    "2.355E+4",
+    "2.4121802E+10",
+    "2.48651225E+10",
+    "2.57",
+    "2.570000",
+    "2.57E+4",
+    "2.6112885E+10",
+    "2.786709695E+10",
+    "2.79",
+    "2.793",
+    "2.793000",
+    "2.793E+4",
+    "2.8981747E+10",
+    "2.9855E+5",
+    "20",
+    "20,026",
+    "20,026 – 389,060",
+    "20.40",
+    "20025.85",
+    "20025.850000",
+    "21,250",
+    "21,250 đ",
+    "2100.000000",
+    "21250.000000",
+    "21825",
+    "21825.000000",
+    "2311647.5",
+    "2311647.500000",
+    "23550.000000",
+    "24,121,802,000",
+    "24,121,802,000 đ",
+    "24121802000.000000",
+    "24865122500.000000",
+    "25",
+    "25,700",
+    "25.000000",
+    "25700.000000",
+    "26,112,885,000",
+    "26112885000.000000",
+    "27,930",
+    "27.89",
+    "27867096950.000000",
+    "27930.000000",
+    "28,424,421,975",
+    "28,424,421,975 đ",
+    "28,981,747,000",
+    "28424421975",
+    "28424421975.000000",
+    "28981747000.000000",
+    "298,550",
+    "298550.000000",
+    "3",
+    "3,565,320",
+    "3.0",
+    "3.0099075E+9",
+    "3.217139545E+10",
+    "3.29",
+    "3.290000",
+    "3.29E+4",
+    "3.56532E+6",
+    "3.8906E+5",
+    "3009907500.000000",
+    "3128205925",
+    "3128205925.000000",
+    "32171395450.000000",
+    "32900.000000",
+    "34.18",
+    "343805",
+    "343805.000000",
+    "3565320.000000",
+    "384,285",
+    "384,285 – 1,177,544",
+    "384,285 – 3,565,320",
+    "384285",
+    "384285.000000",
+    "389,060",
+    "389060.000000",
+    "39153824947.5",
+    "39153824947.500000",
+    "4.043585E+7",
+    "4.99",
+    "4.990000",
+    "4.99E+4",
+    "40,435,850",
+    "40,435,850 đ – 15,049,948,000 đ",
+    "40435850.000000",
+    "43.42",
+    "43.42% – 122.22%",
+    "47.50",
+    "49,900",
+    "49900.000000",
+    "5",
+    "5,791,990,000",
+    "5,791,990,000 đ – 26,112,885,000 đ",
+    "5,791,990,000 đ – 78,087,460,300 đ",
+    "5.79199E+9",
+    "50.0",
+    "50.000000",
+    "50.64",
+    "50.64% – 168.96%",
+    "50.75",
+    "51.84",
+    "514,952",
+    "514952.5",
+    "514952.500000",
+    "52",
+    "5791990000.000000",
+    "5E+1",
+    "6,019,815,000",
+    "6,019,815,000 đ",
+    "6,161,116,000",
+    "6,161,116,000 đ – 28,981,747,000 đ",
+    "6,161,116,000 đ – 96,296,288,910 đ",
+    "6,215,976,000",
+    "6,215,976,000 đ",
+    "6.019815E+9",
+    "6.161116E+9",
+    "6.215976E+9",
+    "6019815000.000000",
+    "6161116000.000000",
+    "620468.125",
+    "620468.125000",
+    "6215976000.000000",
+    "7",
+    "7,753,855,000",
+    "7,753,855,000 đ",
+    "7.753855E+9",
+    "7.80874603E+10",
+    "73.74",
+    "73.74%",
+    "76.92",
+    "76.92% – 168.96%",
+    "7753855000.000000",
+    "78,087,460,300",
+    "78087460300.000000",
+    "79.37",
+    "8.2014091E+9",
+    "8201409100.000000",
+    "9.629628891E+10",
+    "9.8206575E+9",
+    "9000.000000",
+    "96,296,288,910",
+    "96296288910.000000",
+    "9820657500.000000",
+    "9E+3",
+    "<",
+    ">",
+    "avg_turnover_20s_vnd",
+    "không công bố",
+    "pct_from_52w_high",
+    "price_to_par",
+    "zero_trade_ratio_3m"
+  ],
+  "as_of_date": "2026-10-01",
+  "company": {
+    "description_vi": null,
+    "ir_url": null,
+    "legal_name_vi": "Công ty Cổ phần Nam Việt",
+    "sector_code": "food_agri",
+    "sector_name_vi": "Thủy sản và nông sản",
+    "short_name": "Nam Việt",
+    "website": null
+  },
+  "disclosure_gaps": [
+    {
+      "display": "không công bố",
+      "field": "company.description_vi",
+      "label_vi": "Mô tả hoạt động kinh doanh",
+      "reason": "requires_human_authorship"
+    },
+    {
+      "display": "không công bố",
+      "field": "ticker.shares_outstanding",
+      "label_vi": "Số cổ phiếu đang lưu hành",
+      "reason": "not_ingested"
+    },
+    {
+      "display": "không công bố",
+      "field": "metric.pe",
+      "label_vi": "P/E",
+      "reason": "missing_facts:net_profit_after_tax,shares_outstanding"
+    },
+    {
+      "display": "không công bố",
+      "field": "metric.interest_coverage",
+      "label_vi": "Khả năng trả lãi",
+      "reason": "missing_facts:ebit,interest_expense"
+    },
+    {
+      "display": "không công bố",
+      "field": "metric.ev_ebitda",
+      "label_vi": "EV/EBITDA",
+      "reason": "missing_facts:ebitda,short_term_debt,long_term_debt,cash_and_equivalents"
+    },
+    {
+      "display": "không công bố",
+      "field": "metric.net_debt_ebitda",
+      "label_vi": "Nợ ròng / EBITDA",
+      "reason": "missing_facts:short_term_debt,long_term_debt,cash_and_equivalents,ebitda"
+    },
+    {
+      "display": "không công bố",
+      "field": "metric.roe",
+      "label_vi": "ROE",
+      "reason": "missing_facts:net_profit_after_tax,total_equity"
+    },
+    {
+      "display": "không công bố",
+      "field": "metric.bid_ask_spread_pct",
+      "label_vi": "Chênh lệch mua - bán",
+      "reason": "no_intraday_snapshot"
+    },
+    {
+      "display": "không công bố",
+      "field": "metric.shares_cagr_3y",
+      "label_vi": "Tăng trưởng số lượng cổ phiếu (3 năm)",
+      "reason": "missing_facts:shares_outstanding"
+    },
+    {
+      "display": "không tìm thấy công bố tương ứng",
+      "field": "flag.auditor_change_within_24m",
+      "label_vi": "Thay đổi đơn vị kiểm toán trong 24 tháng",
+      "reason": "no_event_source_configured"
+    },
+    {
+      "display": "không tìm thấy công bố tương ứng",
+      "field": "flag.interest_coverage_below_2x",
+      "label_vi": "Khả năng trả lãi dưới 2 lần",
+      "reason": "metric_unavailable:interest_coverage:missing_facts:ebit,interest_expense"
+    },
+    {
+      "display": "không tìm thấy công bố tương ứng",
+      "field": "flag.net_debt_ebitda_above_4x",
+      "label_vi": "Nợ ròng trên 4 lần EBITDA",
+      "reason": "metric_unavailable:net_debt_ebitda:missing_facts:short_term_debt,long_term_debt,cash_and_equivalents,ebitda"
+    },
+    {
+      "display": "không tìm thấy công bố tương ứng",
+      "field": "flag.no_audited_annual_statement_18m",
+      "label_vi": "Không có báo cáo kiểm toán năm trong 18 tháng",
+      "reason": "no_statement_source_configured"
+    },
+    {
+      "display": "không tìm thấy công bố tương ứng",
+      "field": "flag.dilution_shares_up_25pct_3y",
+      "label_vi": "Pha loãng - số cổ phiếu tăng trên 25% trong 3 năm",
+      "reason": "metric_unavailable:shares_cagr_3y:missing_facts:shares_outstanding"
+    },
+    {
+      "display": "không tìm thấy công bố tương ứng",
+      "field": "flag.pe_above_2x_sector_median",
+      "label_vi": "P/E cao hơn 2 lần trung vị ngành",
+      "reason": "metric_unavailable:pe:missing_facts:net_profit_after_tax,shares_outstanding"
+    }
+  ],
+  "flags": [
+    {
+      "active_since": "2026-09-30",
+      "active_since_label_vi": "Ở trạng thái này từ 2026-09-30",
+      "category": "valuation",
+      "code": "price_near_52w_low",
+      "evidence": [
+        {
+          "kind": "metric",
+          "label": "pct_from_52w_high = -0.507500 (< -0.5)",
+          "ref": "metric_value:20",
+          "source_url": null
+        }
+      ],
+      "explanation_vi": "Giá đang thấp hơn đỉnh 52 tuần trên 50%. Đây là mô tả trạng thái giá, không phải nhận định rằng cổ phiếu rẻ hay đắt.",
+      "history": [
+        {
+          "changed_on": "2026-09-30",
+          "from_state": "inactive",
+          "label_vi": "2026-09-30: Không có → Đang có",
+          "to_state": "active"
+        }
+      ],
+      "name_vi": "Giá gần đáy 52 tuần",
+      "reason": null,
+      "rule_summary": "pct_from_52w_high < -0.5",
+      "severity": "info",
+      "state": "active",
+      "state_label_vi": "Đang có",
+      "triggered_values": {
+        "metric": "pct_from_52w_high",
+        "op": "<",
+        "threshold": "-0.5",
+        "value": "-0.507500"
+      }
+    },
+    {
+      "active_since": null,
+      "active_since_label_vi": null,
+      "category": "governance",
+      "code": "auditor_change_within_24m",
+      "evidence": [],
+      "explanation_vi": "Doanh nghiệp đã thay đổi đơn vị kiểm toán trong hai năm qua. Bản thân việc này không phải vi phạm, nhưng nó là một trong những dấu hiệu đáng kiểm tra kỹ nhất.",
+      "history": [],
+      "name_vi": "Thay đổi đơn vị kiểm toán trong 24 tháng",
+      "reason": "no_event_source_configured",
+      "rule_summary": "auditor_change  24",
+      "severity": "high",
+      "state": "unknown",
+      "state_label_vi": "không tìm thấy công bố tương ứng",
+      "triggered_values": {}
+    },
+    {
+      "active_since": null,
+      "active_since_label_vi": null,
+      "category": "leverage",
+      "code": "interest_coverage_below_2x",
+      "evidence": [],
+      "explanation_vi": "Lợi nhuận trước lãi vay và thuế chỉ đủ trả lãi dưới 2 lần. Doanh nghiệp phụ thuộc vào việc tiếp tục vay được để phục vụ khoản nợ hiện tại.",
+      "history": [],
+      "name_vi": "Khả năng trả lãi dưới 2 lần",
+      "reason": "metric_unavailable:interest_coverage:missing_facts:ebit,interest_expense",
+      "rule_summary": "interest_coverage < 2.0",
+      "severity": "high",
+      "state": "unknown",
+      "state_label_vi": "không tìm thấy công bố tương ứng",
+      "triggered_values": {}
+    },
+    {
+      "active_since": null,
+      "active_since_label_vi": null,
+      "category": "leverage",
+      "code": "net_debt_ebitda_above_4x",
+      "evidence": [],
+      "explanation_vi": "Cần hơn bốn năm lợi nhuận để trả hết nợ ròng. Mức này khiến doanh nghiệp rất ít chịu được một năm kinh doanh xấu.",
+      "history": [],
+      "name_vi": "Nợ ròng trên 4 lần EBITDA",
+      "reason": "metric_unavailable:net_debt_ebitda:missing_facts:short_term_debt,long_term_debt,cash_and_equivalents,ebitda",
+      "rule_summary": "net_debt_ebitda > 4.0",
+      "severity": "high",
+      "state": "unknown",
+      "state_label_vi": "không tìm thấy công bố tương ứng",
+      "triggered_values": {}
+    },
+    {
+      "active_since": null,
+      "active_since_label_vi": null,
+      "category": "disclosure",
+      "code": "no_audited_annual_statement_18m",
+      "evidence": [],
+      "explanation_vi": "Không tìm thấy báo cáo tài chính năm đã được kiểm toán trong 18 tháng gần nhất. Việc chậm công bố là chỉ dấu rủi ro quản trị rõ ràng nhất mà nhà đầu tư nhỏ có thể tự kiểm tra.",
+      "history": [],
+      "name_vi": "Không có báo cáo kiểm toán năm trong 18 tháng",
+      "reason": "no_statement_source_configured",
+      "rule_summary": "financial_period  18",
+      "severity": "high",
+      "state": "unknown",
+      "state_label_vi": "không tìm thấy công bố tương ứng",
+      "triggered_values": {}
+    },
+    {
+      "active_since": null,
+      "active_since_label_vi": null,
+      "category": "dilution",
+      "code": "dilution_shares_up_25pct_3y",
+      "evidence": [],
+      "explanation_vi": "Số cổ phiếu lưu hành tăng khoảng 25% hoặc hơn trong ba năm. Phần sở hữu của cổ đông cũ bị pha loãng tương ứng; câu hỏi cần trả lời là tiền thu được đã dùng vào việc gì.",
+      "history": [],
+      "name_vi": "Pha loãng - số cổ phiếu tăng trên 25% trong 3 năm",
+      "reason": "metric_unavailable:shares_cagr_3y:missing_facts:shares_outstanding",
+      "rule_summary": "shares_cagr_3y > 0.077",
+      "severity": "watch",
+      "state": "unknown",
+      "state_label_vi": "không tìm thấy công bố tương ứng",
+      "triggered_values": {}
+    },
+    {
+      "active_since": null,
+      "active_since_label_vi": null,
+      "category": "valuation",
+      "code": "pe_above_2x_sector_median",
+      "evidence": [],
+      "explanation_vi": "Cổ phiếu đang được định giá cao gấp hơn hai lần trung vị ngành. Cần kiểm tra xem điều gì biện minh cho mức chênh lệch đó.",
+      "history": [],
+      "name_vi": "P/E cao hơn 2 lần trung vị ngành",
+      "reason": "metric_unavailable:pe:missing_facts:net_profit_after_tax,shares_outstanding",
+      "rule_summary": "pe >",
+      "severity": "watch",
+      "state": "unknown",
+      "state_label_vi": "không tìm thấy công bố tương ứng",
+      "triggered_values": {}
+    },
+    {
+      "active_since": null,
+      "active_since_label_vi": null,
+      "category": "liquidity",
+      "code": "thin_liquidity_turnover_below_1bn",
+      "evidence": [],
+      "explanation_vi": "Giá trị giao dịch bình quân dưới 1 tỷ đồng mỗi phiên. Với mức này, một vị thế vài trăm triệu đồng có thể cần nhiều phiên để thoát, và việc bán ra có thể tự đẩy giá xuống.",
+      "history": [],
+      "name_vi": "Thanh khoản mỏng - giá trị giao dịch dưới 1 tỷ/phiên",
+      "reason": null,
+      "rule_summary": "avg_turnover_20s_vnd < 1000000000",
+      "severity": "high",
+      "state": "inactive",
+      "state_label_vi": "Không có",
+      "triggered_values": {
+        "metric": "avg_turnover_20s_vnd",
+        "op": "<",
+        "threshold": "1000000000",
+        "value": "6215976000.000000"
+      }
+    },
+    {
+      "active_since": null,
+      "active_since_label_vi": null,
+      "category": "liquidity",
+      "code": "zero_trade_sessions_over_5pct_3m",
+      "evidence": [],
+      "explanation_vi": "Hơn 5% số phiên trong ba tháng qua không có một cổ phiếu nào được khớp. Khi cần bán, có thể không có người mua ở bất kỳ giá nào.",
+      "history": [],
+      "name_vi": "Nhiều phiên không có giao dịch",
+      "reason": null,
+      "rule_summary": "zero_trade_ratio_3m > 0.05",
+      "severity": "high",
+      "state": "inactive",
+      "state_label_vi": "Không có",
+      "triggered_values": {
+        "metric": "zero_trade_ratio_3m",
+        "op": ">",
+        "threshold": "0.05",
+        "value": "0.000000"
+      }
+    },
+    {
+      "active_since": null,
+      "active_since_label_vi": null,
+      "category": "valuation",
+      "code": "price_below_par_value",
+      "evidence": [],
+      "explanation_vi": "Thị trường đang trả cho mỗi cổ phiếu ít hơn mệnh giá ghi trên sổ sách. Điều này không tự động là xấu, nhưng nó đặt ra một câu hỏi cần câu trả lời: vì sao?",
+      "history": [],
+      "name_vi": "Giá dưới mệnh giá",
+      "reason": null,
+      "rule_summary": "price_to_par < 1.0",
+      "severity": "watch",
+      "state": "inactive",
+      "state_label_vi": "Không có",
+      "triggered_values": {
+        "metric": "price_to_par",
+        "op": "<",
+        "threshold": "1.0",
+        "value": "1.590000"
+      }
+    },
+    {
+      "active_since": null,
+      "active_since_label_vi": null,
+      "category": "liquidity",
+      "code": "turnover_below_quarter_of_sector_median",
+      "evidence": [],
+      "explanation_vi": "Giá trị giao dịch bình quân của mã này thấp hơn một phần tư trung vị nhóm ngành. So với các mã cùng ngành, việc mua hoặc bán một lượng lớn sẽ khó hơn đáng kể. Đây là mô tả mức độ thanh khoản, không phải nhận định về giá.",
+      "history": [],
+      "name_vi": "Giá trị giao dịch dưới 1/4 trung vị ngành",
+      "reason": null,
+      "rule_summary": "avg_turnover_20s_vnd <",
+      "severity": "watch",
+      "state": "inactive",
+      "state_label_vi": "Không có",
+      "triggered_values": {
+        "comparand": "1553994000.00000000",
+        "metric": "avg_turnover_20s_vnd",
+        "multiple": "0.25",
+        "op": "<",
+        "sample_size": "3",
+        "sector_median": "6215976000.000000",
+        "value": "6215976000.000000"
+      }
+    },
+    {
+      "active_since": null,
+      "active_since_label_vi": null,
+      "category": "liquidity",
+      "code": "zero_trade_ratio_above_3x_sector_median",
+      "evidence": [],
+      "explanation_vi": "Tỷ lệ phiên không có giao dịch nào của mã này cao hơn ba lần trung vị nhóm ngành. Có những phiên mà không thể bán ở bất kỳ giá nào, vì không có giao dịch diễn ra.",
+      "history": [],
+      "name_vi": "Số phiên không giao dịch cao hơn 3 lần trung vị ngành",
+      "reason": null,
+      "rule_summary": "zero_trade_ratio_3m >",
+      "severity": "watch",
+      "state": "inactive",
+      "state_label_vi": "Không có",
+      "triggered_values": {
+        "comparand": "0E-7",
+        "metric": "zero_trade_ratio_3m",
+        "multiple": "3.0",
+        "op": ">",
+        "sample_size": "3",
+        "sector_median": "0.000000",
+        "value": "0.000000"
+      }
+    }
+  ],
+  "headline_metrics": [
+    {
+      "available": false,
+      "code": "pe",
+      "comparison": {
+        "own_history": [
+          {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Khoảng 1 năm của chính mã này",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "ticker_history",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "1y"
+          },
+          {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Khoảng 3 năm của chính mã này",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "ticker_history",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "3y"
+          }
+        ],
+        "position_vs_own_range": "unknown",
+        "position_vs_own_range_label_vi": "không công bố",
+        "position_vs_sector": "unknown",
+        "position_vs_sector_label_vi": "không công bố",
+        "sector": {
+          "available": false,
+          "display_median": "không công bố",
+          "display_range": "không công bố",
+          "label_vi": "Trung vị nhóm ngành",
+          "max_value": null,
+          "median": null,
+          "members": [],
+          "min_value": null,
+          "p25": null,
+          "p75": null,
+          "provenance": [],
+          "sample_size": 0,
+          "scope": "sector",
+          "unavailable_reason": "Chưa có dữ liệu so sánh",
+          "window_label": "current"
+        }
+      },
+      "definition_vi": "Giá cổ phiếu chia cho lợi nhuận trên mỗi cổ phiếu. Khi doanh nghiệp lỗ, chỉ số này không có ý nghĩa và sẽ được ghi là không công bố thay vì hiển thị một số âm.",
+      "display": "không công bố",
+      "label_vi": "P/E",
+      "provenance": [],
+      "unavailable_reason": "missing_facts:net_profit_after_tax,shares_outstanding",
+      "unit": "x",
+      "value": null
+    },
+    {
+      "available": true,
+      "code": "price_to_par",
+      "comparison": {
+        "own_history": [
+          {
+            "available": true,
+            "display_median": "2.12",
+            "display_range": "1.56 – 2.57",
+            "label_vi": "Khoảng 1 năm của chính mã này",
+            "max_value": "2.570000",
+            "median": "2.125000",
+            "members": [],
+            "min_value": "1.555000",
+            "p25": "1.590000",
+            "p75": "2.355000",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "price_to_par · ticker_history/1y · n=5",
+                "ref": "metric_benchmark:4495",
+                "source_url": null
+              }
+            ],
+            "sample_size": 5,
+            "scope": "ticker_history",
+            "unavailable_reason": null,
+            "window_label": "1y"
+          },
+          {
+            "available": true,
+            "display_median": "1.79",
+            "display_range": "1.54 – 2.79",
+            "label_vi": "Khoảng 3 năm của chính mã này",
+            "max_value": "2.793000",
+            "median": "1.787000",
+            "members": [],
+            "min_value": "1.538000",
+            "p25": "1.591875",
+            "p75": "2.182500",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "price_to_par · ticker_history/3y · n=12",
+                "ref": "metric_benchmark:4333",
+                "source_url": null
+              }
+            ],
+            "sample_size": 12,
+            "scope": "ticker_history",
+            "unavailable_reason": null,
+            "window_label": "3y"
+          }
+        ],
+        "position_vs_own_range": "near_low",
+        "position_vs_own_range_label_vi": "Gần mức thấp nhất của khoảng",
+        "position_vs_sector": "in_line",
+        "position_vs_sector_label_vi": "Tương đương nhóm ngành",
+        "sector": {
+          "available": true,
+          "display_median": "1.59",
+          "display_range": "0.21 – 4.99",
+          "label_vi": "Trung vị nhóm ngành",
+          "max_value": "4.990000",
+          "median": "1.590000",
+          "members": [
+            "AGM",
+            "ANV",
+            "VHC"
+          ],
+          "min_value": "0.210000",
+          "p25": "0.900000",
+          "p75": "3.290000",
+          "provenance": [
+            {
+              "kind": "benchmark",
+              "label": "price_to_par · sector/current · n=3",
+              "ref": "metric_benchmark:4207",
+              "source_url": null
+            }
+          ],
+          "sample_size": 3,
+          "scope": "sector",
+          "unavailable_reason": null,
+          "window_label": "current"
+        }
+      },
+      "definition_vi": "Giá thị trường chia cho mệnh giá (thường là 10.000 đồng). Dưới 1 nghĩa là thị trường đang định giá mỗi cổ phiếu thấp hơn mệnh giá ghi trên sổ sách — không tự động là xấu, nhưng là điều cần giải thích.",
+      "display": "1.59",
+      "label_vi": "Giá so với mệnh giá",
+      "provenance": [
+        {
+          "kind": "metric",
+          "label": "price_to_par @ as_of",
+          "ref": "metric_value:13",
+          "source_url": null
+        }
+      ],
+      "unavailable_reason": null,
+      "unit": "ratio",
+      "value": "1.590000"
+    },
+    {
+      "available": false,
+      "code": "interest_coverage",
+      "comparison": {
+        "own_history": [
+          {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Khoảng 1 năm của chính mã này",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "ticker_history",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "1y"
+          },
+          {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Khoảng 3 năm của chính mã này",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "ticker_history",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "3y"
+          }
+        ],
+        "position_vs_own_range": "unknown",
+        "position_vs_own_range_label_vi": "không công bố",
+        "position_vs_sector": "unknown",
+        "position_vs_sector_label_vi": "không công bố",
+        "sector": {
+          "available": false,
+          "display_median": "không công bố",
+          "display_range": "không công bố",
+          "label_vi": "Trung vị nhóm ngành",
+          "max_value": null,
+          "median": null,
+          "members": [],
+          "min_value": null,
+          "p25": null,
+          "p75": null,
+          "provenance": [],
+          "sample_size": 0,
+          "scope": "sector",
+          "unavailable_reason": "Chưa có dữ liệu so sánh",
+          "window_label": "current"
+        }
+      },
+      "definition_vi": "Lợi nhuận trước lãi vay và thuế chia cho chi phí lãi vay. Dưới 2 lần nghĩa là doanh nghiệp phụ thuộc vào việc tiếp tục vay được để trả lãi khoản vay hiện tại.",
+      "display": "không công bố",
+      "label_vi": "Khả năng trả lãi",
+      "provenance": [],
+      "unavailable_reason": "missing_facts:ebit,interest_expense",
+      "unit": "x",
+      "value": null
+    }
+  ],
+  "lineage": {
+    "as_of_date": "2026-10-01",
+    "data_sources": [
+      "hose_search",
+      "vndirect_dchart"
+    ],
+    "rule_spec_version": "1243aa7c745f9868613dfcf51034a6ce5f56d4a9bb2f4c89abab3c5a966d4c58"
+  },
+  "liquidity": {
+    "exit_estimates": [
+      {
+        "position_label": "1000mn_vnd",
+        "sessions": "0.8"
+      },
+      {
+        "position_label": "100mn_vnd",
+        "sessions": "0.1"
+      },
+      {
+        "position_label": "500mn_vnd",
+        "sessions": "0.4"
+      }
+    ],
+    "figures": [
+      {
+        "available": true,
+        "code": "avg_turnover_20s_vnd",
+        "comparison": {
+          "own_history": [
+            {
+              "available": true,
+              "display_median": "11,015,257,875 đ",
+              "display_range": "6,161,116,000 đ – 28,981,747,000 đ",
+              "label_vi": "Khoảng 1 năm của chính mã này",
+              "max_value": "28981747000.000000",
+              "median": "11015257875.000000",
+              "members": [],
+              "min_value": "6161116000.000000",
+              "p25": "6215976000.000000",
+              "p75": "27867096950.000000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "avg_turnover_20s_vnd · ticker_history/1y · n=5",
+                  "ref": "metric_benchmark:4483",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 5,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "1y"
+            },
+            {
+              "available": true,
+              "display_median": "28,424,421,975 đ",
+              "display_range": "6,161,116,000 đ – 96,296,288,910 đ",
+              "label_vi": "Khoảng 3 năm của chính mã này",
+              "max_value": "96296288910.000000",
+              "median": "28424421975.000000",
+              "members": [],
+              "min_value": "6161116000.000000",
+              "p25": "10776241956.250000",
+              "p75": "39153824947.500000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "avg_turnover_20s_vnd · ticker_history/3y · n=12",
+                  "ref": "metric_benchmark:4321",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 12,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "3y"
+            }
+          ],
+          "position_vs_own_range": "near_low",
+          "position_vs_own_range_label_vi": "Gần mức thấp nhất của khoảng",
+          "position_vs_sector": "in_line",
+          "position_vs_sector_label_vi": "Tương đương nhóm ngành",
+          "sector": {
+            "available": true,
+            "display_median": "6,215,976,000 đ",
+            "display_range": "40,435,850 đ – 15,049,948,000 đ",
+            "label_vi": "Trung vị nhóm ngành",
+            "max_value": "15049948000.000000",
+            "median": "6215976000.000000",
+            "members": [
+              "AGM",
+              "ANV",
+              "VHC"
+            ],
+            "min_value": "40435850.000000",
+            "p25": "3128205925.000000",
+            "p75": "10632962000.000000",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "avg_turnover_20s_vnd · sector/current · n=3",
+                "ref": "metric_benchmark:4195",
+                "source_url": null
+              }
+            ],
+            "sample_size": 3,
+            "scope": "sector",
+            "unavailable_reason": null,
+            "window_label": "current"
+          }
+        },
+        "definition_vi": "Giá trị tiền thực sự đổi chủ mỗi phiên. Đây là thước đo thanh khoản quan trọng hơn khối lượng, vì nó cho biết bạn có thể mua hoặc bán bao nhiêu tiền mà không tự đẩy giá.",
+        "display": "6,215,976,000 đ",
+        "label_vi": "Giá trị giao dịch bình quân 20 phiên",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "avg_turnover_20s_vnd @ 2026-10-01",
+            "ref": "metric_value:15",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "VND",
+        "value": "6215976000.000000"
+      },
+      {
+        "available": true,
+        "code": "median_turnover_20s_vnd",
+        "comparison": {
+          "own_history": [
+            {
+              "available": true,
+              "display_median": "7,753,855,000 đ",
+              "display_range": "5,791,990,000 đ – 26,112,885,000 đ",
+              "label_vi": "Khoảng 1 năm của chính mã này",
+              "max_value": "26112885000.000000",
+              "median": "7753855000.000000",
+              "members": [],
+              "min_value": "5791990000.000000",
+              "p25": "6019815000.000000",
+              "p75": "24865122500.000000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "median_turnover_20s_vnd · ticker_history/1y · n=5",
+                  "ref": "metric_benchmark:4489",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 5,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "1y"
+            },
+            {
+              "available": true,
+              "display_median": "24,121,802,000 đ",
+              "display_range": "5,791,990,000 đ – 78,087,460,300 đ",
+              "label_vi": "Khoảng 3 năm của chính mã này",
+              "max_value": "78087460300.000000",
+              "median": "24121802000.000000",
+              "members": [],
+              "min_value": "5791990000.000000",
+              "p25": "8201409100.000000",
+              "p75": "32171395450.000000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "median_turnover_20s_vnd · ticker_history/3y · n=12",
+                  "ref": "metric_benchmark:4327",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 12,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "3y"
+            }
+          ],
+          "position_vs_own_range": "near_low",
+          "position_vs_own_range_label_vi": "Gần mức thấp nhất của khoảng",
+          "position_vs_sector": "in_line",
+          "position_vs_sector_label_vi": "Tương đương nhóm ngành",
+          "sector": {
+            "available": true,
+            "display_median": "6,019,815,000 đ",
+            "display_range": "0 đ – 13,621,500,000 đ",
+            "label_vi": "Trung vị nhóm ngành",
+            "max_value": "13621500000.000000",
+            "median": "6019815000.000000",
+            "members": [
+              "AGM",
+              "ANV",
+              "VHC"
+            ],
+            "min_value": "0.000000",
+            "p25": "3009907500.000000",
+            "p75": "9820657500.000000",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "median_turnover_20s_vnd · sector/current · n=3",
+                "ref": "metric_benchmark:4201",
+                "source_url": null
+              }
+            ],
+            "sample_size": 3,
+            "scope": "sector",
+            "unavailable_reason": null,
+            "window_label": "current"
+          }
+        },
+        "definition_vi": "Giá trị giao dịch của một phiên TIÊU BIỂU. Khác với giá trị bình quân, chỉ số này không bị một vài phiên giao dịch khối lượng lớn làm méo. Nếu trung vị bằng 0 trong khi bình quân rất cao, nghĩa là cổ phiếu hầu như không giao dịch mà chỉ thỉnh thoảng được chuyển nhượng theo lô — hai việc hoàn toàn khác nhau đối với người cần bán.",
+        "display": "6,019,815,000 đ",
+        "label_vi": "Giá trị giao dịch trung vị 20 phiên",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "median_turnover_20s_vnd @ as_of",
+            "ref": "metric_value:116",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "VND",
+        "value": "6019815000.000000"
+      },
+      {
+        "available": true,
+        "code": "zero_trade_ratio_3m",
+        "comparison": {
+          "own_history": [
+            {
+              "available": true,
+              "display_median": "0.00%",
+              "display_range": "0.00% – 0.00%",
+              "label_vi": "Khoảng 1 năm của chính mã này",
+              "max_value": "0.000000",
+              "median": "0.000000",
+              "members": [],
+              "min_value": "0.000000",
+              "p25": "0.000000",
+              "p75": "0.000000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "zero_trade_ratio_3m · ticker_history/1y · n=5",
+                  "ref": "metric_benchmark:4499",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 5,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "1y"
+            },
+            {
+              "available": true,
+              "display_median": "0.00%",
+              "display_range": "0.00% – 0.00%",
+              "label_vi": "Khoảng 3 năm của chính mã này",
+              "max_value": "0.000000",
+              "median": "0.000000",
+              "members": [],
+              "min_value": "0.000000",
+              "p25": "0.000000",
+              "p75": "0.000000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "zero_trade_ratio_3m · ticker_history/3y · n=12",
+                  "ref": "metric_benchmark:4337",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 12,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "3y"
+            }
+          ],
+          "position_vs_own_range": "mid_range",
+          "position_vs_own_range_label_vi": "Ở giữa khoảng",
+          "position_vs_sector": "in_line",
+          "position_vs_sector_label_vi": "Tương đương nhóm ngành",
+          "sector": {
+            "available": true,
+            "display_median": "0.00%",
+            "display_range": "0.00% – 79.37%",
+            "label_vi": "Trung vị nhóm ngành",
+            "max_value": "0.793700",
+            "median": "0.000000",
+            "members": [
+              "AGM",
+              "ANV",
+              "VHC"
+            ],
+            "min_value": "0.000000",
+            "p25": "0.000000",
+            "p75": "0.396850",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "zero_trade_ratio_3m · sector/current · n=3",
+                "ref": "metric_benchmark:4211",
+                "source_url": null
+              }
+            ],
+            "sample_size": 3,
+            "scope": "sector",
+            "unavailable_reason": null,
+            "window_label": "current"
+          }
+        },
+        "definition_vi": "Tỷ lệ phiên không có giao dịch nào. Tỷ lệ cao nghĩa là cổ phiếu gần như đóng băng: khi cần bán, có thể không có người mua ở bất kỳ giá nào.",
+        "display": "0.00%",
+        "label_vi": "Tỷ lệ phiên không giao dịch (3 tháng)",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "zero_trade_ratio_3m @ as_of",
+            "ref": "metric_value:17",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "pct",
+        "value": "0.000000"
+      },
+      {
+        "available": true,
+        "code": "avg_volume_20s",
+        "comparison": {
+          "own_history": [
+            {
+              "available": true,
+              "display_median": "514,952",
+              "display_range": "384,285 – 1,177,544",
+              "label_vi": "Khoảng 1 năm của chính mã này",
+              "max_value": "1177543.500000",
+              "median": "514952.500000",
+              "members": [],
+              "min_value": "384285.000000",
+              "p25": "389060.000000",
+              "p75": "1060315.000000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "avg_volume_20s · ticker_history/1y · n=5",
+                  "ref": "metric_benchmark:4484",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 5,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "1y"
+            },
+            {
+              "available": true,
+              "display_median": "1,348,262",
+              "display_range": "384,285 – 3,565,320",
+              "label_vi": "Khoảng 3 năm của chính mã này",
+              "max_value": "3565320.000000",
+              "median": "1348261.750000",
+              "members": [],
+              "min_value": "384285.000000",
+              "p25": "620468.125000",
+              "p75": "2311647.500000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "avg_volume_20s · ticker_history/3y · n=12",
+                  "ref": "metric_benchmark:4322",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 12,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "3y"
+            }
+          ],
+          "position_vs_own_range": "near_low",
+          "position_vs_own_range_label_vi": "Gần mức thấp nhất của khoảng",
+          "position_vs_sector": "above",
+          "position_vs_sector_label_vi": "Cao hơn nhóm ngành",
+          "sector": {
+            "available": true,
+            "display_median": "298,550",
+            "display_range": "20,026 – 389,060",
+            "label_vi": "Trung vị nhóm ngành",
+            "max_value": "389060.000000",
+            "median": "298550.000000",
+            "members": [
+              "AGM",
+              "ANV",
+              "VHC"
+            ],
+            "min_value": "20025.850000",
+            "p25": "159287.925000",
+            "p75": "343805.000000",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "avg_volume_20s · sector/current · n=3",
+                "ref": "metric_benchmark:4196",
+                "source_url": null
+              }
+            ],
+            "sample_size": 3,
+            "scope": "sector",
+            "unavailable_reason": null,
+            "window_label": "current"
+          }
+        },
+        "definition_vi": "Số cổ phiếu được giao dịch bình quân mỗi phiên, tính trên 20 phiên giao dịch gần nhất theo lịch giao dịch thực tế (không phải 20 dòng dữ liệu).",
+        "display": "389,060",
+        "label_vi": "Khối lượng bình quân 20 phiên",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "avg_volume_20s @ 2026-10-01",
+            "ref": "metric_value:14",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "share",
+        "value": "389060.000000"
+      },
+      {
+        "available": false,
+        "code": "bid_ask_spread_pct",
+        "comparison": {
+          "own_history": [
+            {
+              "available": false,
+              "display_median": "không công bố",
+              "display_range": "không công bố",
+              "label_vi": "Khoảng 1 năm của chính mã này",
+              "max_value": null,
+              "median": null,
+              "members": [],
+              "min_value": null,
+              "p25": null,
+              "p75": null,
+              "provenance": [],
+              "sample_size": 0,
+              "scope": "ticker_history",
+              "unavailable_reason": "Chưa có dữ liệu so sánh",
+              "window_label": "1y"
+            },
+            {
+              "available": false,
+              "display_median": "không công bố",
+              "display_range": "không công bố",
+              "label_vi": "Khoảng 3 năm của chính mã này",
+              "max_value": null,
+              "median": null,
+              "members": [],
+              "min_value": null,
+              "p25": null,
+              "p75": null,
+              "provenance": [],
+              "sample_size": 0,
+              "scope": "ticker_history",
+              "unavailable_reason": "Chưa có dữ liệu so sánh",
+              "window_label": "3y"
+            }
+          ],
+          "position_vs_own_range": "unknown",
+          "position_vs_own_range_label_vi": "không công bố",
+          "position_vs_sector": "unknown",
+          "position_vs_sector_label_vi": "không công bố",
+          "sector": {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Trung vị nhóm ngành",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "sector",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "current"
+          }
+        },
+        "definition_vi": "Khoảng cách giữa giá chào mua cao nhất và giá chào bán thấp nhất. Chênh lệch rộng là một loại chi phí ẩn: bạn mất phần đó ngay khi vừa mua xong.",
+        "display": "không công bố",
+        "label_vi": "Chênh lệch mua - bán",
+        "provenance": [],
+        "unavailable_reason": "no_intraday_snapshot",
+        "unit": "pct",
+        "value": null
+      },
+      {
+        "available": true,
+        "code": "missing_bar_sessions_3m",
+        "comparison": {
+          "own_history": [
+            {
+              "available": true,
+              "display_median": "0.0 phiên",
+              "display_range": "0.0 phiên – 0.0 phiên",
+              "label_vi": "Khoảng 1 năm của chính mã này",
+              "max_value": "0.000000",
+              "median": "0.000000",
+              "members": [],
+              "min_value": "0.000000",
+              "p25": "0.000000",
+              "p75": "0.000000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "missing_bar_sessions_3m · ticker_history/1y · n=5",
+                  "ref": "metric_benchmark:4490",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 5,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "1y"
+            },
+            {
+              "available": true,
+              "display_median": "0.0 phiên",
+              "display_range": "0.0 phiên – 0.0 phiên",
+              "label_vi": "Khoảng 3 năm của chính mã này",
+              "max_value": "0.000000",
+              "median": "0.000000",
+              "members": [],
+              "min_value": "0.000000",
+              "p25": "0.000000",
+              "p75": "0.000000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "missing_bar_sessions_3m · ticker_history/3y · n=12",
+                  "ref": "metric_benchmark:4328",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 12,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "3y"
+            }
+          ],
+          "position_vs_own_range": "mid_range",
+          "position_vs_own_range_label_vi": "Ở giữa khoảng",
+          "position_vs_sector": "in_line",
+          "position_vs_sector_label_vi": "Tương đương nhóm ngành",
+          "sector": {
+            "available": true,
+            "display_median": "0.0 phiên",
+            "display_range": "0.0 phiên – 0.0 phiên",
+            "label_vi": "Trung vị nhóm ngành",
+            "max_value": "0.000000",
+            "median": "0.000000",
+            "members": [
+              "AGM",
+              "ANV",
+              "VHC"
+            ],
+            "min_value": "0.000000",
+            "p25": "0.000000",
+            "p75": "0.000000",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "missing_bar_sessions_3m · sector/current · n=3",
+                "ref": "metric_benchmark:4202",
+                "source_url": null
+              }
+            ],
+            "sample_size": 3,
+            "scope": "sector",
+            "unavailable_reason": null,
+            "window_label": "current"
+          }
+        },
+        "definition_vi": "Số phiên mà lịch giao dịch có nhưng dữ liệu giá bị thiếu. Chỉ số này tồn tại để không nhầm lẫn giữa \"không ai giao dịch\" và \"chúng tôi không có dữ liệu\".",
+        "display": "0.0 phiên",
+        "label_vi": "Số phiên thiếu dữ liệu (3 tháng)",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "missing_bar_sessions_3m @ as_of",
+            "ref": "metric_value:18",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "session",
+        "value": "0.000000"
+      },
+      {
+        "available": true,
+        "code": "sessions_to_exit",
+        "comparison": {
+          "own_history": [
+            {
+              "available": true,
+              "display_median": "0.1 phiên",
+              "display_range": "0.0 phiên – 0.1 phiên",
+              "label_vi": "Khoảng 1 năm của chính mã này",
+              "max_value": "0.100000",
+              "median": "0.100000",
+              "members": [],
+              "min_value": "0.000000",
+              "p25": "0.000000",
+              "p75": "0.100000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "sessions_to_exit · ticker_history/1y · n=5",
+                  "ref": "metric_benchmark:4497",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 5,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "1y"
+            },
+            {
+              "available": true,
+              "display_median": "0.0 phiên",
+              "display_range": "0.0 phiên – 0.1 phiên",
+              "label_vi": "Khoảng 3 năm của chính mã này",
+              "max_value": "0.100000",
+              "median": "0.000000",
+              "members": [],
+              "min_value": "0.000000",
+              "p25": "0.000000",
+              "p75": "0.100000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "sessions_to_exit · ticker_history/3y · n=12",
+                  "ref": "metric_benchmark:4335",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 12,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "3y"
+            }
+          ],
+          "position_vs_own_range": "near_high",
+          "position_vs_own_range_label_vi": "Gần mức cao nhất của khoảng",
+          "position_vs_sector": "unknown",
+          "position_vs_sector_label_vi": "không công bố",
+          "sector": {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Trung vị nhóm ngành",
+            "max_value": null,
+            "median": null,
+            "members": [
+              "ANV",
+              "VHC"
+            ],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 2,
+            "scope": "sector",
+            "unavailable_reason": "Số mã trong nhóm ngành chưa đủ để tính trung vị",
+            "window_label": "current"
+          }
+        },
+        "definition_vi": "Ước tính số phiên giao dịch cần thiết để bán hết một vị thế, với giả định bạn không chiếm quá một tỷ lệ nhất định của giá trị giao dịch mỗi phiên (tỷ lệ này luôn được ghi rõ kèm kết quả). Đây là thước đo RỦI RO, không phải tín hiệu mua bán.",
+        "display": "0.1 phiên",
+        "label_vi": "Số phiên cần để thoát vị thế",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "sessions_to_exit @ as_of",
+            "ref": "metric_value:22",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "session",
+        "value": "0.100000"
+      },
+      {
+        "available": true,
+        "code": "zero_trade_sessions_3m",
+        "comparison": {
+          "own_history": [
+            {
+              "available": true,
+              "display_median": "0.0 phiên",
+              "display_range": "0.0 phiên – 0.0 phiên",
+              "label_vi": "Khoảng 1 năm của chính mã này",
+              "max_value": "0.000000",
+              "median": "0.000000",
+              "members": [],
+              "min_value": "0.000000",
+              "p25": "0.000000",
+              "p75": "0.000000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "zero_trade_sessions_3m · ticker_history/1y · n=5",
+                  "ref": "metric_benchmark:4500",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 5,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "1y"
+            },
+            {
+              "available": true,
+              "display_median": "0.0 phiên",
+              "display_range": "0.0 phiên – 0.0 phiên",
+              "label_vi": "Khoảng 3 năm của chính mã này",
+              "max_value": "0.000000",
+              "median": "0.000000",
+              "members": [],
+              "min_value": "0.000000",
+              "p25": "0.000000",
+              "p75": "0.000000",
+              "provenance": [
+                {
+                  "kind": "benchmark",
+                  "label": "zero_trade_sessions_3m · ticker_history/3y · n=12",
+                  "ref": "metric_benchmark:4338",
+                  "source_url": null
+                }
+              ],
+              "sample_size": 12,
+              "scope": "ticker_history",
+              "unavailable_reason": null,
+              "window_label": "3y"
+            }
+          ],
+          "position_vs_own_range": "mid_range",
+          "position_vs_own_range_label_vi": "Ở giữa khoảng",
+          "position_vs_sector": "in_line",
+          "position_vs_sector_label_vi": "Tương đương nhóm ngành",
+          "sector": {
+            "available": true,
+            "display_median": "0.0 phiên",
+            "display_range": "0.0 phiên – 50.0 phiên",
+            "label_vi": "Trung vị nhóm ngành",
+            "max_value": "50.000000",
+            "median": "0.000000",
+            "members": [
+              "AGM",
+              "ANV",
+              "VHC"
+            ],
+            "min_value": "0.000000",
+            "p25": "0.000000",
+            "p75": "25.000000",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "zero_trade_sessions_3m · sector/current · n=3",
+                "ref": "metric_benchmark:4212",
+                "source_url": null
+              }
+            ],
+            "sample_size": 3,
+            "scope": "sector",
+            "unavailable_reason": null,
+            "window_label": "current"
+          }
+        },
+        "definition_vi": "Số phiên mà thị trường mở nhưng không có một cổ phiếu nào được khớp. Phân biệt rõ với phiên thiếu dữ liệu: đây là phiên có thật và không ai giao dịch.",
+        "display": "0.0 phiên",
+        "label_vi": "Số phiên không có giao dịch (3 tháng)",
+        "provenance": [
+          {
+            "kind": "metric",
+            "label": "zero_trade_sessions_3m @ as_of",
+            "ref": "metric_value:16",
+            "source_url": null
+          }
+        ],
+        "unavailable_reason": null,
+        "unit": "session",
+        "value": "0.000000"
+      }
+    ],
+    "framing_note_vi": "Các chỉ số dưới đây đo RỦI RO THOÁT VỊ THẾ - mức độ khó khăn khi cần bán ra. Đây không phải tín hiệu mua hoặc bán, và không dự báo giá.",
+    "participation_rate": "0.20"
+  },
+  "news": [],
+  "other_metrics": [
+    {
+      "available": false,
+      "code": "ev_ebitda",
+      "comparison": {
+        "own_history": [
+          {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Khoảng 1 năm của chính mã này",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "ticker_history",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "1y"
+          },
+          {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Khoảng 3 năm của chính mã này",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "ticker_history",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "3y"
+          }
+        ],
+        "position_vs_own_range": "unknown",
+        "position_vs_own_range_label_vi": "không công bố",
+        "position_vs_sector": "unknown",
+        "position_vs_sector_label_vi": "không công bố",
+        "sector": {
+          "available": false,
+          "display_median": "không công bố",
+          "display_range": "không công bố",
+          "label_vi": "Trung vị nhóm ngành",
+          "max_value": null,
+          "median": null,
+          "members": [],
+          "min_value": null,
+          "p25": null,
+          "p75": null,
+          "provenance": [],
+          "sample_size": 0,
+          "scope": "sector",
+          "unavailable_reason": "Chưa có dữ liệu so sánh",
+          "window_label": "current"
+        }
+      },
+      "definition_vi": "Giá trị toàn doanh nghiệp (gồm cả nợ) so với lợi nhuận trước lãi vay, thuế và khấu hao. Hữu ích khi so sánh các doanh nghiệp có mức nợ khác nhau.",
+      "display": "không công bố",
+      "label_vi": "EV/EBITDA",
+      "provenance": [],
+      "unavailable_reason": "missing_facts:ebitda,short_term_debt,long_term_debt,cash_and_equivalents",
+      "unit": "x",
+      "value": null
+    },
+    {
+      "available": false,
+      "code": "net_debt_ebitda",
+      "comparison": {
+        "own_history": [
+          {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Khoảng 1 năm của chính mã này",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "ticker_history",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "1y"
+          },
+          {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Khoảng 3 năm của chính mã này",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "ticker_history",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "3y"
+          }
+        ],
+        "position_vs_own_range": "unknown",
+        "position_vs_own_range_label_vi": "không công bố",
+        "position_vs_sector": "unknown",
+        "position_vs_sector_label_vi": "không công bố",
+        "sector": {
+          "available": false,
+          "display_median": "không công bố",
+          "display_range": "không công bố",
+          "label_vi": "Trung vị nhóm ngành",
+          "max_value": null,
+          "median": null,
+          "members": [],
+          "min_value": null,
+          "p25": null,
+          "p75": null,
+          "provenance": [],
+          "sample_size": 0,
+          "scope": "sector",
+          "unavailable_reason": "Chưa có dữ liệu so sánh",
+          "window_label": "current"
+        }
+      },
+      "definition_vi": "Số năm lợi nhuận cần có để trả hết nợ ròng. Càng cao thì doanh nghiệp càng ít chịu được một năm kinh doanh xấu.",
+      "display": "không công bố",
+      "label_vi": "Nợ ròng / EBITDA",
+      "provenance": [],
+      "unavailable_reason": "missing_facts:short_term_debt,long_term_debt,cash_and_equivalents,ebitda",
+      "unit": "x",
+      "value": null
+    },
+    {
+      "available": false,
+      "code": "roe",
+      "comparison": {
+        "own_history": [
+          {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Khoảng 1 năm của chính mã này",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "ticker_history",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "1y"
+          },
+          {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Khoảng 3 năm của chính mã này",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "ticker_history",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "3y"
+          }
+        ],
+        "position_vs_own_range": "unknown",
+        "position_vs_own_range_label_vi": "không công bố",
+        "position_vs_sector": "unknown",
+        "position_vs_sector_label_vi": "không công bố",
+        "sector": {
+          "available": false,
+          "display_median": "không công bố",
+          "display_range": "không công bố",
+          "label_vi": "Trung vị nhóm ngành",
+          "max_value": null,
+          "median": null,
+          "members": [],
+          "min_value": null,
+          "p25": null,
+          "p75": null,
+          "provenance": [],
+          "sample_size": 0,
+          "scope": "sector",
+          "unavailable_reason": "Chưa có dữ liệu so sánh",
+          "window_label": "current"
+        }
+      },
+      "definition_vi": "Lợi nhuận tạo ra trên mỗi đồng vốn chủ sở hữu.",
+      "display": "không công bố",
+      "label_vi": "ROE",
+      "provenance": [],
+      "unavailable_reason": "missing_facts:net_profit_after_tax,total_equity",
+      "unit": "pct",
+      "value": null
+    },
+    {
+      "available": false,
+      "code": "shares_cagr_3y",
+      "comparison": {
+        "own_history": [
+          {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Khoảng 1 năm của chính mã này",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "ticker_history",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "1y"
+          },
+          {
+            "available": false,
+            "display_median": "không công bố",
+            "display_range": "không công bố",
+            "label_vi": "Khoảng 3 năm của chính mã này",
+            "max_value": null,
+            "median": null,
+            "members": [],
+            "min_value": null,
+            "p25": null,
+            "p75": null,
+            "provenance": [],
+            "sample_size": 0,
+            "scope": "ticker_history",
+            "unavailable_reason": "Chưa có dữ liệu so sánh",
+            "window_label": "3y"
+          }
+        ],
+        "position_vs_own_range": "unknown",
+        "position_vs_own_range_label_vi": "không công bố",
+        "position_vs_sector": "unknown",
+        "position_vs_sector_label_vi": "không công bố",
+        "sector": {
+          "available": false,
+          "display_median": "không công bố",
+          "display_range": "không công bố",
+          "label_vi": "Trung vị nhóm ngành",
+          "max_value": null,
+          "median": null,
+          "members": [],
+          "min_value": null,
+          "p25": null,
+          "p75": null,
+          "provenance": [],
+          "sample_size": 0,
+          "scope": "sector",
+          "unavailable_reason": "Chưa có dữ liệu so sánh",
+          "window_label": "current"
+        }
+      },
+      "definition_vi": "Tốc độ tăng số lượng cổ phiếu đang lưu hành. Tăng nhanh nghĩa là phần sở hữu của cổ đông hiện hữu bị pha loãng — cần đối chiếu xem tiền thu được đã dùng vào việc gì.",
+      "display": "không công bố",
+      "label_vi": "Tăng trưởng số lượng cổ phiếu (3 năm)",
+      "provenance": [],
+      "unavailable_reason": "missing_facts:shares_outstanding",
+      "unit": "pct",
+      "value": null
+    },
+    {
+      "available": true,
+      "code": "close_price",
+      "comparison": {
+        "own_history": [
+          {
+            "available": true,
+            "display_median": "21,250 đ",
+            "display_range": "15,550 đ – 25,700 đ",
+            "label_vi": "Khoảng 1 năm của chính mã này",
+            "max_value": "25700.000000",
+            "median": "21250.000000",
+            "members": [],
+            "min_value": "15550.000000",
+            "p25": "15900.000000",
+            "p75": "23550.000000",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "close_price · ticker_history/1y · n=5",
+                "ref": "metric_benchmark:4486",
+                "source_url": null
+              }
+            ],
+            "sample_size": 5,
+            "scope": "ticker_history",
+            "unavailable_reason": null,
+            "window_label": "1y"
+          },
+          {
+            "available": true,
+            "display_median": "17,870 đ",
+            "display_range": "15,380 đ – 27,930 đ",
+            "label_vi": "Khoảng 3 năm của chính mã này",
+            "max_value": "27930.000000",
+            "median": "17870.000000",
+            "members": [],
+            "min_value": "15380.000000",
+            "p25": "15918.750000",
+            "p75": "21825.000000",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "close_price · ticker_history/3y · n=12",
+                "ref": "metric_benchmark:4324",
+                "source_url": null
+              }
+            ],
+            "sample_size": 12,
+            "scope": "ticker_history",
+            "unavailable_reason": null,
+            "window_label": "3y"
+          }
+        ],
+        "position_vs_own_range": "near_low",
+        "position_vs_own_range_label_vi": "Gần mức thấp nhất của khoảng",
+        "position_vs_sector": "in_line",
+        "position_vs_sector_label_vi": "Tương đương nhóm ngành",
+        "sector": {
+          "available": true,
+          "display_median": "15,900 đ",
+          "display_range": "2,100 đ – 49,900 đ",
+          "label_vi": "Trung vị nhóm ngành",
+          "max_value": "49900.000000",
+          "median": "15900.000000",
+          "members": [
+            "AGM",
+            "ANV",
+            "VHC"
+          ],
+          "min_value": "2100.000000",
+          "p25": "9000.000000",
+          "p75": "32900.000000",
+          "provenance": [
+            {
+              "kind": "benchmark",
+              "label": "close_price · sector/current · n=3",
+              "ref": "metric_benchmark:4198",
+              "source_url": null
+            }
+          ],
+          "sample_size": 3,
+          "scope": "sector",
+          "unavailable_reason": null,
+          "window_label": "current"
+        }
+      },
+      "definition_vi": "Giá khớp lệnh cuối cùng của phiên giao dịch gần nhất.",
+      "display": "15,900 đ",
+      "label_vi": "Giá đóng cửa",
+      "provenance": [
+        {
+          "kind": "metric",
+          "label": "close_price @ as_of",
+          "ref": "metric_value:12",
+          "source_url": null
+        }
+      ],
+      "unavailable_reason": null,
+      "unit": "VND",
+      "value": "15900.000000"
+    },
+    {
+      "available": true,
+      "code": "pct_from_52w_high",
+      "comparison": {
+        "own_history": [
+          {
+            "available": true,
+            "display_median": "-34.18%",
+            "display_range": "-51.84% – -20.40%",
+            "label_vi": "Khoảng 1 năm của chính mã này",
+            "max_value": "-0.204000",
+            "median": "-0.341800",
+            "members": [],
+            "min_value": "-0.518400",
+            "p25": "-0.507500",
+            "p75": "-0.270600",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "pct_from_52w_high · ticker_history/1y · n=5",
+                "ref": "metric_benchmark:4492",
+                "source_url": null
+              }
+            ],
+            "sample_size": 5,
+            "scope": "ticker_history",
+            "unavailable_reason": null,
+            "window_label": "1y"
+          },
+          {
+            "available": true,
+            "display_median": "-18.88%",
+            "display_range": "-51.84% – 0.00%",
+            "label_vi": "Khoảng 3 năm của chính mã này",
+            "max_value": "0.000000",
+            "median": "-0.188750",
+            "members": [],
+            "min_value": "-0.518400",
+            "p25": "-0.288400",
+            "p75": "-0.096425",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "pct_from_52w_high · ticker_history/3y · n=12",
+                "ref": "metric_benchmark:4330",
+                "source_url": null
+              }
+            ],
+            "sample_size": 12,
+            "scope": "ticker_history",
+            "unavailable_reason": null,
+            "window_label": "3y"
+          }
+        ],
+        "position_vs_own_range": "near_low",
+        "position_vs_own_range_label_vi": "Gần mức thấp nhất của khoảng",
+        "position_vs_sector": "below",
+        "position_vs_sector_label_vi": "Thấp hơn nhóm ngành",
+        "sector": {
+          "available": true,
+          "display_median": "-47.50%",
+          "display_range": "-50.75% – -27.89%",
+          "label_vi": "Trung vị nhóm ngành",
+          "max_value": "-0.278900",
+          "median": "-0.475000",
+          "members": [
+            "AGM",
+            "ANV",
+            "VHC"
+          ],
+          "min_value": "-0.507500",
+          "p25": "-0.491250",
+          "p75": "-0.376950",
+          "provenance": [
+            {
+              "kind": "benchmark",
+              "label": "pct_from_52w_high · sector/current · n=3",
+              "ref": "metric_benchmark:4204",
+              "source_url": null
+            }
+          ],
+          "sample_size": 3,
+          "scope": "sector",
+          "unavailable_reason": null,
+          "window_label": "current"
+        }
+      },
+      "definition_vi": "Giá hiện tại thấp hơn đỉnh 52 tuần bao nhiêu phần trăm.",
+      "display": "-50.75%",
+      "label_vi": "Cách đỉnh 52 tuần",
+      "provenance": [
+        {
+          "kind": "metric",
+          "label": "pct_from_52w_high @ as_of",
+          "ref": "metric_value:20",
+          "source_url": null
+        }
+      ],
+      "unavailable_reason": null,
+      "unit": "pct",
+      "value": "-0.507500"
+    },
+    {
+      "available": true,
+      "code": "price_range_52w_pct",
+      "comparison": {
+        "own_history": [
+          {
+            "available": true,
+            "display_median": "111.02%",
+            "display_range": "76.92% – 168.96%",
+            "label_vi": "Khoảng 1 năm của chính mã này",
+            "max_value": "1.689600",
+            "median": "1.110200",
+            "members": [],
+            "min_value": "0.769200",
+            "p25": "1.110200",
+            "p75": "1.689600",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "price_range_52w_pct · ticker_history/1y · n=5",
+                "ref": "metric_benchmark:4494",
+                "source_url": null
+              }
+            ],
+            "sample_size": 5,
+            "scope": "ticker_history",
+            "unavailable_reason": null,
+            "window_label": "1y"
+          },
+          {
+            "available": true,
+            "display_median": "73.74%",
+            "display_range": "50.64% – 168.96%",
+            "label_vi": "Khoảng 3 năm của chính mã này",
+            "max_value": "1.689600",
+            "median": "0.737450",
+            "members": [],
+            "min_value": "0.506400",
+            "p25": "0.586300",
+            "p75": "1.171400",
+            "provenance": [
+              {
+                "kind": "benchmark",
+                "label": "price_range_52w_pct · ticker_history/3y · n=12",
+                "ref": "metric_benchmark:4332",
+                "source_url": null
+              }
+            ],
+            "sample_size": 12,
+            "scope": "ticker_history",
+            "unavailable_reason": null,
+            "window_label": "3y"
+          }
+        ],
+        "position_vs_own_range": "mid_range",
+        "position_vs_own_range_label_vi": "Ở giữa khoảng",
+        "position_vs_sector": "in_line",
+        "position_vs_sector_label_vi": "Tương đương nhóm ngành",
+        "sector": {
+          "available": true,
+          "display_median": "111.02%",
+          "display_range": "43.42% – 122.22%",
+          "label_vi": "Trung vị nhóm ngành",
+          "max_value": "1.222200",
+          "median": "1.110200",
+          "members": [
+            "AGM",
+            "ANV",
+            "VHC"
+          ],
+          "min_value": "0.434200",
+          "p25": "0.772200",
+          "p75": "1.166200",
+          "provenance": [
+            {
+              "kind": "benchmark",
+              "label": "price_range_52w_pct · sector/current · n=3",
+              "ref": "metric_benchmark:4206",
+              "source_url": null
+            }
+          ],
+          "sample_size": 3,
+          "scope": "sector",
+          "unavailable_reason": null,
+          "window_label": "current"
+        }
+      },
+      "definition_vi": "Khoảng cách giữa giá cao nhất và thấp nhất trong 52 tuần, tính theo phần trăm so với giá thấp nhất. Biên độ rất rộng ở một cổ phiếu thanh khoản mỏng thường phản ánh việc thiếu người giao dịch hơn là thay đổi giá trị doanh nghiệp.",
+      "display": "111.02%",
+      "label_vi": "Biên độ giá 52 tuần",
+      "provenance": [
+        {
+          "kind": "metric",
+          "label": "price_range_52w_pct @ as_of",
+          "ref": "metric_value:19",
+          "source_url": null
+        }
+      ],
+      "unavailable_reason": null,
+      "unit": "pct",
+      "value": "1.110200"
+    }
+  ],
+  "recent_events": [],
+  "schema_version": "factsheet/v1",
+  "ticker": {
+    "coverage": "shallow",
+    "exchange": "HOSE",
+    "listing_date": null,
+    "par_value_vnd": "10000.0000",
+    "shares_outstanding": null,
+    "status": "listed",
+    "symbol": "ANV"
+  },
+  "what_would_have_to_be_true": []
+}

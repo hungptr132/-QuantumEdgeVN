@@ -281,3 +281,30 @@ class TestPersistence:
         run_id = start_run(session, PipelineStage.CALC, "t")
         with pytest.raises(LookupError, match="no active flag rules"):
             evaluate_flags(session, run_id, AS_OF, symbols=["TST"])
+
+
+class TestEvidenceLabelsAreExactAndLegible:
+    """The evidence block is the audit trail, so a label must carry the value actually
+    compared — never a rounded one. But `numeric(24,6)` scale is not precision."""
+
+    def test_column_scale_is_stripped_without_changing_the_number(self) -> None:
+        from quantumedge.calc.rule_engine import _exact
+
+        assert _exact(Decimal("40435850.000000")) == "40,435,850"
+        assert _exact(Decimal("6215976000.000000")) == "6,215,976,000"
+        assert _exact(Decimal("0.000000")) == "0"
+
+    def test_real_precision_is_kept(self) -> None:
+        from quantumedge.calc.rule_engine import _exact
+
+        assert _exact(Decimal("0.0158")) == "0.0158"
+        assert _exact(Decimal("-0.4324")) == "-0.4324"
+        assert _exact(Decimal("0.25")) == "0.25"
+
+    def test_large_values_never_render_in_exponent_form(self) -> None:
+        """Decimal.normalize() turns 40435850.000000 into 4.043585E+7, which is less
+        readable than the trailing zeros it removed, not more."""
+        from quantumedge.calc.rule_engine import _exact
+
+        for raw in ("1000000000", "40435850.000000", "6215976000.000000"):
+            assert "E" not in _exact(Decimal(raw))

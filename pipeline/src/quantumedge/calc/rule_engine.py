@@ -119,11 +119,28 @@ def _metric_threshold(ctx: RuleContext, rule: dict[str, Any], expr: dict[str, An
             {
                 "kind": "metric",
                 "ref": f"metric_value:{metric['id']}",
-                "label": f"{code} = {value} ({op} {threshold})",
+                "label": f"{code} = {_exact(value)} ({op} {_exact(threshold)})",
                 "source_url": None,
             }
         ],
     )
+
+
+def _exact(value: Any) -> str:
+    """A figure for the evidence trail: exact, with thousands separators.
+
+    The evidence block is the audit trail, so the value must be the one actually compared
+    - never a rounded display. But `numeric(24,6)` renders 40435850 as "40435850.000000",
+    and those trailing zeros are column scale rather than measured precision. Stripping
+    them and grouping the digits changes nothing about the number and makes it legible.
+    """
+    d = Decimal(str(value))
+    if d == d.to_integral_value():
+        return f"{int(d):,}"
+    # normalize() alone would render 40435850.000000 as 4.043585E+7 - worse than the
+    # trailing zeros it removes. Formatting with "f" first forces plain notation, so the
+    # zeros go and the magnitude stays readable.
+    return f"{Decimal(format(d.normalize(), 'f')):,f}"
 
 
 def _metric_vs_benchmark(
@@ -199,14 +216,15 @@ def _metric_vs_benchmark(
             {
                 "kind": "metric",
                 "ref": f"metric_value:{metric['id']}",
-                "label": f"{code} = {value}",
+                "label": f"{code} = {_exact(value)}",
                 "source_url": None,
             },
             {
                 "kind": "benchmark",
                 "ref": f"metric_benchmark:{bench['id']}",
                 "label": (
-                    f"sector median {bench['median']} x{multiple} (n={bench['sample_size']})"
+                    f"sector median {_exact(bench['median'])} x{_exact(multiple)} "
+                    f"(n={bench['sample_size']})"
                 ),
                 "source_url": None,
             },

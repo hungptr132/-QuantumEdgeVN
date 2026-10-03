@@ -27,6 +27,7 @@ from quantumedge.factsheet.schema import (
     Lineage,
     LiquidityBlock,
     Provenance,
+    StateChange,
     TickerRef,
 )
 from quantumedge.runs import git_commit
@@ -211,6 +212,49 @@ def build_fact_sheet(session: Session, symbol: str, as_of: date, calc_run_id: in
     )
 
 
+def _flag_history(session: Session, ticker_id: int, as_of: date) -> dict[str, list[dict[str, Any]]]:
+    """Recorded transitions per flag, oldest first, at or before `as_of`.
+
+    A flag active for two years and one that turned active last quarter are different
+    situations, and a snapshot cannot tell them apart. This is what `flag_state_change`
+    was built for.
+    """
+    rows = session.execute(
+        text(
+            """
+            SELECT flag_code, changed_on, from_state, to_state
+            FROM flag_state_change
+            WHERE ticker_id = :t AND changed_on <= CAST(:d AS date)
+            ORDER BY flag_code, changed_on
+            """
+        ),
+        {"t": ticker_id, "d": as_of},
+    ).mappings()
+
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        grouped.setdefault(row["flag_code"], []).append(dict(row))
+    return grouped
+
+
+def _active_since(changes: list[dict[str, Any]], state: str) -> date | None:
+    """When the current run of `state` began, or None if it was never recorded starting.
+
+    Deliberately returns None rather than the first observation date when no transition
+    into the current state exists. A flag that was already active when coverage began has
+    an unknown start, and dating it to the first day we happened to look would invent a
+    fact - precisely the kind of plausible-looking wrong number this pipeline exists to
+    avoid.
+    """
+    for change in reversed(changes):
+        if change["to_state"] == state:
+            changed_on = change["changed_on"]
+            assert isinstance(changed_on, date)
+            return changed_on
+        return None
+    return None
+
+
 def _flags(session: Session, ticker_id: int, as_of: date) -> list[FlagItem]:
     rows = session.execute(
         text(
@@ -227,8 +271,12 @@ def _flags(session: Session, ticker_id: int, as_of: date) -> list[FlagItem]:
         {"t": ticker_id, "d": as_of},
     ).mappings()
 
+    history = _flag_history(session, ticker_id, as_of)
+
     items = []
     for r in rows:
+        changes = history.get(r["flag_code"], [])
+        since = _active_since(changes, r["state"])
         expr = r["rule_expr"] or {}
         summary = (
             f"{expr.get('metric', expr.get('event_type', expr.get('absent', '?')))} "
@@ -255,6 +303,23 @@ def _flags(session: Session, ticker_id: int, as_of: date) -> list[FlagItem]:
                     for e in (r["evidence"] or [])
                 ],
                 reason=r["reason"],
+                active_since=since,
+                active_since_label_vi=(
+                    f"Ở trạng thái này từ {since.isoformat()}" if since else None
+                ),
+                history=[
+                    StateChange(
+                        changed_on=c["changed_on"],
+                        from_state=c["from_state"],
+                        to_state=c["to_state"],
+                        label_vi=(
+                            f"{c['changed_on'].isoformat()}: "
+                            f"{STATE_LABEL_VI[c['from_state']]} → "
+                            f"{STATE_LABEL_VI[c['to_state']]}"
+                        ),
+                    )
+                    for c in changes
+                ],
             )
         )
     return items

@@ -73,11 +73,18 @@ export type ExplanationVi = string;
 export type RuleSummary = string;
 export type Evidence = Provenance1[];
 export type Reason = string | null;
+export type ActiveSince = string | null;
+export type ActiveSinceLabelVi = string | null;
+export type ChangedOn = string;
+export type FromState = "active" | "inactive" | "unknown";
+export type ToState = "active" | "inactive" | "unknown";
+export type LabelVi2 = string;
+export type History = StateChange[];
 export type Flags = FlagItem[];
 export type RecentEvents = Provenance1[];
 export type News = Provenance1[];
 export type Field = string;
-export type LabelVi2 = string;
+export type LabelVi3 = string;
 export type Reason1 = string;
 export type Display1 = string;
 export type DisclosureGaps = DisclosureGap[];
@@ -212,9 +219,21 @@ export interface FlagItem {
   triggered_values?: TriggeredValues;
   evidence?: Evidence;
   reason?: Reason;
+  active_since?: ActiveSince;
+  active_since_label_vi?: ActiveSinceLabelVi;
+  history?: History;
 }
 export interface TriggeredValues {
   [k: string]: string;
+}
+/**
+ * One recorded transition of a flag.
+ */
+export interface StateChange {
+  changed_on: ChangedOn;
+  from_state: FromState;
+  to_state: ToState;
+  label_vi: LabelVi2;
 }
 /**
  * Something a complete page would show and this one cannot.
@@ -224,7 +243,7 @@ export interface TriggeredValues {
  */
 export interface DisclosureGap {
   field: Field;
-  label_vi: LabelVi2;
+  label_vi: LabelVi3;
   reason: Reason1;
   display?: Display1;
 }

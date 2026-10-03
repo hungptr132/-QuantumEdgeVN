@@ -176,6 +176,30 @@ export function FlagList({ flags }: { flags: FlagItem[] }) {
               </div>
             ) : null}
 
+            {/* How long this has been true. A flag active for two years and one that
+                turned active last quarter are different situations, and a snapshot cannot
+                tell them apart. Absent when no transition into the current state was ever
+                recorded - a flag already set when coverage began has an unknown start, and
+                dating it to the first day we looked would invent a fact. */}
+            {flag.active_since_label_vi ? (
+              <p className="mt-2 text-xs text-slate-600">{flag.active_since_label_vi}</p>
+            ) : null}
+
+            {(flag.history ?? []).length > 0 ? (
+              <details className="mt-2">
+                <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-800">
+                  Lịch sử trạng thái ({(flag.history ?? []).length})
+                </summary>
+                <ul className="mt-1 space-y-0.5 border-l border-slate-200 pl-3">
+                  {(flag.history ?? []).map((h, i) => (
+                    <li key={i} className="font-mono text-xs text-slate-500">
+                      {h.label_vi}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+
             {/* A flag we cannot assess says why. It is never presented as a clean result. */}
             {flag.state === "unknown" && flag.reason ? (
               <p className="mt-2 font-mono text-xs text-amber-700">{flag.reason}</p>
