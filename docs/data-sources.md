@@ -156,6 +156,39 @@ Three ways forward, in order of preference:
 The search endpoint being open while the finance endpoint is gated is itself informative:
 the exchange exposes identity publicly and statements only to its own front end.
 
+### A second route to statements, also needing observation
+
+The bundle's own config names its media categories, and two of them are the filed
+documents this project actually wants — more than it wants the JSON endpoint above:
+
+| Key | Value | Meaning |
+|---|---|---|
+| `RELATED_MEDIA_TYPE_BCTC` | `5` | *Báo cáo tài chính* — **financial statements** |
+| `RELATED_MEDIA_TYPE_BCTN` | `6` | *Báo cáo thường niên* — annual report |
+| `RELATED_MEDIA_TYPE_BCB` | `4` | *Bản cáo bạch* — prospectus |
+
+This is the M9–M11 path as planned: ingest the filed attachment, store the bytes
+immutably, extract from XLSX in preference to PDF. It beats the finance JSON endpoint on
+authority, since it is the document the company actually filed.
+
+`GET {m}/mediafiles/{a}/{b}?pageIndex&pageSize&year` returns **404 in both argument
+orders** (`5/2518` and `2518/5`, year 2025). `BCTC` appears only once in the bundle — in
+the env config, never read — so the page that uses it is in a chunk this bundle does not
+contain, and the argument meanings cannot be settled by reading it.
+
+Stopped here on purpose. Both remaining unknowns — this route's arguments and whether the
+`type` header gates the finance endpoint — are answered by the same ten minutes of watching
+a real browser load one company's statements page. Firing more speculative requests at the
+exchange to triangulate them would be slower, less reliable, and rude.
+
+### Also unexplored, and cheap
+
+`/danh-sach-vi-pham-cktv` sits beside the disclosure-violations list: **insider-trading
+violations**. For a product whose `event` enum already contains `insider_sale`, a list the
+exchange itself publishes of who breached reporting duties is a stronger source than
+anything inferable from prices. Both lists are news categories under `parentId: 54`, so
+they come through `{n}/news/newstype/{id}/{type}` rather than the gated finance base.
+
 ## Standing rules
 
 - **Copyright:** store headline + link + publisher + timestamp only. Never article bodies. Enforced structurally — `news_item` has no body column.
