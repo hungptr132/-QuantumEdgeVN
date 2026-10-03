@@ -133,36 +133,64 @@ def _median_turnover(window: list[Session_]) -> Decimal:
     return (values[mid - 1] + values[mid]) / Decimal(2)
 
 
+# A quoted price does not vanish because one session printed no bar. Look back far enough
+# to find the last real trade, and record how stale it is so the page can say so.
+MAX_PRICE_LOOKBACK = 20
+
+
+def _latest_traded(ctx: MetricContext) -> tuple[Session_, int] | None:
+    """Most recent session that actually has a bar, plus how many sessions back it was.
+
+    Using a one-session window here was a real bug: POM has nine sessions in three years
+    with no bar, and on any of those dates close_price reported
+    "no_price_bar_at_or_before_as_of" - which was false, since bars existed on both sides.
+    Worse, price_to_par went unavailable with it, which degraded price_below_par_value from
+    active to unknown. A missing bar was suppressing a genuine risk flag.
+    """
+    window = _window(ctx, MAX_PRICE_LOOKBACK)
+    for offset, session in enumerate(window):
+        if not session.bar_missing:
+            return session, offset
+    return None
+
+
 # ───────────────────────── price ─────────────────────────
 
 
 @metric("close_price")
 def close_price(ctx: MetricContext) -> MetricResult:
-    window = _window(ctx, 1)
-    traded = _traded(window)
-    if not traded:
-        raise MissingInput("no_price_bar_at_or_before_as_of")
-    latest = traded[0]
+    found = _latest_traded(ctx)
+    if found is None:
+        raise MissingInput(f"no_price_bar_within_{MAX_PRICE_LOOKBACK}_sessions")
+    latest, stale = found
     return MetricResult(
         value=latest.close,
-        inputs={"trade_date": str(latest.trade_date), "close_vnd": str(latest.close)},
+        inputs={
+            "trade_date": str(latest.trade_date),
+            "close_vnd": str(latest.close),
+            # How far back the quote came from. Zero means the as_of session itself.
+            "sessions_stale": stale,
+        },
     )
 
 
 @metric("price_to_par")
 def price_to_par(ctx: MetricContext) -> MetricResult:
-    traded = _traded(_window(ctx, 1))
-    if not traded or traded[0].close is None:
-        raise MissingInput("no_price_bar_at_or_before_as_of")
+    found = _latest_traded(ctx)
+    if found is None:
+        raise MissingInput(f"no_price_bar_within_{MAX_PRICE_LOOKBACK}_sessions")
+    latest, stale = found
+    if latest.close is None:
+        raise MissingInput(f"no_price_bar_within_{MAX_PRICE_LOOKBACK}_sessions")
     if ctx.par_value_vnd == 0:
         raise MissingInput("par_value_is_zero")
-    close = traded[0].close
     return MetricResult(
-        value=(close / ctx.par_value_vnd).quantize(Decimal("0.0001")),
+        value=(latest.close / ctx.par_value_vnd).quantize(Decimal("0.0001")),
         inputs={
-            "close_vnd": str(close),
+            "close_vnd": str(latest.close),
             "par_value_vnd": str(ctx.par_value_vnd),
-            "trade_date": str(traded[0].trade_date),
+            "trade_date": str(latest.trade_date),
+            "sessions_stale": stale,
         },
     )
 

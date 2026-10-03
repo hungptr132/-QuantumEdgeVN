@@ -195,6 +195,60 @@ class TestMedianBasisForExitEstimate:
         assert "RỦI RO" in result.inputs["framing"]
 
 
+class TestPriceLooksBackPastMissingBars:
+    """Regression for a real bug found in live data.
+
+    close_price used a one-session window, so on any session where a ticker printed no bar
+    it reported "no_price_bar_at_or_before_as_of" - which was false, since bars existed on
+    both sides. POM has nine such sessions in three years. price_to_par went unavailable
+    with it, which degraded price_below_par_value from active to unknown: a missing bar was
+    suppressing a genuine risk flag, which is the wrong direction for this product to fail.
+    """
+
+    def test_a_missing_bar_on_the_as_of_session_does_not_blank_the_price(
+        self, session: Session, ctx: MetricContext
+    ) -> None:
+        # Bars exist, but not on the as_of session itself (the last entry is newest).
+        volumes: list[int | None] = [1000] * 19 + [None]
+        _build_window(session, ctx.ticker_id, volumes, close=Decimal(2100))
+
+        result = liquidity.close_price(ctx)
+        assert result.value == Decimal("2100.00")
+        # And it says how stale the quote is rather than passing it off as current.
+        assert result.inputs["sessions_stale"] == 1
+
+    def test_price_to_par_survives_too_so_the_flag_still_fires(
+        self, session: Session, ctx: MetricContext
+    ) -> None:
+        volumes: list[int | None] = [1000] * 19 + [None]
+        _build_window(session, ctx.ticker_id, volumes, close=Decimal(2100))
+
+        result = liquidity.price_to_par(ctx)
+        # 2,100 against a 10,000 par value - the flag's input is intact.
+        assert result.value == Decimal("0.2100")
+        assert result.inputs["sessions_stale"] == 1
+
+    def test_a_run_of_missing_bars_is_still_found_within_the_lookback(
+        self, session: Session, ctx: MetricContext
+    ) -> None:
+        volumes: list[int | None] = [1000] * 12 + [None] * 8
+        _build_window(session, ctx.ticker_id, volumes, close=Decimal(3300))
+        result = liquidity.close_price(ctx)
+        assert result.value == Decimal("3300.00")
+        assert result.inputs["sessions_stale"] == 8
+
+    def test_beyond_the_lookback_it_honestly_reports_nothing(
+        self, session: Session, ctx: MetricContext
+    ) -> None:
+        """The lookback is bounded. A quote from further back than MAX_PRICE_LOOKBACK is
+        too stale to present as this ticker's price, so it is withheld with a reason naming
+        the window rather than a vague blank."""
+        volumes: list[int | None] = [None] * liquidity.MAX_PRICE_LOOKBACK
+        _build_window(session, ctx.ticker_id, volumes)
+        with pytest.raises(MissingInput, match="no_price_bar_within_"):
+            liquidity.close_price(ctx)
+
+
 class TestPriceMetrics:
     def test_price_to_par_detects_sub_par_trading(
         self, session: Session, ctx: MetricContext
