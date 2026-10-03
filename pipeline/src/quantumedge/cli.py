@@ -308,6 +308,120 @@ def ingest_prices(
             )
 
 
+@ingest_app.command("hose-ids")
+def ingest_hose_ids(
+    tickers: str = typer.Option("", help="Comma-separated symbols. Default: all covered."),
+) -> None:
+    """Resolve each symbol to HOSE's internal security id.
+
+    Every other HOSE endpoint - statements, disclosures, attachments - is keyed by that
+    numeric id rather than the ticker, so this is the join key the rest of the exchange
+    needs. Safe to re-run: unchanged content is skipped.
+    """
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.ingest import hose  # noqa: PLC0415
+    from quantumedge.ingest.base import StoreResult, store_raw  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    with session_scope() as session:
+        if tickers:
+            symbols = [s.strip().upper() for s in tickers.split(",") if s.strip()]
+        else:
+            symbols = list(
+                session.execute(
+                    sql("SELECT symbol FROM ticker WHERE is_covered ORDER BY symbol")
+                ).scalars()
+            )
+        if not symbols:
+            console.print("[yellow]no covered tickers - run: qe db seed[/yellow]")
+            raise typer.Exit(code=1)
+
+        limit = (
+            session.execute(
+                sql("SELECT rate_limit_per_min FROM source WHERE code = :c"),
+                {"c": hose.SOURCE_CODE},
+            ).scalar_one_or_none()
+            or 20
+        )
+
+        with run_scope(
+            session,
+            PipelineStage.INGEST,
+            "hose_identities",
+            source_code=hose.SOURCE_CODE,
+            params={"symbols": symbols},
+        ) as (run_id, stats):
+            fetched = hose.fetch_identities(symbols, rate_limit_per_min=int(limit))
+            result = StoreResult()
+            unresolved: list[str] = []
+            for f in fetched:
+                if f.payload is None:
+                    unresolved.append(f.symbol)
+                    continue
+                store_raw(session, run_id, [f.payload], result=result)
+            stats.update(result.as_stats())
+            stats["symbols"] = len(symbols)
+            if unresolved:
+                stats["unresolved"] = unresolved
+
+            table = Table("symbol", "HOSE id", title="qe ingest hose-ids")
+            for f in fetched:
+                table.add_row(
+                    f.symbol,
+                    str(f.security_id) if f.security_id else f"[yellow]{f.note}[/yellow]",
+                )
+            console.print(table)
+            console.print(
+                f"new [green]{result.inserted}[/green] · unchanged [dim]{result.unchanged}[/dim]"
+            )
+
+
+@extract_app.command("identifiers")
+def extract_identifiers_cmd(
+    tickers: str = typer.Option("", help="Comma-separated symbols. Default: all stored."),
+) -> None:
+    """Stored HOSE identity documents → security_identifier, with provenance per field."""
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.extract.identifiers import extract_identifiers  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    symbols = [s.strip().upper() for s in tickers.split(",") if s.strip()] or None
+
+    with session_scope() as session:
+        with run_scope(
+            session,
+            PipelineStage.EXTRACT,
+            "identifiers",
+            params={"symbols": symbols or "all"},
+        ) as (run_id, stats):
+            result = extract_identifiers(session, run_id, symbols=symbols)
+            stats.update(result.as_stats())
+
+        rows = session.execute(
+            sql(
+                "SELECT t.symbol, si.scheme, si.value FROM security_identifier si "
+                "JOIN ticker t ON t.id = si.ticker_id ORDER BY t.symbol, si.scheme"
+            )
+        ).mappings()
+
+        table = Table("symbol", "scheme", "value", title="qe extract identifiers")
+        for r in rows:
+            table.add_row(r["symbol"], r["scheme"], r["value"])
+        console.print(table)
+        console.print(
+            f"rows [green]{result.rows_written}[/green] from "
+            f"[dim]{result.documents_read}[/dim] documents"
+        )
+        for note in result.notes[:10]:
+            console.print(f"  [yellow]{note}[/yellow]")
+
+
 @extract_app.command("prices")
 def extract_prices_cmd(
     tickers: str = typer.Option("", help="Comma-separated symbols. Default: every stored one."),

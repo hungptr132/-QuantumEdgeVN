@@ -88,6 +88,17 @@ sources:
       hsx.vn/robots.txt is "User-agent: * / Disallow:" - an empty Disallow, i.e. full
       crawl permission explicitly granted. Site is a client-side SPA; backend endpoints
       must be discovered by observing real traffic (milestone M8), never guessed.
+  - code: hose_search
+    kind: market_data
+    name: HOSE public securities search (symbol -> internal id)
+    base_url: https://api.hsx.vn/q/api/v1/search
+    rate_limit_per_min: 20
+    robots_note: >-
+      The endpoint the hsx.vn search box itself calls when a visitor types a ticker.
+      Path and parameters were read from the bundle the site serves to every visitor,
+      not guessed. Verified resolving all 9 covered tickers on 2026-10-03, each
+      returning the exchange's internal numeric id plus ISIN and FIGI. This is the join
+      key every other HOSE endpoint requires.
 
 # The reviewer whose name goes on every published page. The stamp is the product, so this
 # must be a real person with a real foreign key, not a free-text string.

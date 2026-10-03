@@ -62,33 +62,99 @@ GET {m}/mediafiles/{type}/{id}?pageIndex&pageSize&year
 GET {s}/secorgs/{id}
 ```
 
-### What is NOT yet resolved
+### Resolved on 2026-10-03
 
-`{id}` is a numeric internal security id, not the ticker symbol. Verified: the finance
-endpoint returns `{"data":[],"success":true}` for `AGM`, `VHC`, and for deliberate nonsense
-alike — it accepts any path segment and returns an empty set, so a symbol is not a valid id
-and probing cannot distinguish a wrong id from an empty period. The news and mediafiles
-endpoints 404 on guessed numeric ids.
+**1. `{id}` — the internal security id. SOLVED, and in the pipeline.**
 
-The `time=01{period}` encoding is produced by a minified helper that could not be recovered
-by reading the bundle.
+The site's own search box calls `GET {q}/api/v1/search`, and the bundle gives its exact
+parameters:
 
-**Deliberately stopped here rather than brute-forcing.** Resolving the id space and the period
-encoding needs observation of real traffic — load a company's financial-statement page in a
-browser and read the requests it actually issues. That is one bounded session of work, and it
-is what the M8 plan anticipated. Firing dozens of speculative requests at someone else's API
-to reverse-engineer it is not a reasonable substitute.
+```
+GET https://api.hsx.vn/q/api/v1/search
+    ?indexName=securities
+    &field=code^2,isin,figi,introduction
+    &query=AGM&page=1&pageSize=20
+```
 
-### Also found, worth keeping
+Unauthenticated, HTTP 200, and it returns the id directly — along with the ISIN and FIGI:
 
-`/danh-sach-vi-pham-cbtt` — HOSE publishes a list of companies **violating disclosure
-obligations**. That is a governance signal of exactly the kind this product exists to
-surface, and a far more direct source for the `no_audited_annual_statement_18m` flag than
-inferring absence ourselves. Worth pursuing alongside statement extraction.
+```json
+{"total":1,"items":[{"id":2518,"code":"AGM","isin":"VN000000AGM6",
+                     "figi":"BBG003NWY9K8","securitiesTypeId":1}]}
+```
 
-The bundle also ships Elasticsearch basic-auth credentials (`internet_user`/`internet_user`)
-for its public search box. They are shipped to every visitor and are not secret, but they
-belong to a search cluster rather than a JSON API, so they are noted and not used.
+All nine covered tickers resolved on 2026-10-03, every one `securitiesTypeId: 1`:
+
+| | | | | | | | | |
+|---|---|---|---|---|---|---|---|---|
+| SMC 2136 | NKG 2332 | POM 2410 | HAX 2196 | CTF 2474 | TMT 2366 | ANV 2233 | VHC 2259 | AGM 2518 |
+
+Implemented as `ingest/hose.py` → `extract/identifiers.py` → `security_identifier`, with
+each identifier naming the JSON field it came from. `qe ingest hose-ids` then
+`qe extract identifiers`.
+
+**The match is required to be exact** (`item.code == symbol`), never the top-ranked hit.
+The query runs full-text over four fields including `introduction`, so it returns companies
+whose description merely mentions the ticker. Binding a symbol to the wrong id would make
+every statement fetched afterwards the wrong company's — a wrong number with perfect
+provenance, which is the worst output this pipeline could produce. Tested both directions.
+
+**2. `time=01{period}` — the period encoding. SOLVED by reading the minified helper.**
+
+`nr(n)` is `moment().subtract(n, "years").year()` — it returns a **four-digit year**, not an
+index. So `time` is a six-character string: a two-digit statement selector followed by a
+fiscal year.
+
+```
+GET {l}/securities/finance/{id}?time={NN}{YYYY}      e.g. time=012025
+```
+
+The page issues **four** parallel calls, `time=01…04` for one year — so there are four
+statement types, not the three previously recorded. When the year selector is `9999`
+("all"), it instead issues `time=00{year}` for the last four years, i.e. prefix `00` is a
+different period mode.
+
+### What remains, and why it stopped here
+
+The finance endpoint still answers `{"data":[],"success":true}` — with a verified id
+(2518) and a correct year (`time=012025`, `012024`, `022025`, `002025`, `012026` all tried).
+So neither of the two things previously blamed was the blocker.
+
+The bundle shows why. Its axios defaults carry a **`type` header**:
+
+```js
+An = {type:"HJ2HNS3SKICV4FNE", "Content-Type":"application/json", ...}
+```
+
+It is a request header, not a query parameter — which is why every probe so far has been
+anonymous to the API. The endpoint does not answer 401 or 403 to a caller it does not
+accept; **it answers HTTP 200 with an empty data set.** That behaviour is worth recording
+on its own, because it means an empty result can never be read as "this company published
+nothing". Any module here must treat it as *unknown*.
+
+**Sending that header was not attempted.** The token ships to every visitor and is not
+secret, but replaying an application's own access token to make an API treat this pipeline
+as its first-party web client is a different act from reading a public endpoint, and it is
+a judgment call that belongs to the project owner rather than to a tooling decision made
+mid-session. The sandbox classifier independently refused the request as credential replay,
+which is the correct instinct.
+
+Three ways forward, in order of preference:
+
+1. **Observe real traffic.** Load a company's financial-statement page in a browser and
+   read the requests it issues. This confirms whether the `type` header is actually the
+   gate, what the four statement selectors mean, and the response shape — the bounded
+   session the M8 plan always anticipated. Needs the owner's browser.
+2. **`/danh-sach-vi-pham-cbtt`** — HOSE's list of companies **violating disclosure
+   obligations**. A governance signal of precisely the kind this product exists to surface,
+   and a far better source for `no_audited_annual_statement_18m` than inferring absence.
+   Independent of the statements question; may well be served without the same gate.
+3. **Hand-seeded fundamentals** for the nine tickers, which is already the recorded kill
+   criterion if extraction stalls. It unblocks M12–M13 and the six data-gated metrics
+   immediately, at the cost of not scaling past the seed set.
+
+The search endpoint being open while the finance endpoint is gated is itself informative:
+the exchange exposes identity publicly and statements only to its own front end.
 
 ## Standing rules
 

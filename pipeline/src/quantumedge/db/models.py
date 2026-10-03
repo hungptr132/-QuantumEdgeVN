@@ -465,6 +465,37 @@ class MarketCalendar(Base):
     source: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class SecurityIdentifier(Base):
+    """A ticker's identifiers under external schemes, one row per scheme.
+
+    Long format rather than columns on `ticker`, for the same reason `financial_fact` is
+    long: a new scheme is a new row, not a migration. It also keeps provenance per
+    identifier — a HOSE internal id and an ISIN come from the same document today, but
+    they will not always, and an identifier used as a join key for fetching statements
+    needs to name where it came from as much as any figure does.
+    """
+
+    __tablename__ = "security_identifier"
+    __table_args__ = (
+        UniqueConstraint("ticker_id", "scheme", name="security_identifier_unique"),
+        CheckConstraint("value <> ''", name="security_identifier_value_nonempty"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    ticker_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("ticker.id"), nullable=False)
+    # Free text rather than an enum: schemes accumulate (hnx_security_id, upcom_*), and a
+    # closed type would make each addition a migration for no gain in safety.
+    scheme: Mapped[str] = mapped_column(Text, nullable=False)
+    value: Mapped[str] = mapped_column(Text, nullable=False)
+    source_raw_document_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("raw_document.id"), nullable=False
+    )
+    source_field_path: Mapped[str] = mapped_column(Text, nullable=False)
+    extract_run_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("ingest_run.id"), nullable=False
+    )
+
+
 class PriceBar(Base):
     __tablename__ = "price_bar"
 

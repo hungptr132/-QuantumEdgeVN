@@ -21,7 +21,7 @@ directory. Never add a module that spans two stages.
 | Stage | Directory | May read | May write |
 |---|---|---|---|
 | Ingest | `ingest/` | external sources | `raw_document`, `filing`, `ingest_run` |
-| Extract | `extract/` | `raw_document` only | `price_bar`, `financial_*`, `market_calendar`, `news_item` |
+| Extract | `extract/` | `raw_document` only | `price_bar`, `financial_*`, `market_calendar`, `news_item`, `security_identifier` |
 | Calc | `calc/` | extracted tables | `metric_value`, `metric_benchmark`, `flag_*`, `calc_runs` |
 | Fact sheet | `factsheet/` | calc output | `fact_sheet` |
 | Review | `review/` | `fact_sheet` | `fact_sheet.status`, `fact_sheet_review_log` |

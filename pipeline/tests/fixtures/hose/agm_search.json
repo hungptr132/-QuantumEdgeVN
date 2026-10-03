@@ -1,0 +1,17 @@
+{
+  "total": 1,
+  "page": 1,
+  "pageSize": 20,
+  "totalPages": 1,
+  "items": [
+    {
+      "id": 2518,
+      "version": null,
+      "figi": "BBG003NWY9K8",
+      "code": "AGM",
+      "isin": "VN000000AGM6",
+      "timestamp": "0001-01-01T00:00:00+00:00",
+      "securitiesTypeId": 1
+    }
+  ]
+}
