@@ -1,7 +1,8 @@
 # QuantumEdge — working conventions
 
-Read `docs/ARCHITECTURE.md` to find *where* a change belongs. This file states *how*
-changes are made. Both exist so a fix is a lookup, not an investigation.
+Read `docs/ARCHITECTURE.md` to find *where* a change belongs, and `docs/ROADMAP.md` for
+what is built, what is blocked, and on what. This file states *how* changes are made.
+They exist so a fix is a lookup, not an investigation.
 
 ## The one rule everything else serves
 
