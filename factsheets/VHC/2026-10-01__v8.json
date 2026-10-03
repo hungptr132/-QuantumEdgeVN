@@ -889,8 +889,7 @@
     "data_sources": [
       "hose_search",
       "vndirect_dchart"
-    ],
-    "rule_spec_version": "1243aa7c745f9868613dfcf51034a6ce5f56d4a9bb2f4c89abab3c5a966d4c58"
+    ]
   },
   "liquidity": {
     "exit_estimates": [

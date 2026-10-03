@@ -403,3 +403,60 @@ class TestStaleness:
         stale_sheet = sheet.model_copy(update={"as_of_date": far_future})
         report = validate(session, stale_sheet, "TST")
         assert "price_is_fresh" in report.as_dict()["failed"]
+
+
+class TestRuleVersionIsProvenanceNotContent:
+    """A threshold change must not rewrite every page.
+
+    `rule_spec_version` lives in its own `fact_sheet` column, so excluding it from the
+    content hash loses nothing. Including it meant a rule affecting three companies
+    created new drafts for all nine, discarding nine review stamps - and made the
+    committed-snapshot diff useless for seeing what actually moved.
+    """
+
+    def test_two_sheets_differing_only_in_rule_version_hash_the_same(self) -> None:
+        from quantumedge.factsheet.store import hash_of
+
+        base = {
+            "ticker": {"symbol": "TST"},
+            "headline_metrics": [{"code": "pe", "value": "1.5"}],
+            "lineage": {
+                "rule_spec_version": "aaa",
+                "calc_run_id": 1,
+                "git_commit": "deadbeef",
+                "code_version": "0.1.0",
+                "as_of_date": "2026-06-30",
+            },
+            "generated_at": "2026-06-30T00:00:00Z",
+        }
+        other = {
+            **base,
+            "lineage": {**base["lineage"], "rule_spec_version": "bbb"},
+            "generated_at": "2026-07-01T12:00:00Z",
+        }
+
+        assert hash_of(base) == hash_of(other)
+
+    def test_a_changed_figure_still_changes_the_hash(self) -> None:
+        """The exclusion must not be so broad that real movement stops registering."""
+        from quantumedge.factsheet.store import hash_of
+
+        base = {
+            "ticker": {"symbol": "TST"},
+            "headline_metrics": [{"code": "pe", "value": "1.5"}],
+            "lineage": {"rule_spec_version": "aaa"},
+        }
+        moved = {
+            **base,
+            "headline_metrics": [{"code": "pe", "value": "1.6"}],
+        }
+
+        assert hash_of(base) != hash_of(moved)
+
+    def test_a_changed_flag_state_changes_the_hash(self) -> None:
+        from quantumedge.factsheet.store import hash_of
+
+        base = {"flags": [{"code": "f", "state": "inactive"}], "lineage": {}}
+        fired = {"flags": [{"code": "f", "state": "active"}], "lineage": {}}
+
+        assert hash_of(base) != hash_of(fired)

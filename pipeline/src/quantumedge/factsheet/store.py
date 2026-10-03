@@ -46,7 +46,18 @@ def payload_of(sheet: FactSheet) -> dict[str, Any]:
 # the content hash. Including any of them makes every rebuild look like a data change, which
 # silently defeats hash gating and destroys a review stamp on every run.
 VOLATILE_TOP_LEVEL = ("generated_at",)
-VOLATILE_LINEAGE = ("git_commit", "calc_run_id", "code_version")
+# Run metadata, excluded from the content hash. `rule_spec_version` belongs here for a
+# less obvious reason than the rest: it is *provenance*, not content.
+#
+# It is already stored in `fact_sheet.rule_spec_version`, a column of its own, so nothing
+# is lost by keeping it out of the hash. Leaving it in meant that editing one threshold
+# changed the payload of every ticker - so a rule affecting three companies created nine
+# new drafts, discarded nine review stamps, and made `git diff factsheets/` useless for
+# seeing what actually moved. At eighty tickers that is not a diff anyone reads.
+#
+# A sheet whose figures, flags and gaps are identical says the same thing regardless of
+# which rules file version computed it. It stays the same version, and keeps its stamp.
+VOLATILE_LINEAGE = ("git_commit", "calc_run_id", "code_version", "rule_spec_version")
 
 
 def hash_of(payload: dict[str, Any]) -> str:

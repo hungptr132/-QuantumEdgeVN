@@ -293,8 +293,7 @@
     "as_of_date": "2026-10-01",
     "data_sources": [
       "vndirect_dchart"
-    ],
-    "rule_spec_version": "ea52c09c098b1d81866e10f01e6661f7068974c01d0f80d7b04a4fc645acc475"
+    ]
   },
   "liquidity": {
     "exit_estimates": [
