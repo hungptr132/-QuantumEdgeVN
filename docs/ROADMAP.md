@@ -16,12 +16,14 @@ Updated 2026-10-04. `docs/DECISIONS.md` says *why* for each choice below;
 | M6 | Flags, fact sheet, review gate | 10 machine QA checks; publishing without a human stamp raises `IntegrityError` |
 | M7 | Next.js read slice | `next build` prerenders only the published ticker; a draft URL is a build-time 404 |
 | M8 | HOSE identity | All 9 tickers → internal id + ISIN + FIGI, via the exchange's own public search. **Statements still gated** — see below |
-| M12 | Fundamentals + benchmarks | 6 statement metrics implemented and data-gated; 4,536 benchmarks across sector and own-history scopes |
+| M12 | Fundamentals + benchmarks | 6 statement metrics implemented and data-gated; benchmarks across sector and own-history scopes |
+| — | Risk metrics from price data | `turnover_concentration_3m` (AGM 52,21% vs CTF 6,69%), `max_drawdown_52w`, `sessions_since_52w_high`. All Vietnamese-formatted |
 | M13 | Reproducibility | Rebuild with no change: 0 of 90 snapshots written, empty `git diff`. A threshold change moves only the threshold text and the flag that flipped |
 
-Current state of the nine covered tickers: **17 active flags** carrying evidence,
-**54 `unknown`** each naming what it waits for, **41 datable flag transitions** across
-2024-03 to 2026-10, and **16 disclosure gaps** stated rather than left blank.
+Current state of the nine covered tickers: **19 active flags** carrying evidence,
+**54 `unknown`** each naming what it waits for, datable flag transitions across 2024-03
+to 2026-10, and 16 disclosure gaps stated rather than left blank. Each page leads with
+**7 headline metrics**, 5 of them available without any statement data.
 
 ## The one real blocker
 
@@ -44,6 +46,16 @@ Three ways past it, and the first needs a decision rather than code:
    the recorded kill-criterion fallback. Unblocks everything immediately; does not scale.
 
 ## Not started, in dependency order
+
+### Breadth to HNX / UPCOM is blocked on a name source
+
+Probed and ruled out 2026-10-04: VNDirect dchart serves HNX and UPCOM prices fine (TNG,
+CEO, BSR, VGT all return real bars), but there is **no authoritative source for those
+companies' legal Vietnamese names** — `api.hsx.vn`'s `secorgs` and `securities` endpoints
+both 404, and its search covers HOSE only. Seeding them would mean typing real companies'
+legal names from memory, and a wrong legal name on a page naming a real company is the
+failure this product exists to prevent. Needs an HNX/UPCOM reference source, or names
+entered by a person from filings.
 
 | Work | Blocked on | Note |
 |---|---|---|
