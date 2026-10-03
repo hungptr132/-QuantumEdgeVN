@@ -66,7 +66,7 @@ entered by a person from filings.
 | Agent 1 — events | an LLM, which Phase 1 excludes | Its `event` table exists and is queried today; rows can be hand-seeded with `extraction_method='manual'` |
 | Agent 2 — expression | Agent 1 | Its validator already exists and is tested: `allowed_numbers` + `factsheet/qa.py` |
 | Agents 3–4 | Agent 2 | See `pipeline/src/quantumedge/agents/` for each contract |
-| HNX / UPCOM coverage | nothing structural | `exchange` is per-ticker and every query filters `is_covered`; adding a name is a row in `coverage.yaml` |
+| HNX / UPCOM coverage | a legal-name source (above) | Nothing *structural* blocks it: `exchange` is per-ticker, every query filters `is_covered`, and the calendar is already derived per exchange. Note the calendar rule (a date is a trading day if any covered ticker traded) weakens with few tickers, so seed enough per exchange before trusting it |
 
 ## Standing constraints
 
