@@ -12,11 +12,28 @@ fact_codes:
     statement: income
     definition_vi: Doanh thu bán hàng và cung cấp dịch vụ sau khi trừ các khoản giảm trừ.
 
+  - code: cost_of_goods_sold
+    label_vi: Giá vốn hàng bán
+    label_en: Cost of goods sold
+    unit: VND
+    statement: income
+    definition_vi: >-
+      Chi phí trực tiếp để tạo ra hàng hóa hoặc dịch vụ đã bán trong kỳ.
+
   - code: gross_profit
     label_vi: Lợi nhuận gộp
     unit: VND
     statement: income
     definition_vi: Doanh thu thuần trừ giá vốn hàng bán.
+
+  - code: operating_profit
+    label_vi: Lợi nhuận thuần từ hoạt động kinh doanh
+    label_en: Operating profit
+    unit: VND
+    statement: income
+    definition_vi: >-
+      Lợi nhuận từ hoạt động kinh doanh chính, sau chi phí bán hàng và quản lý, trước
+      các khoản thu nhập và chi phí khác.
 
   - code: ebit
     label_vi: Lợi nhuận trước lãi vay và thuế
@@ -69,6 +86,14 @@ fact_codes:
     statement: balance
     definition_vi: Tổng giá trị tài sản doanh nghiệp đang nắm giữ.
 
+  - code: total_liabilities
+    label_vi: Nợ phải trả
+    label_en: Total liabilities
+    unit: VND
+    statement: balance
+    definition_vi: >-
+      Tổng các khoản doanh nghiệp phải trả, gồm cả nợ ngắn hạn và nợ dài hạn.
+
   - code: total_equity
     label_vi: Vốn chủ sở hữu
     unit: VND
@@ -77,6 +102,16 @@ fact_codes:
       Phần tài sản thuộc về cổ đông sau khi trừ toàn bộ nợ. Nên so sánh với vốn điều lệ:
       nếu vốn điều lệ chiếm gần như toàn bộ vốn chủ sở hữu, doanh nghiệp hầu như chưa
       tích lũy được lợi nhuận nào từ khi thành lập.
+
+  - code: total_liabilities_and_equity
+    label_vi: Tổng cộng nguồn vốn
+    label_en: Total liabilities and equity
+    unit: VND
+    statement: balance
+    definition_vi: >-
+      Tổng nguồn vốn, bằng nợ phải trả cộng vốn chủ sở hữu. Theo nguyên tắc kế toán,
+      con số này phải bằng tổng cộng tài sản - đây là phép kiểm tra để xác nhận báo cáo
+      đã được đọc đúng.
 
   - code: charter_capital
     label_vi: Vốn điều lệ

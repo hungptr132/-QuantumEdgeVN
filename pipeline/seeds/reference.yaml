@@ -99,6 +99,17 @@ sources:
       not guessed. Verified resolving all 9 covered tickers on 2026-10-03, each
       returning the exchange's internal numeric id plus ISIN and FIGI. This is the join
       key every other HOSE endpoint requires.
+  - code: company_filing
+    kind: manual
+    name: Company filings placed in pipeline/data/filings
+    base_url: null
+    rate_limit_per_min: 60
+    robots_note: >-
+      Not fetched. Files are downloaded by a person from the company's IR page or HOSE and
+      placed on disk, then hashed and stored immutably. This is the most authoritative
+      fundamentals input available - the company's own filed statement rather than a third
+      party's rendering - and it needs no API, so it is unaffected by HOSE's statements
+      endpoint being gated.
 
 # The reviewer whose name goes on every published page. The stamp is the product, so this
 # must be a real person with a real foreign key, not a free-text string.

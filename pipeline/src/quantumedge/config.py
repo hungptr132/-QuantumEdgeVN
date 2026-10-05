@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     data_dir: Path = Field(default=REPO_ROOT / "pipeline" / "data")
     rules_dir: Path = Field(default=REPO_ROOT / "pipeline" / "rules")
     seeds_dir: Path = Field(default=REPO_ROOT / "pipeline" / "seeds")
+    # Where a person drops downloaded filings, and where their bytes are archived
+    # under their hash. Both inside data_dir, which is gitignored: filings are
+    # someone else's documents and can be large.
+    filings_dir: Path = Field(default=REPO_ROOT / "pipeline" / "data" / "filings")
+    filing_store_dir: Path = Field(default=REPO_ROOT / "pipeline" / "data" / "filing_store")
     factsheets_dir: Path = Field(default=REPO_ROOT / "factsheets")
     contracts_dir: Path = Field(default=REPO_ROOT / "contracts")
 

@@ -40,6 +40,7 @@ dev = [
     "ruff>=0.8",
     "mypy>=1.13",
     "types-PyYAML>=6.0",
+    "types-openpyxl>=3.1",
 ]
 
 [project.scripts]
@@ -66,6 +67,14 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.12"
 strict = true
 warn_return_any = true
+
+# pdfplumber ships no type information and has no stub package. The alternative to
+# this override is an inline `type: ignore` at each import, which hides the same
+# untypedness in more places. openpyxl is NOT listed here - types-openpyxl exists and
+# is a dev dependency, so spreadsheet reading is genuinely checked.
+[[tool.mypy.overrides]]
+module = ["pdfplumber", "pdfplumber.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

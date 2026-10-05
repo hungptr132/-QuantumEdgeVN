@@ -469,6 +469,146 @@ def ingest_hose_ids(
             )
 
 
+@ingest_app.command("filings")
+def ingest_filings(
+    tickers: str = typer.Option("", help="Comma-separated symbols. Default: every folder."),
+) -> None:
+    """Store filings placed in pipeline/data/filings/<SYMBOL>/ as immutable documents.
+
+    Nothing is fetched. A person downloads the company's own statements from its IR page
+    or HOSE and drops them in; this hashes the bytes, archives them under their hash, and
+    records them. Parsing happens later, against captured bytes, so a parser fix is a
+    re-run rather than a re-download.
+
+    Filenames must say which period they cover: <year>-<period>-<description>, where the
+    period is Y, H1, H2 or Q1..Q4. Guessing it from the contents would mean parsing before
+    storing, and from the file date would attach real figures to the wrong year.
+    """
+    from quantumedge.config import load_settings  # noqa: PLC0415
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.ingest import filings as filings_source  # noqa: PLC0415
+    from quantumedge.ingest.base import StoreResult, store_raw  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    settings = load_settings()
+    symbols = [s.strip().upper() for s in tickers.split(",") if s.strip()] or None
+
+    if not settings.filings_dir.exists():
+        settings.filings_dir.mkdir(parents=True, exist_ok=True)
+        console.print(f"[yellow]created {settings.filings_dir}[/yellow]")
+        console.print("Place filings in a folder per ticker, named <year>-<period>-<desc>:")
+        console.print("  pipeline/data/filings/AGM/2024-Y-bao-cao-tai-chinh-kiem-toan.xlsx")
+        console.print(
+            "[dim]Prefer XLSX over PDF - a spreadsheet carries figures as numbers, "
+            "a PDF carries a picture of them.[/dim]"
+        )
+        raise typer.Exit(code=0)
+
+    outcome = filings_source.scan(settings.filings_dir, symbols=symbols)
+
+    if not outcome.found and not outcome.rejected:
+        console.print(f"[yellow]no filings under {settings.filings_dir}[/yellow]")
+        raise typer.Exit(code=0)
+
+    with session_scope() as session, run_scope(
+        session,
+        PipelineStage.INGEST,
+        "company_filings",
+        source_code=filings_source.SOURCE_CODE,
+        params={"symbols": symbols or "all"},
+    ) as (run_id, stats):
+        result = StoreResult()
+        for found in outcome.found:
+            stored = filings_source.archive(found, settings.filing_store_dir)
+            found.stored_path = stored
+            payload = filings_source.to_payload(found, stored)
+            store_raw(session, run_id, [payload], result=result)
+        stats.update(result.as_stats())
+        stats.update(outcome.as_stats())
+
+    table = Table("symbol", "period", "file", "size", title="qe ingest filings")
+    for found in outcome.found:
+        table.add_row(
+            found.symbol,
+            found.parsed.period_key,
+            found.path.name,
+            f"{found.byte_size / 1024:,.0f} KB",
+        )
+    console.print(table)
+    console.print(f"new [green]{result.inserted}[/green] · unchanged [dim]{result.unchanged}[/dim]")
+    for rejected in outcome.rejected:
+        console.print(f"  [yellow]skipped[/yellow] {rejected}")
+
+
+@extract_app.command("statements")
+def extract_statements_cmd(
+    tickers: str = typer.Option("", help="Comma-separated symbols. Default: all stored."),
+) -> None:
+    """Parse stored filings into financial_period + financial_fact.
+
+    A statement whose own arithmetic does not hold is refused in full rather than written:
+    VAS prescribes that total assets equal total liabilities plus equity, so a parse that
+    took the wrong column breaks the identity and the figures cannot be trusted.
+    """
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.config import load_settings  # noqa: PLC0415
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.extract.mapping.vas import spec_for  # noqa: PLC0415
+    from quantumedge.extract.statements import extract_statements  # noqa: PLC0415
+    from quantumedge.runs import run_scope  # noqa: PLC0415
+
+    settings = load_settings()
+    spec = spec_for(settings.rules_dir)
+    symbols = [s.strip().upper() for s in tickers.split(",") if s.strip()] or None
+
+    with session_scope() as session:
+        with run_scope(
+            session,
+            PipelineStage.EXTRACT,
+            "statements",
+            params={"symbols": symbols or "all", "extractor": "vas-v1"},
+        ) as (run_id, stats):
+            outcome = extract_statements(session, run_id, spec, symbols=symbols)
+            stats.update(outcome.as_stats())
+
+        rows = session.execute(
+            sql(
+                "SELECT t.symbol, fp.fiscal_year, fp.period_type::text AS pt, "
+                "       count(*) AS facts "
+                "FROM financial_fact ff "
+                "JOIN financial_period fp ON fp.id = ff.financial_period_id "
+                "JOIN ticker t ON t.id = fp.ticker_id "
+                "GROUP BY t.symbol, fp.fiscal_year, fp.period_type "
+                "ORDER BY t.symbol, fp.fiscal_year DESC"
+            )
+        ).mappings()
+
+        table = Table("symbol", "period", "facts", title="qe extract statements")
+        for r in rows:
+            table.add_row(r["symbol"], f"{r['fiscal_year']} {r['pt']}", str(r["facts"]))
+        console.print(table)
+
+        console.print(
+            f"facts [green]{outcome.facts_written}[/green] · "
+            f"periods [green]{outcome.periods_written}[/green] · "
+            f"read [dim]{outcome.documents_read}[/dim] · skipped [yellow]{outcome.skipped}[/yellow]"
+        )
+        if outcome.assumed_lines_used:
+            console.print(
+                f"[yellow]{outcome.assumed_lines_used} facts came from UNVERIFIED "
+                "mappings[/yellow] "
+                "- confirm them against the filing and set status: verified in "
+                "rules/vas_lines.yaml"
+            )
+        for failure in outcome.identity_failures[:10]:
+            console.print(f"  [red]refused[/red] {failure}")
+        for note in outcome.notes[:10]:
+            console.print(f"  [dim]{note}[/dim]")
+
+
 @extract_app.command("identifiers")
 def extract_identifiers_cmd(
     tickers: str = typer.Option("", help="Comma-separated symbols. Default: all stored."),
@@ -1203,6 +1343,10 @@ def run_daily(
         steps.append(("ingest prices", ["ingest", "prices"]))
     steps += [
         ("extract prices + calendar", ["extract", "prices"]),
+        # Filings are local files, so these two cost nothing when the folder is empty and
+        # pick up anything newly dropped in without needing a separate command remembered.
+        ("ingest filings", ["ingest", "filings"]),
+        ("extract statements", ["extract", "statements"]),
         ("calc metrics", ["calc", "all"] + (["--as-of", as_of] if as_of else [])),
         ("calc flags", ["calc", "flags"] + (["--as-of", as_of] if as_of else [])),
         ("factsheet build", ["factsheet", "build"] + (["--as-of", as_of] if as_of else [])),

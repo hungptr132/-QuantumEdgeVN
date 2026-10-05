@@ -1,0 +1,137 @@
+# Vietnamese statement line items -> fact_code.
+#
+# Vietnamese financial statements follow forms prescribed by Circular 200/2014/TT-BTC:
+# B01-DN (balance sheet), B02-DN (income statement), B03-DN (cash flow). Each line carries
+# a "Mã số" — a numeric code fixed by the circular and therefore the same across every
+# company that files under VAS.
+#
+# THAT is the match key, not the label text. Labels vary in wording, abbreviation,
+# capitalisation and diacritics between companies and between a PDF and an XLSX of the same
+# filing; the code does not. Matching on prose would be the fuzzy matching this project
+# refuses.
+#
+# The label is still recorded, as a GUARD. Extraction requires the code to be found AND the
+# label to contain the expected keywords. If they disagree the line is refused with
+# `label_code_mismatch` rather than extracted — because the failure that matters here is not
+# a missing figure, it is `total_equity` quietly filled from a row that means something else.
+#
+# `status` says how much to trust each entry:
+#   verified   — confirmed against a real filing, named in `verified_against`
+#   assumed    — from the circular's structure but NOT yet seen in a real document
+#
+# An `assumed` line still extracts, because the label guard and the identity checks below
+# have to catch a wrong code; but `qe extract statements` reports how many assumed lines it
+# used, and they should be promoted to `verified` as filings arrive.
+
+spec_id: quantumedge.vas_lines
+
+# Self-checks from the circular's own arithmetic. A statement that fails these was parsed
+# wrongly — the document validates itself, which is far stronger than trusting the parser.
+# Tolerance is absolute VND: rounding in a published statement is to the dong, so anything
+# beyond a few dong is a parse error, not rounding.
+identities:
+  - name: balance_sheet_balances
+    description: TỔNG CỘNG TÀI SẢN must equal TỔNG CỘNG NGUỒN VỐN
+    left: [total_assets]
+    right: [total_liabilities_and_equity]
+    tolerance_vnd: 1000
+  - name: liabilities_plus_equity
+    description: NỢ PHẢI TRẢ + VỐN CHỦ SỞ HỮU must equal TỔNG CỘNG NGUỒN VỐN
+    left: [total_liabilities, total_equity]
+    right: [total_liabilities_and_equity]
+    tolerance_vnd: 1000
+  - name: gross_profit_definition
+    description: Doanh thu thuần − Giá vốn hàng bán = Lợi nhuận gộp
+    left: [revenue, _negative_cost_of_goods_sold]
+    right: [gross_profit]
+    tolerance_vnd: 1000
+
+lines:
+  # ---------- B02-DN, income statement ----------
+  - vas_code: "10"
+    fact_code: revenue
+    statement: income
+    label_keywords: ["doanh thu thuần"]
+    status: assumed
+  - vas_code: "11"
+    fact_code: cost_of_goods_sold
+    statement: income
+    label_keywords: ["giá vốn"]
+    status: assumed
+  - vas_code: "20"
+    fact_code: gross_profit
+    statement: income
+    label_keywords: ["lợi nhuận gộp"]
+    status: assumed
+  - vas_code: "23"
+    fact_code: interest_expense
+    statement: income
+    # Line 23 is the "trong đó: Chi phí lãi vay" sub-line of financial expenses (22).
+    # Taking 22 instead would overstate interest cover's denominator with FX losses and
+    # provisions, so the sub-line is the one that matters.
+    label_keywords: ["lãi vay"]
+    status: assumed
+  - vas_code: "30"
+    fact_code: operating_profit
+    statement: income
+    label_keywords: ["lợi nhuận thuần", "hoạt động kinh doanh"]
+    status: assumed
+  - vas_code: "50"
+    fact_code: profit_before_tax
+    statement: income
+    label_keywords: ["trước thuế"]
+    status: assumed
+  - vas_code: "60"
+    fact_code: net_profit_after_tax
+    statement: income
+    label_keywords: ["sau thuế"]
+    status: assumed
+
+  # ---------- B01-DN, balance sheet ----------
+  - vas_code: "110"
+    fact_code: cash_and_equivalents
+    statement: balance
+    label_keywords: ["tiền", "tương đương tiền"]
+    status: assumed
+  - vas_code: "270"
+    fact_code: total_assets
+    statement: balance
+    label_keywords: ["tổng cộng tài sản"]
+    status: assumed
+  - vas_code: "300"
+    fact_code: total_liabilities
+    statement: balance
+    label_keywords: ["nợ phải trả"]
+    status: assumed
+  - vas_code: "400"
+    fact_code: total_equity
+    statement: balance
+    label_keywords: ["vốn chủ sở hữu"]
+    status: assumed
+  - vas_code: "411"
+    fact_code: charter_capital
+    statement: balance
+    label_keywords: ["vốn góp", "chủ sở hữu"]
+    status: assumed
+  - vas_code: "440"
+    fact_code: total_liabilities_and_equity
+    statement: balance
+    label_keywords: ["tổng cộng nguồn vốn"]
+    status: assumed
+
+# Lines deliberately NOT mapped yet, and why. Recorded so the gap is a decision rather
+# than an oversight:
+#
+#   short_term_debt / long_term_debt — the circular numbers these differently across its
+#     revisions (320 vs 338 for the short-term borrowing line, depending on the form
+#     version), and getting them the wrong way round would invert net_debt_ebitda. They
+#     need confirming against a real filing before they are written down here. Until then
+#     net_debt_ebitda stays unavailable and names them, which is the honest state.
+#
+#   ebit / ebitda — derived, not filed. EBIT is operating_profit plus interest_expense;
+#     EBITDA adds depreciation from the cash flow statement (B03-DN) or the notes. They
+#     belong in calc/, computed from these facts, not mapped from a line.
+#
+#   shares_outstanding — on the cover page or in the notes rather than in the three
+#     statements, and often only as charter capital divided by par value. Needs its own
+#     extraction path.
