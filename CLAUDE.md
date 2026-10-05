@@ -4,6 +4,10 @@ Read `docs/ARCHITECTURE.md` to find *where* a change belongs, and `docs/ROADMAP.
 what is built, what is blocked, and on what. This file states *how* changes are made.
 They exist so a fix is a lookup, not an investigation.
 
+**Run `.\scriptsackup.ps1` at the end of a session.** The repo lives on a removable
+exFAT drive that has already disconnected once mid-session; `docs/BACKUP.md` says what is
+covered and how to recover what is not.
+
 ## The one rule everything else serves
 
 **Code computes. Models only ever express.** Every number is produced by deterministic

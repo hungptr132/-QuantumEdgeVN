@@ -48,3 +48,9 @@ desktop.ini
 #   pipeline/rules/*.yaml     flag/metric spec files
 #   pipeline/seeds/*.yaml     reference seed data
 #   pipeline/tests/fixtures/  recorded source payloads
+
+# Local backup targets (see docs/BACKUP.md). Listed so a stray copy inside the repo is
+# never committed - the real ones live on D:.
+/QuantumEdge-backup.git/
+/QuantumEdge-backup-db/
+*.dump
