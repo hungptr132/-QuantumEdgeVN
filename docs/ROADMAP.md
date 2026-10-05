@@ -18,6 +18,7 @@ Updated 2026-10-04. `docs/DECISIONS.md` says *why* for each choice below;
 | M8 | HOSE identity | All 9 tickers → internal id + ISIN + FIGI, via the exchange's own public search. **Statements still gated** — see below |
 | M12 | Fundamentals + benchmarks | 6 statement metrics implemented and data-gated; benchmarks across sector and own-history scopes |
 | — | Risk metrics from price data | `turnover_concentration_3m` (AGM 52,21% vs CTF 6,69%), `max_drawdown_52w`, `sessions_since_52w_high`. All Vietnamese-formatted |
+| M9–M11 | Statement extraction | VAS Mã số matching with a label guard; a statement failing its own balance identity is refused in full; 44 tests against a generated filing-shaped workbook. **Awaiting files** |
 | M13 | Reproducibility | Rebuild with no change: 0 of 90 snapshots written, empty `git diff`. A threshold change moves only the threshold text and the flag that flipped |
 
 Current state of the nine covered tickers: **19 active flags** carrying evidence,
@@ -25,25 +26,30 @@ Current state of the nine covered tickers: **19 active flags** carrying evidence
 to 2026-10, and 16 disclosure gaps stated rather than left blank. Each page leads with
 **7 headline metrics**, 5 of them available without any statement data.
 
-## The one real blocker
+## The remaining gap
 
-**No fundamentals source.** Six metrics — `pe`, `ev_ebitda`, `interest_coverage`,
-`net_debt_ebitda`, `roe`, `shares_cagr_3y` — and six flag rules are implemented and
-correct, but have no data. Each reports the exact line item it is waiting for.
+**No statements on disk yet.** The extraction path is built and tested (M9-M11); what it
+needs is files. Six metrics - `pe`, `ev_ebitda`, `interest_coverage`, `net_debt_ebitda`,
+`roe`, `shares_cagr_3y` - and six flag rules are implemented and correct, each naming the
+exact line item it waits for.
 
-Three ways past it, and the first needs a decision rather than code:
+**To unblock it:** download the nine companies' statements from their IR pages or HOSE,
+prefer XLSX over PDF, name them `<year>-<period>-<description>`, and drop them in
+`pipeline/data/filings/<SYMBOL>/`. Then `qe run`. That folder has a README with the
+details. Roughly twenty minutes of downloading.
 
-1. **Send HOSE's `type` header.** Found, documented, deliberately not sent: it would be
-   replaying the exchange's own front-end access token so the API treats this pipeline as
-   its web client. The project owner's call. If taken, the statements endpoint and the
-   `mediafiles` attachment route both likely open, and M9–M11 proceed as planned.
-2. **The disclosure-violation lists** (`/danh-sach-vi-pham-cbtt`, `/danh-sach-vi-pham-cktv`).
-   The exchange publishing who breached disclosure and insider-reporting duties is a
-   governance signal of exactly this product's kind, and a better source for
-   `no_audited_annual_statement_18m` than inferring absence. Routes through the news base,
-   independent of the gate above.
-3. **Hand-seeded fundamentals** for nine tickers, from filings read by a person. Already
-   the recorded kill-criterion fallback. Unblocks everything immediately; does not scale.
+Two refusals are deliberate, not bugs: a statement that fails the VAS balance identity is
+rejected in full, and a scanned PDF is reported unreadable rather than OCR'd.
+
+Every mapping in `rules/vas_lines.yaml` is `status: assumed` until someone checks a figure
+against a real filing, and each run prints how many facts came from unverified mappings.
+`short_term_debt` and `long_term_debt` are deliberately unmapped - the circular numbers
+them differently across revisions and inverting them would invert `net_debt_ebitda`.
+
+**Alternatives, if the folder route is unwanted:** sending HOSE's `type` header (the
+owner's call, since it replays the exchange's own front-end token), or the
+disclosure-violation lists, which need the same browser observation as the attachment
+route.
 
 ## Not started, in dependency order
 
@@ -59,7 +65,7 @@ entered by a person from filings.
 
 | Work | Blocked on | Note |
 |---|---|---|
-| M9–M11 statement ingest + extraction | the blocker above | Prefer XLSX over PDF; store bytes immutably so extraction is re-runnable |
+| Verifying the VAS mappings | one real filing | Promote `assumed` to `verified` in `rules/vas_lines.yaml`, and map the two debt lines |
 | Company descriptions (`description_vi`) | nothing | 9 rows, human-written by decision. Currently NULL and reported as a gap |
 | `quote_snapshot` capture | a scheduled in-session job | Until then `bid_ask_spread_pct` is honestly `no_intraday_snapshot` |
 | News/RSS (headlines only) | nothing | `news_item` has no body column by design |
@@ -67,6 +73,13 @@ entered by a person from filings.
 | Agent 2 — expression | Agent 1 | Its validator already exists and is tested: `allowed_numbers` + `factsheet/qa.py` |
 | Agents 3–4 | Agent 2 | See `pipeline/src/quantumedge/agents/` for each contract |
 | HNX / UPCOM coverage | a legal-name source (above) | Nothing *structural* blocks it: `exchange` is per-ticker, every query filters `is_covered`, and the calendar is already derived per exchange. Note the calendar rule (a date is a trading day if any covered ticker traded) weakens with few tickers, so seed enough per exchange before trusting it |
+
+## Backups
+
+`scriptsackup.ps1` mirrors git and dumps the database to `D:` (NTFS, internal), and
+verifies both. Run it at the end of a session. `docs/BACKUP.md` says what is not covered
+and how to recover it. This exists because `E:` disconnected mid-session on 2026-10-04
+while holding the only copy.
 
 ## Standing constraints
 
