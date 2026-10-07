@@ -56,6 +56,20 @@ FILENAME_PATTERN = re.compile(
 )
 
 PERIOD_TYPES = {"Y": "Y", "H1": "H", "H2": "H", "Q1": "Q", "Q2": "Q", "Q3": "Q", "Q4": "Q"}
+
+# For a half-year, `fiscal_quarter` records WHICH HALF (1 or 2) rather than a quarter.
+#
+# This is not cosmetic. `financial_period_unique` is
+# (ticker_id, period_type, fiscal_year, COALESCE(fiscal_quarter, 0)), so leaving it NULL
+# for both halves made 2024-H1 and 2024-H2 the same key: the second filing's INSERT hit
+# the conflict, the fallback SELECT returned the FIRST half's period, and the facts were
+# upserted over it - H1's figures silently replaced by H2's under a row dated 30 June.
+# A wrong figure with clean provenance, which is the one outcome this pipeline must not
+# produce. Found by code review, not by a test, which is why there is now a test.
+#
+# The column's CHECK allows 1-4, so 1 and 2 are valid, and `period_type = 'H'` is what
+# tells a reader to read the number as a half.
+HALVES = {"H1": 1, "H2": 2}
 FISCAL_QUARTERS = {"Q1": 1, "Q2": 2, "Q3": 3, "Q4": 4}
 
 
@@ -96,7 +110,7 @@ def parse_filename(stem: str) -> ParsedName:
         fiscal_year=int(m.group("year")),
         period_label=label,
         period_type=PERIOD_TYPES[label],
-        fiscal_quarter=FISCAL_QUARTERS.get(label),
+        fiscal_quarter=FISCAL_QUARTERS.get(label) or HALVES.get(label),
         title=m.group("title").replace("-", " ").replace("_", " ").strip(),
     )
 

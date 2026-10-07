@@ -36,6 +36,13 @@ class VasLine:
     statement: str
     label_keywords: tuple[str, ...]
     status: str
+    # Lines a filing presents as a deduction, which some companies print in parentheses
+    # and others as a plain positive. Stored as a magnitude either way, because the
+    # identity that uses it already subtracts: `revenue - cost_of_goods_sold`. Without
+    # this, a parenthesised "Giá vốn hàng bán" made gross profit come out at revenue PLUS
+    # cost, the identity failed, and a perfectly good balance sheet in the same workbook
+    # was thrown away with it.
+    is_deduction: bool = False
 
     @property
     def is_assumed(self) -> bool:
@@ -75,7 +82,7 @@ def fold(text: str) -> str:
 
 def load_spec(path: Path) -> VasSpec:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    lines = {}
+    lines: dict[str, VasLine] = {}
     for row in data.get("lines", []):
         line = VasLine(
             vas_code=str(row["vas_code"]).strip(),
@@ -83,7 +90,17 @@ def load_spec(path: Path) -> VasSpec:
             statement=row["statement"],
             label_keywords=tuple(fold(k) for k in row.get("label_keywords", ())),
             status=row.get("status", "assumed"),
+            is_deduction=bool(row.get("is_deduction", False)),
         )
+        # Last-write-wins would drop a mapping silently. The registry is expected to grow -
+        # short_term_debt and long_term_debt are still pending, with codes that differ
+        # between revisions of the circular - so a duplicated code is a likely mistake and
+        # must not be absorbed quietly.
+        if line.vas_code in lines:
+            raise ValueError(
+                f"duplicate vas_code {line.vas_code!r} in {path.name}: "
+                f"{lines[line.vas_code].fact_code} and {line.fact_code}"
+            )
         lines[line.vas_code] = line
 
     identities = tuple(
@@ -241,3 +258,53 @@ def check_identities(spec: VasSpec, facts: dict[str, Decimal]) -> list[IdentityC
         )
 
     return results
+
+
+# ---------------------------------------------------------------------------------------
+# Denomination
+#
+# The identities above are all scale-invariant: a statement printed in millions balances
+# exactly as well as one printed in dong. So this is the one class of parse error the
+# self-validation story cannot catch, and it understates every figure by a factor of a
+# million while looking perfect.
+#
+# Vietnamese statements declare their unit in a line near the top, e.g.
+# "Đơn vị tính: triệu đồng". A statement in anything other than dong is REFUSED rather
+# than rescaled: applying a multiplier would mean trusting this detection to be right, and
+# being wrong would produce a figure a thousand or a million out with full provenance.
+# Refusing says "we could not read this", which is true and harmless.
+
+_UNIT_SCALES: tuple[tuple[str, str], ...] = (
+    ("nghin ty dong", "nghìn tỷ đồng"),
+    ("ty dong", "tỷ đồng"),
+    ("trieu dong", "triệu đồng"),
+    ("nghin dong", "nghìn đồng"),
+)
+
+# Spellings that mean plain dong, which is what the extractor assumes and can handle.
+_UNIT_DONG = ("dong viet nam", "vnd", "dong")
+
+
+def detect_unit(sample_text: str) -> str | None:
+    """The non-dong denomination a statement declares, or None.
+
+    None covers two different cases on purpose - "declared as dong" and "no declaration
+    found" - because the caller treats them the same way: proceed on the assumption of
+    dong, which is overwhelmingly the common case for the primary statements. What must
+    never happen silently is proceeding when the document says millions.
+    """
+    folded = fold(sample_text)
+    if "don vi" not in folded:
+        return None
+
+    # Only look at the declaration itself. The words "triệu đồng" appear in note prose all
+    # over a filing, so scanning the whole document would refuse almost everything.
+    start = folded.index("don vi")
+    window = folded[start : start + 60]
+
+    for needle, pretty in _UNIT_SCALES:
+        if needle in window:
+            return pretty
+    if any(d in window for d in _UNIT_DONG):
+        return None
+    return None

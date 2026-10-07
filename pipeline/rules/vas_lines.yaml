@@ -58,6 +58,9 @@ lines:
     statement: income
     label_keywords: ["giá vốn"]
     status: assumed
+    # Some filings print this in parentheses as a deduction, others as a plain positive.
+    # Stored as a magnitude either way: the gross-profit identity already subtracts it.
+    is_deduction: true
   - vas_code: "20"
     fact_code: gross_profit
     statement: income

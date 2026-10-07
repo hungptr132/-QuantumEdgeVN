@@ -25,7 +25,8 @@ from quantumedge.extract.statements import (
     EXTRACTOR_VERSION,
     _period_end,
     extract_statements,
-    read_candidates,
+    interpret,
+    read_document,
 )
 from quantumedge.ingest.base import store_raw
 from quantumedge.ingest.filings import (
@@ -138,6 +139,20 @@ def _ingest(session: Session, seed_ticker: int, filings_dir: Path, store: Path) 
     return run_id
 
 
+def _by_code(spec, path: Path) -> dict:
+    """Interpret every row of a document, keyed by the Mã số it resolved to.
+
+    Interpretation now needs the mapping spec - it prefers a code the registry knows over
+    one that merely looks like a code - so reading and interpreting are two steps.
+    """
+    out = {}
+    for row in read_document(path).rows:
+        candidate = interpret(spec, row)
+        if candidate is not None:
+            out.setdefault(candidate.vas_code, candidate)
+    return out
+
+
 class TestFilenameCarriesThePeriod:
     """Refusing to guess. Inferring the period from the file's contents would mean parsing
     before storing, and from the modification date would attach real figures to the wrong
@@ -217,9 +232,9 @@ class TestScanAndArchive:
 
 
 class TestReadingAWorkbook:
-    def test_mapped_lines_are_located_with_their_cell(self, filings_dir: Path) -> None:
+    def test_mapped_lines_are_located_with_their_cell(self, filings_dir: Path, spec) -> None:
         path = _workbook(filings_dir / "2024-Y-statements.xlsx")
-        candidates = {c.vas_code: c for c in read_candidates(path)}
+        candidates = _by_code(spec, path)
 
         assert candidates["270"].amount == Decimal(1_000_000_000)
         assert "TỔNG CỘNG TÀI SẢN" in candidates["270"].label
@@ -229,19 +244,19 @@ class TestReadingAWorkbook:
         assert candidates["60"].amount == Decimal(68_000_000)
         assert candidates["60"].field_path.startswith("KQHDKD!r")
 
-    def test_dot_grouped_text_figures_are_read_correctly(self, filings_dir: Path) -> None:
+    def test_dot_grouped_text_figures_are_read_correctly(self, filings_dir: Path, spec) -> None:
         """What a PDF-to-XLSX conversion produces. "1.000.000.000" must not become 1.0."""
         path = _workbook(filings_dir / "2024-Y-statements.xlsx", as_text=True)
-        candidates = {c.vas_code: c for c in read_candidates(path)}
+        candidates = _by_code(spec, path)
 
         assert candidates["270"].amount == Decimal(1_000_000_000)
         assert candidates["11"].amount == Decimal(560_000_000)
 
-    def test_the_code_column_is_not_mistaken_for_the_amount(self, filings_dir: Path) -> None:
+    def test_the_code_column_is_not_mistaken_for_the_amount(self, filings_dir: Path, spec) -> None:
         """The Mã số is itself a small number. Taking the first numeric cell in the row
         would report total assets as 270."""
         path = _workbook(filings_dir / "2024-Y-statements.xlsx")
-        candidates = {c.vas_code: c for c in read_candidates(path)}
+        candidates = _by_code(spec, path)
         assert candidates["270"].amount != Decimal(270)
 
 
