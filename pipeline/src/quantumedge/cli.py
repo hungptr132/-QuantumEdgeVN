@@ -126,6 +126,7 @@ def doctor() -> None:
     table.add_row("timezone", "[green]ok[/green]", settings.timezone)
 
     db_ok = _check_database(table, settings)
+    warnings = _check_freshness(table, settings) if db_ok else []
 
     console.print(table)
     if not db_ok:
@@ -133,6 +134,12 @@ def doctor() -> None:
             "\nDatabase unreachable. Start the local cluster:\n  .\\pipeline\\scripts\\pg.ps1 start"
         )
         raise typer.Exit(code=1)
+
+    # Staleness is a data state, not a broken environment, so it does not fail the command -
+    # but it is printed with the command that fixes it, because a warning nobody can act on
+    # gets ignored.
+    for warning in warnings:
+        console.print(f"[yellow]![/yellow] {warning}")
 
 
 def _min_benchmark_sample(settings: "Settings") -> int:
@@ -217,6 +224,75 @@ def _evaluate_flags_at(session: "Session", as_of: "date_") -> int:
             {"d": as_of},
         ).scalar_one()
     )
+
+
+def _check_freshness(table: Table, settings: Settings) -> list[str]:
+    """Render the health assessment into the doctor report.
+
+    The measuring lives in `quantumedge.health`, which takes a session and returns facts,
+    so it can be tested. This only formats - and the split exists because an untested
+    staleness detector is a detector nobody should believe.
+    """
+    from quantumedge.db.seed import rule_spec_version  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.health import assess  # noqa: PLC0415
+
+    try:
+        with session_scope() as session:
+            health = assess(session, rule_spec_version(settings))
+    except Exception as exc:  # noqa: BLE001
+        table.add_row("data freshness", "[yellow]unknown[/yellow]", str(exc).splitlines()[0][:70])
+        return []
+
+    table.add_row(
+        "rule_spec_version", "[green]current[/green]", health.rule_spec_version[:16] + "\u2026"
+    )
+
+    if health.latest_price_date is None:
+        table.add_row("latest price bar", "[yellow]none[/yellow]", "run: qe ingest prices")
+    else:
+        table.add_row(
+            "latest price bar",
+            "[green]fresh[/green]" if health.prices_are_fresh else "[yellow]stale[/yellow]",
+            f"{health.latest_price_date} ({health.sessions_behind} trading sessions behind)",
+        )
+
+    if health.stale_flag_rows:
+        table.add_row(
+            "flags vs current rules",
+            "[yellow]stale[/yellow]",
+            f"{health.stale_flag_rows} evaluated under an older rule spec",
+        )
+    else:
+        table.add_row("flags vs current rules", "[green]current[/green]", "all at the current spec")
+
+    if health.stale_published:
+        table.add_row(
+            "published vs current rules",
+            "[red]stale[/red]",
+            f"{len(health.stale_published)} of {health.published}: "
+            f"{', '.join(health.stale_published[:6])}",
+        )
+    else:
+        table.add_row(
+            "published vs current rules",
+            "[green]current[/green]",
+            f"{health.published} published at the current spec",
+        )
+
+    if health.unpublished:
+        table.add_row(
+            "coverage published",
+            "[yellow]partial[/yellow]",
+            f"{health.covered - health.unpublished} of {health.covered} covered tickers "
+            "are published",
+        )
+    else:
+        table.add_row(
+            "coverage published", "[green]complete[/green]", f"all {health.covered} published"
+        )
+
+    return health.warnings()
 
 
 def _check_database(table: Table, settings: Settings) -> bool:
