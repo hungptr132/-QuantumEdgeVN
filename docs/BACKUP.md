@@ -127,6 +127,13 @@ the real one.
 
 Run it after changing a migration, and before trusting a backup.
 
+`scriptserify-restore.ps1` is its companion for the dump. `backup.ps1` proves a dump is
+*readable* with `pg_restore --list`; that is not the same as proving it restores. This one
+restores the newest dump into a throwaway database and checks what survived — weighted
+deliberately towards the audit trail, since everything else can be recomputed. It also
+checks that no published sheet came back without its stamp, which would mean the restore
+had dropped the `CHECK` and the next publish could bypass the gate.
+
 This is not hypothetical. The first time the drill was actually run it **failed**:
 `ticker_alias_trgm` needs an operator class from `pg_trgm`, nothing in the migration
 created the extension, and `alembic upgrade head` on a fresh database died with
