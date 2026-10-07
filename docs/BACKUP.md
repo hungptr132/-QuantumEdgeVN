@@ -21,9 +21,33 @@ something to design around.
 |---|---|---|
 | Git mirror | `D:\QuantumEdge-backup.git` | All history: code, `rules/*.yaml`, migrations, committed fact sheet snapshots, docs |
 | Database dump | `D:\QuantumEdge-backup-db\quantumedge-<timestamp>.dump` | Every table, including the review audit trail. Last 10 kept |
+| Plain files | `D:\QuantumEdge-backup-files\` | The working tree, excluding only what rebuilds itself. ~290 files, ~12 MB |
 
-Both land on `D:` — NTFS, journalled, internal, not removable. Local only: no cloud, no
-account, nothing leaves the machine.
+All three land on `D:` — NTFS, journalled, internal, not removable. Local only: no cloud,
+no account, nothing leaves the machine.
+
+### What the plain-file copy is for
+
+The git mirror covers everything tracked; the dump covers the database. Between them they
+left four kinds of file in **no backup at all**:
+
+* **`.env`** — the database passwords. Included deliberately; see below.
+* **`pipeline/data/filings/`** and **`filing_store/`** — statements a person downloaded,
+  and the content-addressed archive of their bytes that every extracted figure's
+  provenance points at. Re-downloadable in principle, tedious in practice.
+* **The exported conversation transcripts** (`*.txt` at the repo root) — gitignored because
+  they contain credential-shaped lines, and not reproducible at all.
+* **`.idea/`** — editor settings. Low value, but it costs nothing.
+
+It doubles as a copy that does not need git to read anything, which is worth having when
+the thing you are recovering from might be a corrupt object store.
+
+**Deliberately excluded**, because they rebuild exactly and are 34 GB between them:
+`pipeline/.venv` (`uv sync`), `web/node_modules` (`npm ci`), and the `__pycache__`,
+`.mypy_cache`, `.pytest_cache`, `.ruff_cache` and `.next` directories.
+
+The copy is `/MIR`, so a file deleted in the project is deleted in the backup. A backup
+that accumulates files the project no longer has is one nobody can reason about.
 
 ### Why the database is backed up at all
 
@@ -37,13 +61,18 @@ when, and what they said they had checked. No rerun recreates that, and without 
 product's central claim — that nothing publishes without a human stamp — has no evidence
 behind it. The backfilled history is merely expensive; the audit trail is irreplaceable.
 
-## What is deliberately not backed up
+## `.env` — included, and the trade behind that
 
-### `.env` — and why not
+It holds the database passwords. Leaving it out was the original call, on the grounds that
+copying a secret widens its exposure.
 
-It holds the database passwords. Copying a secret to a second location widens its
-exposure, and recovery here costs about two minutes, so the trade is not worth it.
-`.env.example` is tracked, so the *shape* of the file survives in git.
+That was reconsidered. Both copies sit on this one machine, so anything that can read one
+can read the other and the exposure widens by almost nothing — while the exclusion cost a
+real recovery step, the `pg_hba` dance below. If the trade ever looks wrong (the backup
+drive leaving this machine would do it), pass `-SkipFiles`, or drop `.env` from the
+robocopy call, and the reset procedure still works.
+
+`.env.example` stays tracked, so the *shape* of the file is in git regardless.
 
 To rebuild it after a loss:
 
@@ -63,18 +92,22 @@ To rebuild it after a loss:
 
 Never commit the result, and never paste a DSN into a terminal that is being logged.
 
-### `pipeline/data/` — raw payloads
+## What rebuilds itself, and is therefore excluded
 
-Re-fetchable: `qe ingest prices` and `qe ingest hose-ids`. Large, and the content hashes
-in `raw_document` mean a re-fetch of identical bytes is recorded as `unchanged`.
+### `pipeline/data/` — now covered
 
-### `pipeline/.venv/` — reproducible
+Previously excluded as re-fetchable, which holds for the price payloads
+(`qe ingest prices`, `qe ingest hose-ids`) but not for filings a person downloaded by
+hand. It is in the plain-file copy.
 
-`cd pipeline && uv sync` rebuilds it byte-for-byte from `uv.lock`.
+### `pipeline/.venv/`
 
-### `web/node_modules/` — reproducible
+`cd pipeline && uv sync` rebuilds it from `uv.lock`. 9.8 GB, so it is not worth copying to
+save one command.
 
-`cd web && npm ci`.
+### `web/node_modules/`
+
+`cd web && npm ci`. 24 GB.
 
 ## Restoring
 

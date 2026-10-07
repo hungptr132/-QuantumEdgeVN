@@ -79,6 +79,11 @@ the "reverses if" column is how you know it's time to revisit rather than re-lit
 | 2026-10-07 | One document per (symbol, period): the **newest** | Without `DISTINCT ON` every stored version was processed and each upserted over the last, so the final writer was the OLDEST - an audited filing was silently replaced by the unaudited one it superseded | Never |
 | 2026-10-07 | Deduction lines are stored as **magnitudes**, marked `is_deduction` in the mapping | Some filings print `Giá vốn hàng bán` in parentheses. The gross-profit identity subtracts it, so a negative made the left side revenue PLUS cost, the identity failed, and a sound balance sheet in the same workbook was discarded with it | Never |
 
+| 2026-10-07 | The backup includes a **plain-file mirror** of the working tree | The git mirror and the dump between them left four kinds of file in no backup at all: `.env`, downloaded filings and their content-addressed archive, the exported conversation transcripts, and editor settings. 286 files, 12 MB. It doubles as a copy that does not need git to read anything, which matters when the thing you are recovering from might be a corrupt object store | Never |
+| 2026-10-07 | **`.env` is backed up after all**, reversing the earlier call | Both copies sit on one machine, so anything able to read one can read the other and the exposure widens by almost nothing; what the exclusion cost was a real recovery step, the pg_hba trust-then-ALTER-ROLE dance. `-SkipFiles` reverses it and that procedure stays documented | The backup drive ever leaves this machine, or a credential appears that cannot be reissued locally |
+| 2026-10-07 | `.venv` and `node_modules` **stay excluded** | 34 GB between them, and both rebuild exactly from `uv.lock` and `package-lock.json`. Copying them would be enormous churn to save two commands | Never |
+| 2026-10-07 | `backup.ps1` ends with an explicit **`exit 0`** | robocopy's exit code is a bit field in which 1 means "files were copied" - a success - and it lingered in `$LASTEXITCODE`, so the script printed "Backup complete" and then exited 1. Anything reading the exit code would have treated every normal backup as a failure | Never |
+
 ## Kill criteria
 
 Carried from the product spec, section 8 — recorded here so they stay honest:
