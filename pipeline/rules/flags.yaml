@@ -127,6 +127,76 @@ flags:
       Số cổ phiếu lưu hành tăng khoảng 25% hoặc hơn trong ba năm. Phần sở hữu của cổ đông
       cũ bị pha loãng tương ứng; câu hỏi cần trả lời là tiền thu được đã dùng vào việc gì.
 
+  # Negative equity is tested through book_value_per_share rather than a raw equity
+  # figure: the two are equivalent (the share count is guarded positive before the metric
+  # is produced, so the sign comes entirely from equity), and a flag may only read a
+  # `metric_value` row - which is what gives the active state its evidence reference.
+  - code: negative_equity
+    name_vi: Vốn chủ sở hữu âm
+    name_en: Negative shareholders' equity
+    category: leverage
+    severity: high
+    rule_kind: metric_threshold
+    rule_version: v1
+    requires_metrics: [book_value_per_share]
+    on_missing: unknown
+    expr: { metric: book_value_per_share, op: "<", value: 0 }
+    explanation_vi: >-
+      Giá trị sổ sách trên mỗi cổ phiếu đang âm, nghĩa là nợ phải trả đã vượt tổng tài
+      sản theo sổ sách của doanh nghiệp. Trong trạng thái này, các chỉ số tính trên vốn
+      chủ sở hữu như ROE hay P/B không còn cách đọc đúng và được ghi là không công bố.
+      Đây là mô tả tình trạng trên báo cáo đã công bố.
+
+  - code: cfo_negative_while_profit_positive
+    name_vi: Lợi nhuận dương nhưng dòng tiền kinh doanh âm
+    name_en: Positive profit with negative operating cash flow
+    category: profitability
+    severity: high
+    rule_kind: metric_threshold
+    rule_version: v1
+    requires_metrics: [cfo_to_net_profit]
+    on_missing: unknown
+    expr: { metric: cfo_to_net_profit, op: "<", value: 0 }
+    explanation_vi: >-
+      Doanh nghiệp báo lãi trong bốn quý gần nhất, nhưng hoạt động kinh doanh trong cùng
+      kỳ lại làm giảm tiền. Khoảng cách giữa hai con số này thường nằm ở các khoản phải
+      thu và hàng tồn kho tăng lên: lợi nhuận đã được ghi nhận trên báo cáo nhưng tiền
+      chưa về. Đây là mô tả quan hệ giữa hai số liệu đã công bố, không phải nhận định về
+      cách doanh nghiệp được điều hành.
+
+  - code: related_party_receivables_over_20pct_assets
+    name_vi: Phải thu bên liên quan trên {threshold_pct} tổng tài sản
+    name_en: Related-party receivables above {threshold_pct} of total assets
+    category: governance
+    severity: watch
+    rule_kind: metric_threshold
+    rule_version: v1
+    requires_metrics: [related_party_receivables_to_assets]
+    on_missing: unknown
+    expr: { metric: related_party_receivables_to_assets, op: ">", value: 0.20 }
+    explanation_vi: >-
+      Hơn {threshold_pct} tổng tài sản đang là các khoản cho bên liên quan nợ. Đây là
+      khoản mục mà tiền có thể rời khỏi doanh nghiệp mà không phải là hoạt động kinh
+      doanh, nên tỷ trọng ở mức này cần được đọc cùng thuyết minh về giao dịch với các
+      bên liên quan. Nếu thuyết minh không mô tả các khoản này, trạng thái đúng là không
+      tìm thấy công bố tương ứng.
+
+  - code: net_profit_growth_negative_yoy
+    name_vi: Lợi nhuận sau thuế giảm so với cùng kỳ
+    name_en: Net profit down year on year
+    category: profitability
+    severity: info
+    rule_kind: metric_threshold
+    rule_version: v1
+    requires_metrics: [net_profit_growth_yoy]
+    on_missing: unknown
+    expr: { metric: net_profit_growth_yoy, op: "<", value: 0 }
+    explanation_vi: >-
+      Lợi nhuận sau thuế của bốn quý gần nhất thấp hơn bốn quý cùng kỳ năm trước. Vì cả
+      hai kỳ đều dài mười hai tháng, chênh lệch này không đến từ yếu tố mùa vụ. Một kỳ
+      giảm chưa cho biết xu hướng dài hạn; nguyên nhân thường nằm trong phần giải trình
+      kết quả kinh doanh mà doanh nghiệp đã công bố.
+
   - code: pe_above_2x_sector_median
     name_vi: P/E cao hơn {multiple} lần trung vị ngành
     name_en: P/E above {multiple}x sector median

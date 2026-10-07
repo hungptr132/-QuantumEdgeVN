@@ -66,17 +66,13 @@ _LIQUIDITY_CODES = (
     "sessions_since_52w_high",
 )
 
-# Valuation, leverage and profitability. Implemented but data-gated: until statements
-# are ingested each one reports the exact fact it is waiting for, which is why they are
-# run rather than skipped - a metric that is never attempted cannot say "không công bố".
-_FUNDAMENTAL_CODES = (
-    "pe",
-    "ev_ebitda",
-    "interest_coverage",
-    "net_debt_ebitda",
-    "roe",
-    "shares_cagr_3y",
-)
+# Valuation, leverage and profitability come from `calc.fundamentals.FUNDAMENTAL_CODES`
+# rather than a list here. This file used to carry its own copy, and it went stale the
+# first time the module grew: eleven metrics were implemented, defined in metrics.yaml,
+# and silently never run - which is worse than not having them, because a metric that is
+# never attempted writes no row at all, so the sheet cannot even say "không công bố" for
+# it. They are run rather than skipped while statements are missing for the same reason:
+# each one reports the exact fact it is waiting for.
 
 
 @app.command()
@@ -396,6 +392,66 @@ def db_seed() -> None:
         table.add_row(name, str(n))
     console.print(table)
     console.print(f"rule_spec_version [dim]{rule_spec_version(settings)[:16]}…[/dim]")
+
+
+@calc_app.command("ttm")
+def calc_ttm(
+    symbol: str = typer.Argument(..., help="Ticker symbol, e.g. SMC."),
+    as_of: str = typer.Option("", help="Valuation date YYYY-MM-DD. Default: latest session."),
+) -> None:
+    """Show the trailing-twelve-month window behind a ticker's fundamentals.
+
+    When a fundamental reads *không công bố*, this is what says why: whether the window
+    itself is short a quarter, or whether only that one line item is absent. It computes
+    nothing new - the same code path the metrics take.
+    """
+    from quantumedge.calc.periods import describe_ttm  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+
+    with session_scope() as session:
+        from sqlalchemy import text as sql  # noqa: PLC0415
+
+        as_of_date = _resolve_as_of(session, as_of)
+        ticker_id = session.execute(
+            sql("SELECT id FROM ticker WHERE symbol = :s"), {"s": symbol.upper()}
+        ).scalar_one_or_none()
+        if ticker_id is None:
+            console.print(f"[red]unknown ticker {symbol.upper()}[/red]")
+            raise typer.Exit(code=1)
+
+        described = describe_ttm(session, int(ticker_id), as_of_date)
+
+        quarters = described["quarters_available"]
+        console.print(
+            f"[bold]{symbol.upper()}[/bold] TTM at {as_of_date} · "
+            f"quarters on file: {', '.join(quarters) if quarters else '[dim]none[/dim]'}"
+        )
+
+        if described["window"] is None:
+            # The window, not the line items, is what failed. Saying which is the whole
+            # point of this command: four quarters missing and one line item missing need
+            # different work, and "không công bố" cannot tell them apart.
+            console.print(f"[yellow]no complete window: {described['unavailable_reason']}[/yellow]")
+            return
+
+        table = Table("line item", "kind", "value", "basis / reason", title="TTM inputs")
+        for row in described["items"]:
+            if row["value"] is None:
+                table.add_row(
+                    row["fact_code"],
+                    row["kind"],
+                    "[dim]-[/dim]",
+                    f"[yellow]{row['unavailable_reason']}[/yellow]",
+                )
+            else:
+                table.add_row(row["fact_code"], row["kind"], row["value"], row["basis"])
+        console.print(table)
+
+        present = sum(1 for r in described["items"] if r["value"] is not None)
+        console.print(
+            f"{present}/{len(described['items'])} line items resolved. "
+            "[dim]flow items sum four quarters; stock items take the closing balance[/dim]"
+        )
 
 
 @ingest_app.command("news")
@@ -1554,6 +1610,7 @@ def calc_backfill(
         build_history_benchmarks,
         build_sector_benchmarks,
     )
+    from quantumedge.calc.fundamentals import FUNDAMENTAL_CODES  # noqa: PLC0415
     from quantumedge.calc.registry import load_contexts, run_metrics  # noqa: PLC0415
     from quantumedge.config import load_settings  # noqa: PLC0415
     from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
@@ -1562,7 +1619,7 @@ def calc_backfill(
 
     settings = load_settings()
     minimum = _min_benchmark_sample(settings)
-    codes = [*_LIQUIDITY_CODES, *_FUNDAMENTAL_CODES]
+    codes = [*_LIQUIDITY_CODES, *FUNDAMENTAL_CODES]
 
     with session_scope() as session:
         # Quarter-end trading sessions, taken from the calendar rather than computed, so
@@ -1630,13 +1687,14 @@ def calc_all(
     from sqlalchemy import text as sql  # noqa: PLC0415
 
     from quantumedge.calc import fundamentals, liquidity  # noqa: PLC0415, F401
+    from quantumedge.calc.fundamentals import FUNDAMENTAL_CODES  # noqa: PLC0415
     from quantumedge.calc.registry import load_contexts, run_metrics  # noqa: PLC0415
     from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
     from quantumedge.db.session import session_scope  # noqa: PLC0415
     from quantumedge.runs import run_scope  # noqa: PLC0415
 
     symbols = [s.strip().upper() for s in tickers.split(",") if s.strip()] or None
-    codes = [*_LIQUIDITY_CODES, *_FUNDAMENTAL_CODES]
+    codes = [*_LIQUIDITY_CODES, *FUNDAMENTAL_CODES]
 
     with session_scope() as session:
         if as_of:

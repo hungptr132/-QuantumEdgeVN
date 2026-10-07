@@ -37,8 +37,27 @@ class Strict(BaseModel):
 
 
 class Provenance(Strict):
+    """Where one figure or conclusion came from.
+
+    `data_absence` is the odd one and the important one: a `data_absence` rule's evidence
+    IS the absence — "no audited annual statement within 18 months of this date" — so it
+    has a ref and a label but no document and no URL. The kind was missing from this
+    Literal while `rule_engine._data_absence` already emitted it, which did not fail only
+    because no ticker had statements yet, so the rule always returned `unknown` and never
+    reached evidence. The first ticker to gain statements *and* a disclosure gap would
+    have had its fact sheet refuse to build — the sheet for the company the gap is about.
+    """
+
     kind: Literal[
-        "metric", "benchmark", "price_bar", "financial_fact", "event", "filing", "news", "manual"
+        "metric",
+        "benchmark",
+        "price_bar",
+        "financial_fact",
+        "event",
+        "filing",
+        "news",
+        "manual",
+        "data_absence",
     ]
     ref: str
     label: str

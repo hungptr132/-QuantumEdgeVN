@@ -67,6 +67,47 @@ class TestNoHandTypedThresholds:
             assert len(note.strip()) > 30, f"{code}: note is too short to be a reason"
 
 
+class TestProseStaysDescriptive:
+    """The regulatory screen, applied where the prose is written rather than where it is
+    published.
+
+    `factsheet/qa.py` already screens every human string on a fact sheet, but it only runs
+    once a sheet exists for a ticker whose data makes the flag fire. A rule that will not
+    fire for months would carry a prohibited sentence until then. These two tests move the
+    same check to the rules file, where the sentence is authored.
+    """
+
+    def test_no_rule_prose_contains_prohibited_language(self) -> None:
+        from quantumedge.factsheet.qa import FORBIDDEN_PATTERNS
+
+        offenders = []
+        for rule in _rules():
+            for field in PROSE_FIELDS:
+                raw = rule.get(field)
+                if not isinstance(raw, str):
+                    continue
+                lowered = raw.lower()
+                for pattern in FORBIDDEN_PATTERNS:
+                    if re.search(pattern, lowered):
+                        offenders.append(f"{rule['code']}.{field}: {pattern}")
+
+        assert not offenders, (
+            "recommendations, price targets and verdicts are SSC-licensed or defamation "
+            "territory; describe the disclosed figures instead:\n  " + "\n  ".join(offenders)
+        )
+
+    def test_every_rule_explains_itself_in_vietnamese(self) -> None:
+        """A flag with a one-line label and no explanation is a verdict without a reason.
+        An `active` flag is a negative statement about a named company, so the sentence
+        that accompanies it is a product requirement, not decoration."""
+        thin = [
+            rule["code"]
+            for rule in _rules()
+            if len(str(rule.get("explanation_vi", "")).strip()) < 80
+        ]
+        assert not thin, f"rules whose Vietnamese explanation is too short to explain: {thin}"
+
+
 class TestRendering:
     def test_a_threshold_renders_into_every_prose_field(self) -> None:
         rendered = _render_rule_prose(

@@ -50,11 +50,15 @@ export type Available1 = boolean;
 export type UnavailableReason1 = string | null;
 export type Members = string[];
 export type Provenance2 = Provenance1[];
+export type QuartilesAreInterpolated = boolean;
+export type QuartileNoteVi = string | null;
 export type OwnHistory = BenchmarkRef[];
 export type PositionVsSector = "above" | "below" | "in_line" | "unknown";
 export type PositionVsSectorLabelVi = string;
 export type PositionVsOwnRange = "near_high" | "near_low" | "mid_range" | "unknown";
 export type PositionVsOwnRangeLabelVi = string;
+export type PositionVsExchange = "above" | "below" | "in_line" | "unknown";
+export type PositionVsExchangeLabelVi = string;
 export type HeadlineMetrics = Figure[];
 export type OtherMetrics = Figure[];
 export type Figures = Figure[];
@@ -168,6 +172,9 @@ export interface Comparison {
   position_vs_sector_label_vi?: PositionVsSectorLabelVi;
   position_vs_own_range?: PositionVsOwnRange;
   position_vs_own_range_label_vi?: PositionVsOwnRangeLabelVi;
+  exchange?: BenchmarkRef | null;
+  position_vs_exchange?: PositionVsExchange;
+  position_vs_exchange_label_vi?: PositionVsExchangeLabelVi;
 }
 /**
  * One distribution a figure can be read against.
@@ -192,6 +199,8 @@ export interface BenchmarkRef {
   unavailable_reason?: UnavailableReason1;
   members?: Members;
   provenance?: Provenance2;
+  quartiles_are_interpolated?: QuartilesAreInterpolated;
+  quartile_note_vi?: QuartileNoteVi;
 }
 /**
  * Agent 5's output. `framing_note_vi` travels with it so the numbers cannot be

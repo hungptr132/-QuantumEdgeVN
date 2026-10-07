@@ -90,6 +90,66 @@ def test_flag_required_metrics_all_exist(session: Session) -> None:
     assert not missing, f"flag rules reference undefined metrics: {missing}"
 
 
+def test_every_metric_carries_real_glossary_text(session: Session) -> None:
+    """`metric_def.definition_vi` is rendered on the ticker page as the glossary entry, so
+    a placeholder ships straight to a reader. The floor is deliberately low - a short
+    definition can be a complete one ("giá khớp lệnh cuối cùng của phiên gần nhất" needs
+    no elaboration) - so what this really catches is a stub left behind by a metric added
+    in a hurry."""
+    settings = load_settings()
+    seed_all(session, settings)
+    thin = (
+        session.execute(
+            text(
+                "SELECT code FROM metric_def "
+                "WHERE length(trim(definition_vi)) < 40 "
+                "   OR definition_vi ILIKE '%todo%' OR definition_vi ILIKE '%tbd%' "
+                "   OR definition_vi ILIKE '%placeholder%' "
+                "ORDER BY code"
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert not thin, f"metrics whose glossary text is a placeholder or too short: {thin}"
+
+
+def test_every_metric_requires_only_defined_fact_codes(session: Session) -> None:
+    """A metric declaring a line item the registry never defines can only ever be
+    unavailable - an honest-looking row that no extractor improvement will ever fill."""
+    settings = load_settings()
+    seed_all(session, settings)
+    unknown = (
+        session.execute(
+            text(
+                "SELECT DISTINCT f FROM metric_def m, unnest(m.requires_facts) AS f "
+                "WHERE f NOT IN (SELECT code FROM financial_fact_def)"
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert not unknown, f"metrics require fact codes that do not exist: {unknown}"
+
+
+def test_every_threshold_rule_carries_a_complete_expression(session: Session) -> None:
+    """`metric_threshold` is evaluated from three keys. A rule missing one evaluates to
+    `unknown` forever, which looks like missing data rather than a broken rule."""
+    settings = load_settings()
+    seed_all(session, settings)
+    incomplete = (
+        session.execute(
+            text(
+                "SELECT code FROM flag_def WHERE rule_kind = 'metric_threshold' "
+                "AND NOT (rule_expr ? 'metric' AND rule_expr ? 'op' AND rule_expr ? 'value')"
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert not incomplete, f"threshold rules missing metric/op/value: {incomplete}"
+
+
 def test_rule_spec_version_tracks_content(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
     """Editing a rule file must change the version, or staleness detection cannot work."""
     settings = load_settings()

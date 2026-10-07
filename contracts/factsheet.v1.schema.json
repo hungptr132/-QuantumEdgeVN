@@ -137,6 +137,23 @@
           },
           "title": "Provenance",
           "type": "array"
+        },
+        "quartiles_are_interpolated": {
+          "default": false,
+          "title": "Quartiles Are Interpolated",
+          "type": "boolean"
+        },
+        "quartile_note_vi": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quartile Note Vi"
         }
       },
       "required": [
@@ -287,6 +304,33 @@
         "position_vs_own_range_label_vi": {
           "default": "không công bố",
           "title": "Position Vs Own Range Label Vi",
+          "type": "string"
+        },
+        "exchange": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BenchmarkRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "position_vs_exchange": {
+          "default": "unknown",
+          "enum": [
+            "above",
+            "below",
+            "in_line",
+            "unknown"
+          ],
+          "title": "Position Vs Exchange",
+          "type": "string"
+        },
+        "position_vs_exchange_label_vi": {
+          "default": "không công bố",
+          "title": "Position Vs Exchange Label Vi",
           "type": "string"
         }
       },

@@ -200,12 +200,56 @@ metrics:
       không có ý nghĩa và sẽ được ghi là không công bố thay vì hiển thị một số âm.
     precision: 2
 
+  - code: pb
+    label_vi: P/B
+    label_en: Price to book
+    unit: x
+    category: valuation
+    formula_text: market_cap / total_equity
+    requires_facts: [total_equity, shares_outstanding]
+    definition_vi: >-
+      Giá thị trường của toàn bộ cổ phiếu chia cho vốn chủ sở hữu ghi trên sổ sách. Dưới
+      1 lần nghĩa là thị trường đang trả ít hơn phần giá trị sổ sách thuộc về cổ đông.
+      Điều đó không tự động là rẻ: giá trị sổ sách chỉ đáng tin khi tài sản trên sổ phản
+      ánh đúng số tiền có thể thu hồi. Khi vốn chủ sở hữu âm, chỉ số không có ý nghĩa và
+      được ghi là không công bố thay vì hiển thị một số âm.
+    precision: 2
+
+  - code: eps
+    label_vi: EPS - Lợi nhuận trên mỗi cổ phiếu
+    label_en: Earnings per share
+    unit: VND
+    category: profitability
+    formula_text: net_profit_after_tax_ttm / shares_outstanding
+    requires_facts: [net_profit_after_tax, shares_outstanding]
+    definition_vi: >-
+      Lợi nhuận sau thuế của bốn quý gần nhất chia cho số cổ phiếu đang lưu hành: phần
+      lợi nhuận tính trên mỗi cổ phiếu. Khi doanh nghiệp lỗ, chỉ số này âm và vẫn được
+      hiển thị, vì một khoản lỗ trên mỗi cổ phiếu là thông tin đọc đúng nghĩa ngay. Đây
+      là chỗ khác với P/E âm, vốn dễ bị đọc thành "chỉ số thấp nên rẻ".
+    precision: 0
+
+  - code: book_value_per_share
+    label_vi: Giá trị sổ sách trên mỗi cổ phiếu
+    label_en: Book value per share
+    unit: VND
+    category: valuation
+    formula_text: total_equity / shares_outstanding
+    requires_facts: [total_equity, shares_outstanding]
+    definition_vi: >-
+      Vốn chủ sở hữu tại cuối quý gần nhất chia cho số cổ phiếu đang lưu hành, tức phần
+      tài sản ròng theo sổ sách tương ứng với mỗi cổ phiếu. Nếu con số này thấp hơn mệnh
+      giá, phần lớn vốn cổ đông đã góp đã bị lỗ lũy kế ăn mòn. Nếu nó âm, nợ phải trả đã
+      vượt tổng tài sản trên sổ sách.
+    precision: 0
+
   - code: ev_ebitda
     label_vi: EV/EBITDA
     unit: x
     category: valuation
-    formula_text: (market_cap + net_debt) / ebitda
-    requires_facts: [ebitda, short_term_debt, long_term_debt, cash_and_equivalents]
+    formula_text: (market_cap + net_debt) / ebitda_ttm
+    requires_facts: [profit_before_tax, interest_expense, depreciation_amortisation,
+                     short_term_debt, long_term_debt, cash_and_equivalents]
     definition_vi: >-
       Giá trị toàn doanh nghiệp (gồm cả nợ) so với lợi nhuận trước lãi vay, thuế và khấu
       hao. Hữu ích khi so sánh các doanh nghiệp có mức nợ khác nhau.
@@ -216,8 +260,8 @@ metrics:
     label_en: Interest coverage
     unit: x
     category: leverage
-    formula_text: ebit / interest_expense
-    requires_facts: [ebit, interest_expense]
+    formula_text: ebit_ttm / interest_expense_ttm
+    requires_facts: [profit_before_tax, interest_expense]
     is_headline: true
     definition_vi: >-
       Lợi nhuận trước lãi vay và thuế chia cho chi phí lãi vay. Dưới 2 lần nghĩa là
@@ -228,11 +272,26 @@ metrics:
     label_vi: Nợ ròng / EBITDA
     unit: x
     category: leverage
-    formula_text: (short_term_debt + long_term_debt - cash_and_equivalents) / ebitda
-    requires_facts: [short_term_debt, long_term_debt, cash_and_equivalents, ebitda]
+    formula_text: (short_term_debt + long_term_debt - cash_and_equivalents) / ebitda_ttm
+    requires_facts: [short_term_debt, long_term_debt, cash_and_equivalents,
+                     profit_before_tax, interest_expense, depreciation_amortisation]
     definition_vi: >-
       Số năm lợi nhuận cần có để trả hết nợ ròng. Càng cao thì doanh nghiệp càng ít chịu
       được một năm kinh doanh xấu.
+    precision: 2
+
+  - code: debt_to_equity
+    label_vi: Nợ vay / Vốn chủ sở hữu
+    label_en: Debt to equity
+    unit: x
+    category: leverage
+    formula_text: (short_term_debt + long_term_debt) / total_equity
+    requires_facts: [short_term_debt, long_term_debt, total_equity]
+    definition_vi: >-
+      Tổng nợ vay ngắn hạn và dài hạn so với vốn chủ sở hữu. Chỉ tính các khoản vay có
+      lãi, không tính toàn bộ nợ phải trả, nên con số này thấp hơn tỷ lệ nợ trên tổng tài
+      sản và đo đúng phần nợ phải trả lãi định kỳ. Khi vốn chủ sở hữu âm, chỉ số không có
+      ý nghĩa và được ghi là không công bố.
     precision: 2
 
   - code: roe
@@ -240,10 +299,110 @@ metrics:
     label_en: Return on equity
     unit: pct
     category: profitability
-    formula_text: net_profit_after_tax / total_equity
+    formula_text: net_profit_after_tax_ttm / total_equity
     requires_facts: [net_profit_after_tax, total_equity]
     definition_vi: >-
-      Lợi nhuận tạo ra trên mỗi đồng vốn chủ sở hữu.
+      Lợi nhuận bốn quý gần nhất tạo ra trên mỗi đồng vốn chủ sở hữu tại cuối kỳ. Vốn vay
+      có thể làm chỉ số này cao lên mà không đi kèm hiệu quả kinh doanh tốt hơn, nên nó
+      đáng được đọc cùng với ROA và tỷ lệ nợ vay.
+    precision: 4
+
+  - code: roa
+    label_vi: ROA
+    label_en: Return on assets
+    unit: pct
+    category: profitability
+    formula_text: net_profit_after_tax_ttm / total_assets
+    requires_facts: [net_profit_after_tax, total_assets]
+    definition_vi: >-
+      Lợi nhuận bốn quý gần nhất so với tổng tài sản. Khác với ROE, chỉ số này không được
+      vốn vay làm đẹp: hai doanh nghiệp có ROE bằng nhau nhưng ROA chênh lệch lớn thì
+      doanh nghiệp có ROA thấp đang dựa nhiều hơn vào nợ để tạo ra cùng mức sinh lời cho
+      cổ đông.
+    precision: 4
+
+  - code: net_margin
+    label_vi: Tỷ suất lợi nhuận ròng
+    label_en: Net profit margin
+    unit: pct
+    category: profitability
+    formula_text: net_profit_after_tax_ttm / revenue_ttm
+    requires_facts: [net_profit_after_tax, revenue]
+    definition_vi: >-
+      Phần còn lại của mỗi đồng doanh thu sau khi trừ toàn bộ chi phí, lãi vay và thuế,
+      tính trên bốn quý gần nhất. Tỷ suất rất mỏng nghĩa là lợi nhuận có thể chuyển thành
+      lỗ chỉ vì một thay đổi nhỏ của giá vốn hoặc chi phí lãi vay.
+    precision: 4
+
+  - code: gross_margin
+    label_vi: Tỷ suất lợi nhuận gộp
+    label_en: Gross profit margin
+    unit: pct
+    category: profitability
+    formula_text: gross_profit_ttm / revenue_ttm
+    requires_facts: [gross_profit, revenue]
+    definition_vi: >-
+      Phần còn lại của mỗi đồng doanh thu sau khi trừ giá vốn hàng bán, tính trên bốn quý
+      gần nhất. Tỷ suất gộp cho thấy doanh nghiệp có bao nhiêu quyền định giá trước khi
+      tính đến chi phí quản lý và lãi vay. Nó thường ổn định trong một ngành, nên một thay
+      đổi lớn giữa các năm là điều cần tìm nguyên nhân trong thuyết minh.
+    precision: 4
+
+  - code: cfo_to_net_profit
+    label_vi: Dòng tiền kinh doanh / Lợi nhuận sau thuế
+    label_en: Cash flow from operations to net profit
+    unit: x
+    category: profitability
+    formula_text: cfo_ttm / net_profit_after_tax_ttm
+    requires_facts: [cfo, net_profit_after_tax]
+    definition_vi: >-
+      Tiền thực thu từ hoạt động kinh doanh so với lợi nhuận sau thuế, trên cùng bốn quý.
+      Quanh mức 1 lần nghĩa là lợi nhuận ghi trên báo cáo đã thực sự về thành tiền. Thấp
+      hơn nhiều, hoặc âm, nghĩa là lợi nhuận đang nằm ở khoản phải thu và hàng tồn kho
+      chứ chưa thu được tiền. Chỉ số chỉ được tính khi lợi nhuận dương, vì tỷ lệ so với
+      một khoản lỗ không có cách đọc.
+    precision: 2
+
+  - code: revenue_growth_yoy
+    label_vi: Tăng trưởng doanh thu (so với cùng kỳ)
+    label_en: Revenue growth, year on year
+    unit: pct
+    category: growth
+    formula_text: revenue_ttm / revenue_ttm_prior_year - 1
+    requires_facts: [revenue]
+    definition_vi: >-
+      Doanh thu bốn quý gần nhất so với bốn quý cùng kỳ năm trước. So sánh hai kỳ mười
+      hai tháng nên yếu tố mùa vụ đã được loại bỏ, khác với việc so hai quý liền kề. Phép
+      so sánh này cần đủ tám quý liên tiếp; thiếu một quý thì chỉ số được ghi là không
+      công bố kèm tên quý còn thiếu, chứ không ước lượng bù.
+    precision: 4
+
+  - code: net_profit_growth_yoy
+    label_vi: Tăng trưởng lợi nhuận sau thuế (so với cùng kỳ)
+    label_en: Net profit growth, year on year
+    unit: pct
+    category: growth
+    formula_text: net_profit_after_tax_ttm / net_profit_after_tax_ttm_prior_year - 1
+    requires_facts: [net_profit_after_tax]
+    definition_vi: >-
+      Lợi nhuận sau thuế bốn quý gần nhất so với bốn quý cùng kỳ năm trước. Nếu lợi nhuận
+      của kỳ gốc là số âm, tốc độ tăng trưởng không có cách đọc nào đúng - đi từ lỗ sang
+      lỗ ít hơn sẽ hiện thành một con số dương rất lớn - nên trường hợp đó được ghi là
+      không công bố.
+    precision: 4
+
+  - code: related_party_receivables_to_assets
+    label_vi: Phải thu bên liên quan / Tổng tài sản
+    label_en: Related-party receivables to total assets
+    unit: pct
+    category: ownership
+    formula_text: related_party_receivables / total_assets
+    requires_facts: [related_party_receivables, total_assets]
+    definition_vi: >-
+      Tỷ trọng các khoản doanh nghiệp đang cho bên liên quan nợ trong tổng tài sản. Khoản
+      mục này đáng theo dõi vì nó là nơi tiền có thể rời khỏi doanh nghiệp mà không phải
+      là hoạt động kinh doanh. Tỷ trọng lớn là điều cần đối chiếu với thuyết minh về giao
+      dịch với các bên liên quan trong báo cáo tài chính.
     precision: 4
 
   - code: shares_cagr_3y
