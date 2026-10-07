@@ -1,4 +1,5 @@
 import { sql } from "@/lib/db";
+import { assertFactSheet } from "@/lib/factsheet";
 import type { FactSheet } from "@/lib/generated/factsheet.v1";
 
 /**
@@ -32,7 +33,10 @@ export async function listPublished(): Promise<PublishedRow[]> {
     FROM published_ticker_page
     ORDER BY symbol
   `;
-  return rows;
+  // Validate here rather than at render time. `payload` is jsonb, so the declared type is
+  // an assertion the compiler cannot check; a schema drift would otherwise surface as a
+  // page missing a section, which a reader has no way to notice.
+  return rows.map((row) => ({ ...row, payload: assertFactSheet(row.payload, row.symbol) }));
 }
 
 /**
@@ -49,5 +53,7 @@ export async function getPublished(symbol: string): Promise<PublishedRow | null>
     WHERE symbol = ${symbol.toUpperCase()}
     LIMIT 1
   `;
-  return rows[0] ?? null;
+  const row = rows[0];
+  if (!row) return null;
+  return { ...row, payload: assertFactSheet(row.payload, row.symbol) };
 }
