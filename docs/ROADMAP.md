@@ -51,6 +51,13 @@ owner's call, since it replays the exchange's own front-end token), or the
 disclosure-violation lists, which need the same browser observation as the attachment
 route.
 
+## The model map
+
+`docs/MODELS.md` lists every model in the system — directory, mechanism, and the
+architectural reason it is shaped that way — plus what is not built and exactly what blocks
+each one. Start there when the question is "what is in here", and come back here for "what
+is next".
+
 ## Not started, in dependency order
 
 ### Breadth to HNX / UPCOM is blocked on a name source
