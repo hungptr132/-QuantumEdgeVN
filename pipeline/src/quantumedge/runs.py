@@ -117,6 +117,12 @@ def finish_run(
     )
 
 
+# A reserved key in a run's `stats`. Present and truthy means "some of this worked":
+# `run_scope` finishes the run `partial` and moves the value into `error`. Popped before
+# the stats are written, so it never shows up as a statistic.
+PARTIAL_REASON = "_partial_reason"
+
+
 @contextmanager
 def run_scope(
     session: Session,
@@ -132,6 +138,13 @@ def run_scope(
 
     A raised exception marks the run failed and re-raises, so a half-finished run is
     never left looking like it succeeded.
+
+    The body may also set `stats[PARTIAL_REASON]` to finish as `partial` rather than
+    `succeeded`. `run_status` has had that value since the schema was written and nothing
+    used it, so a stage that got three of four sources reported success — and a manifest
+    that says "succeeded" when a publisher served a 503 is the kind of record this project
+    exists not to produce. The reason is stored in `error`, which is the column for what
+    went wrong whether or not the run as a whole failed.
     """
     run_id = start_run(
         session,
@@ -157,7 +170,11 @@ def run_scope(
         finish_run(session, run_id, RunStatus.FAILED, stats, error=str(exc)[:2000])
         session.commit()
         raise
-    finish_run(session, run_id, RunStatus.SUCCEEDED, stats)
+    reason = stats.pop(PARTIAL_REASON, None)
+    if reason:
+        finish_run(session, run_id, RunStatus.PARTIAL, stats, error=str(reason)[:2000])
+    else:
+        finish_run(session, run_id, RunStatus.SUCCEEDED, stats)
 
 
 def _json(value: Any) -> str:

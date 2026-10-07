@@ -26,6 +26,15 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+# Reading calc's output means knowing how calc encoded it. Importing the two helpers
+# is deliberate: the alternative is a second copy of the label format in this file, and
+# the copy is what would drift. It disappears when `metric_benchmark` gains an
+# `exchange_code` column (see docs/ROADMAP.md), after which the label is just 'current'.
+from quantumedge.calc.benchmarks import (
+    MIN_EXACT_QUARTILE_SAMPLE,
+    exchange_window_label,
+    parse_exchange_window_label,
+)
 from quantumedge.factsheet.schema import BenchmarkRef, Comparison, Provenance
 
 NOT_DISCLOSED = "không công bố"
@@ -52,6 +61,20 @@ WINDOW_LABELS = {
     "3y": "Khoảng 3 năm của chính mã này",
     "1y": "Khoảng 1 năm của chính mã này",
 }
+
+EXCHANGE_LABELS = {
+    "above": "Cao hơn trung vị sàn",
+    "below": "Thấp hơn trung vị sàn",
+    "in_line": "Tương đương trung vị sàn",
+    "unknown": NOT_DISCLOSED,
+}
+
+# Said in the reader's language, because the alternative is a column headed "p25" that
+# looks like a statistic and is not one at this sample size.
+QUARTILE_NOTE_VI = (
+    "Mẫu dưới {n} mã: giá trị p25/p75 là nội suy giữa các mã trong mẫu, "
+    "không phải phân vị thực. Đọc như một khoảng, không như một thống kê riêng."
+)
 
 # Why a benchmark is absent, in the reader's language. An unexplained blank invites the
 # assumption that the comparison was unfavourable and withheld.
@@ -90,6 +113,18 @@ def _position_in_range(value: Decimal, bench: dict[str, Any]) -> str:
     return "mid_range"
 
 
+def _window_label_vi(bench: dict[str, Any]) -> str:
+    """The window's name in Vietnamese.
+
+    Exchange rows carry the venue inside `window_label` (`current@HOSE`), so they are
+    named after the venue; everything else reads from the fixed table.
+    """
+    parsed = parse_exchange_window_label(bench["window_label"])
+    if bench["scope"] == "exchange" and parsed is not None:
+        return f"Trung vị sàn {parsed[0]}"
+    return str(WINDOW_LABELS.get(bench["window_label"], bench["window_label"]))
+
+
 def _to_ref(
     bench: dict[str, Any],
     *,
@@ -99,11 +134,13 @@ def _to_ref(
     available = bool(bench["is_available"])
     median = bench["median"]
     low, high = bench["min_value"], bench["max_value"]
+    sample_size = int(bench["sample_size"])
+    interpolated = available and 0 < sample_size < MIN_EXACT_QUARTILE_SAMPLE
 
     return BenchmarkRef(
         scope=bench["scope"],
         window_label=bench["window_label"],
-        label_vi=WINDOW_LABELS.get(bench["window_label"], bench["window_label"]),
+        label_vi=_window_label_vi(bench),
         median=median,
         p25=bench["p25"],
         p75=bench["p75"],
@@ -115,8 +152,12 @@ def _to_ref(
             if available and low is not None
             else NOT_DISCLOSED
         ),
-        sample_size=int(bench["sample_size"]),
+        sample_size=sample_size,
         available=available,
+        quartiles_are_interpolated=interpolated,
+        quartile_note_vi=(
+            QUARTILE_NOTE_VI.format(n=MIN_EXACT_QUARTILE_SAMPLE) if interpolated else None
+        ),
         unavailable_reason=(
             REASON_LABELS.get(bench["unavailable_reason"], bench["unavailable_reason"])
             if not available
@@ -149,6 +190,14 @@ def load_comparisons(
     three benchmarks each, and per-figure queries would make building a sheet noticeably
     slower for no gain in clarity.
     """
+    # An exchange row carries neither a ticker_id nor a sector_id — that is what its
+    # CHECK constraint requires — so it matched neither of the other two clauses and was
+    # invisible here. Its venue is encoded in window_label, so the label this ticker's
+    # exchange would produce is computed first and matched exactly.
+    venue = session.execute(
+        text("SELECT exchange_code FROM ticker WHERE id = :t"), {"t": ticker_id}
+    ).scalar_one()
+
     rows = session.execute(
         text(
             """
@@ -163,11 +212,12 @@ def load_comparisons(
                     b.ticker_id = :t
                     OR (b.scope = 'sector' AND c.id = (
                           SELECT company_id FROM ticker WHERE id = :t))
+                    OR (b.scope = 'exchange' AND b.window_label = :venue_label)
                   )
             ORDER BY b.metric_code, b.scope, b.window_label
             """
         ),
-        {"t": ticker_id, "d": as_of},
+        {"t": ticker_id, "d": as_of, "venue_label": exchange_window_label(str(venue))},
     ).mappings()
 
     grouped: dict[str, list[dict[str, Any]]] = {}
@@ -204,8 +254,10 @@ def build_comparison(
         return None
 
     sector_ref: BenchmarkRef | None = None
+    exchange_ref: BenchmarkRef | None = None
     history: list[BenchmarkRef] = []
     position_sector = "unknown"
+    position_exchange = "unknown"
     position_range = "unknown"
 
     for bench in benchmarks:
@@ -216,6 +268,14 @@ def build_comparison(
             sector_ref = ref
             if value is not None and bench["is_available"]:
                 position_sector = _position_vs_sector(value, bench)
+        elif bench["scope"] == "exchange":
+            # Dispatched explicitly rather than by falling through. The `else` branch
+            # below files a row under *this ticker's own history*, and an exchange row
+            # landing there would present the market's distribution as the company's past
+            # — with a label saying so, which is the kind of wrong a reader cannot see.
+            exchange_ref = ref
+            if value is not None and bench["is_available"]:
+                position_exchange = _position_vs_sector(value, bench)
         else:
             history.append(ref)
             # The 3-year window is the headline one; 1y is shown but does not set the
@@ -230,4 +290,7 @@ def build_comparison(
         position_vs_sector_label_vi=SECTOR_LABELS[position_sector],
         position_vs_own_range=position_range,  # type: ignore[arg-type]
         position_vs_own_range_label_vi=RANGE_LABELS[position_range],
+        exchange=exchange_ref,
+        position_vs_exchange=position_exchange,  # type: ignore[arg-type]
+        position_vs_exchange_label_vi=EXCHANGE_LABELS[position_exchange],
     )

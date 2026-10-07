@@ -398,6 +398,121 @@ def db_seed() -> None:
     console.print(f"rule_spec_version [dim]{rule_spec_version(settings)[:16]}…[/dim]")
 
 
+@ingest_app.command("news")
+def ingest_news(
+    feeds: str = typer.Option("", help="Comma-separated feed codes. Default: every feed."),
+) -> None:
+    """Fetch RSS feeds into raw_document. Headlines only — never article bodies."""
+    from datetime import date  # noqa: PLC0415
+
+    from quantumedge.config import load_settings  # noqa: PLC0415
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.ingest import rss_news  # noqa: PLC0415
+    from quantumedge.ingest.base import store_raw  # noqa: PLC0415
+    from quantumedge.runs import PARTIAL_REASON, run_scope  # noqa: PLC0415
+
+    settings = load_settings()
+    codes = [c.strip() for c in feeds.split(",") if c.strip()] or None
+
+    with session_scope() as session:
+        try:
+            specs = rss_news.load_feed_specs(settings, codes=codes)
+        except rss_news.FeedSpecError as exc:
+            console.print(f"[red]{exc}[/red]")
+            raise typer.Exit(code=1) from exc
+
+        specs = rss_news.apply_db_rate_limits(session, specs)
+
+        table = Table("feed", "status", "bytes", title="qe ingest news")
+        stored = unchanged = failed = 0
+
+        # One run per feed, not one for all of them: `ingest_run.source_id` names a single
+        # source, and a run spanning four publishers could not answer "which one went
+        # quiet" - which is the question the manifest exists for.
+        for spec in specs:
+            with run_scope(
+                session,
+                PipelineStage.INGEST,
+                f"rss_news:{spec.code}",
+                source_code=spec.code,
+                as_of=date.today(),
+                params={"feed_url": spec.feed_url},
+            ) as (run_id, stats):
+                result = rss_news.fetch_feeds([spec])[0]
+                stats.update(rss_news.fetch_stats([result]))
+
+                if result.payload is not None:
+                    outcome = store_raw(session, run_id, [result.payload])
+                    stats.update(outcome.as_stats())
+                    stored += outcome.inserted
+                    unchanged += outcome.unchanged
+                    status = "new" if outcome.inserted else "unchanged"
+                else:
+                    if result.failed:
+                        failed += 1
+                        stats[PARTIAL_REASON] = result.note
+                    status = f"[yellow]{result.note}[/yellow]"
+
+                table.add_row(spec.code, status, str(result.byte_size))
+
+        console.print(table)
+        console.print(
+            f"stored [green]{stored}[/green] · unchanged [dim]{unchanged}[/dim] · "
+            f"failed [red]{failed}[/red]"
+        )
+        if failed:
+            console.print(
+                "[dim]a failed feed is a partial run, not a failed one - the others "
+                "still stored. See: qe doctor[/dim]"
+            )
+
+
+@extract_app.command("news")
+def extract_news_cmd(
+    feeds: str = typer.Option("", help="Comma-separated feed codes. Default: every feed."),
+) -> None:
+    """raw_document -> news_item. Headline, link, publisher, timestamp; nothing else."""
+    from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.extract.news import extract_news  # noqa: PLC0415
+    from quantumedge.runs import PARTIAL_REASON, run_scope  # noqa: PLC0415
+
+    codes = [c.strip() for c in feeds.split(",") if c.strip()] or None
+
+    with session_scope() as session:
+        with run_scope(
+            session,
+            PipelineStage.EXTRACT,
+            "news",
+            params={"feeds": codes or "all"},
+        ) as (run_id, stats):
+            outcome = extract_news(session, run_id, feed_codes=codes)
+            stats.update(outcome.as_stats())
+            if outcome.documents_failed:
+                # One publisher serving an error page must not cost the other three their
+                # headlines, so extraction never raises - which means the manifest is the
+                # only place the failure can be recorded.
+                stats[PARTIAL_REASON] = f"{outcome.documents_failed} document(s) unparseable"
+
+        table = Table("count", "what", title="qe extract news")
+        table.add_row(str(outcome.documents_read), "feed documents read")
+        table.add_row(str(outcome.items_seen), "items seen")
+        table.add_row(str(outcome.written), "headlines written")
+        table.add_row(str(outcome.unchanged), "already stored")
+        table.add_row(str(outcome.attributed), "attributed to a ticker")
+        table.add_row(str(outcome.unattributed), "left unattributed")
+        table.add_row(str(outcome.skipped), "skipped (no date / link / headline)")
+        console.print(table)
+
+        # Attribution is exact-match only. An unattributed headline is the expected
+        # outcome for most general-news items, not a failure to report.
+        console.print(
+            "[dim]attribution is exact alias or whole-symbol match only; a near miss is "
+            "left unattributed rather than guessed[/dim]"
+        )
+
+
 @ingest_app.command("prices")
 def ingest_prices(
     tickers: str = typer.Option("", help="Comma-separated symbols. Default: all covered."),
@@ -1316,8 +1431,10 @@ def calc_benchmarks(
 
     from quantumedge.calc.benchmarks import (  # noqa: PLC0415
         CALC_VERSION,
+        build_exchange_benchmarks,
         build_history_benchmarks,
         build_sector_benchmarks,
+        parse_exchange_window_label,
     )
     from quantumedge.config import load_settings  # noqa: PLC0415
     from quantumedge.db.enums import PipelineStage  # noqa: PLC0415
@@ -1339,10 +1456,14 @@ def calc_benchmarks(
         ) as (run_id, stats):
             sector = build_sector_benchmarks(session, run_id, as_of_date, minimum_sample=minimum)
             history = build_history_benchmarks(session, run_id, as_of_date, minimum_sample=minimum)
+            exchange = build_exchange_benchmarks(
+                session, run_id, as_of_date, minimum_sample=minimum
+            )
             stats.update(
                 {
                     "sector": sector.as_stats(),
                     "ticker_history": history.as_stats(),
+                    "exchange": exchange.as_stats(),
                 }
             )
 
@@ -1370,9 +1491,45 @@ def calc_benchmarks(
                 _num(r["p75"]),
             )
         console.print(table)
+
+        # Exchange rows carry no sector_id, so the join above cannot see them. Printed
+        # separately rather than left out: a median the pipeline wrote and no command
+        # shows is a number nobody checks.
+        venue_rows = session.execute(
+            sql(
+                "SELECT b.window_label, b.metric_code, b.sample_size, b.median, b.p25, b.p75 "
+                "FROM metric_benchmark b "
+                "WHERE b.as_of_date = :d AND b.scope = 'exchange' AND b.is_available "
+                "ORDER BY b.window_label, b.metric_code"
+            ),
+            {"d": as_of_date},
+        ).mappings()
+
+        venue_table = Table(
+            "exchange",
+            "metric",
+            "n",
+            "p25",
+            "median",
+            "p75",
+            title=f"exchange medians - {as_of_date}",
+        )
+        for r in venue_rows:
+            parsed = parse_exchange_window_label(r["window_label"])
+            venue_table.add_row(
+                parsed[0] if parsed else r["window_label"],
+                r["metric_code"],
+                str(r["sample_size"]),
+                _num(r["p25"]),
+                _num(r["median"]),
+                _num(r["p75"]),
+            )
+        console.print(venue_table)
+
         console.print(
             f"sector [green]{sector.available}[/green]/[dim]{sector.written}[/dim] available · "
-            f"own-history [green]{history.available}[/green]/[dim]{history.written}[/dim]"
+            f"own-history [green]{history.available}[/green]/[dim]{history.written}[/dim] · "
+            f"exchange [green]{exchange.available}[/green]/[dim]{exchange.written}[/dim]"
         )
 
 
@@ -1393,6 +1550,7 @@ def calc_backfill(
 
     from quantumedge.calc import fundamentals, liquidity  # noqa: PLC0415, F401
     from quantumedge.calc.benchmarks import (  # noqa: PLC0415
+        build_exchange_benchmarks,
         build_history_benchmarks,
         build_sector_benchmarks,
     )
@@ -1445,6 +1603,7 @@ def calc_backfill(
                 )
                 build_sector_benchmarks(session, run_id, as_of_date, minimum_sample=minimum)
                 build_history_benchmarks(session, run_id, as_of_date, minimum_sample=minimum)
+                build_exchange_benchmarks(session, run_id, as_of_date, minimum_sample=minimum)
                 stats.update(outcome.as_stats())
 
             active = ""

@@ -24,7 +24,8 @@ import structlog
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from quantumedge.db.enums import FlagState
+from quantumedge.calc.benchmarks import exchange_window_label
+from quantumedge.db.enums import BenchmarkScope, FlagState
 
 log = structlog.get_logger(__name__)
 
@@ -143,9 +144,90 @@ def _exact(value: Any) -> str:
     return f"{Decimal(format(d.normalize(), 'f')):,f}"
 
 
+# The only statistic a `metric_vs_benchmark` rule may compare against today. p25/p75 are
+# deliberately absent: at the sample sizes this universe produces they are interpolations
+# between two adjacent values rather than order statistics of the sample (see
+# calc.benchmarks.MIN_EXACT_QUARTILE_SAMPLE), so a flag keyed to one would fire on an
+# arithmetic artefact. An unrecognised stat is `unknown`, never a silent fallback to the
+# median — a rule asking for p75 and quietly getting the median is a wrong number.
+_BENCHMARK_STATS = frozenset({"median"})
+
+_BENCHMARK_COLUMNS = (
+    "b.id, b.median, b.sample_size, b.is_available, b.unavailable_reason, b.window_label"
+)
+
+
+def _sector_benchmark(ctx: RuleContext, code: str, window: str) -> dict[str, Any] | None:
+    """The row for this ticker's own sector. NULL `sector_id` matches nothing, by design:
+    `sector_id = c.sector_id` is never true when the company has no sector, so a
+    sector-less company reports `benchmark_not_computed` rather than matching some
+    arbitrary row."""
+    row = (
+        ctx.session.execute(
+            text(
+                f"SELECT {_BENCHMARK_COLUMNS} "
+                "FROM metric_benchmark b "
+                "JOIN ticker t ON t.id = :t "
+                "JOIN company c ON c.id = t.company_id "
+                "WHERE b.metric_code = :c AND b.as_of_date = CAST(:d AS date) "
+                "  AND b.scope = 'sector' "
+                "  AND b.window_label = :window AND b.sector_id = c.sector_id"
+            ),
+            {"t": ctx.ticker_id, "c": code, "d": ctx.as_of, "window": window},
+        )
+        .mappings()
+        .first()
+    )
+    return dict(row) if row else None
+
+
+def _exchange_benchmark(
+    ctx: RuleContext, code: str, window: str
+) -> tuple[dict[str, Any] | None, str | None]:
+    """The row for the venue this ticker is listed on, and that venue's code.
+
+    An exchange-scope row carries neither `sector_id` nor `ticker_id`, so the exchange is
+    encoded into `window_label` (`calc.benchmarks.exchange_window_label`) and that label is
+    the whole of the match. Both id columns are asserted NULL as well: if a future writer
+    ever puts an exchange-scope row against a sector, this returns nothing and the flag
+    reads `unknown`, rather than comparing against a population it cannot name.
+    """
+    exchange_code = ctx.session.execute(
+        text("SELECT exchange_code FROM ticker WHERE id = :t"),
+        {"t": ctx.ticker_id},
+    ).scalar_one_or_none()
+    if exchange_code is None:
+        return None, None
+
+    row = (
+        ctx.session.execute(
+            text(
+                f"SELECT {_BENCHMARK_COLUMNS} "
+                "FROM metric_benchmark b "
+                "WHERE b.metric_code = :c AND b.as_of_date = CAST(:d AS date) "
+                "  AND b.scope = 'exchange' "
+                "  AND b.window_label = :label "
+                "  AND b.sector_id IS NULL AND b.ticker_id IS NULL"
+            ),
+            {"c": code, "d": ctx.as_of, "label": exchange_window_label(exchange_code, window)},
+        )
+        .mappings()
+        .first()
+    )
+    return (dict(row) if row else None), str(exchange_code)
+
+
 def _metric_vs_benchmark(
     ctx: RuleContext, rule: dict[str, Any], expr: dict[str, Any]
 ) -> Evaluation:
+    """`{metric, op, benchmark: {scope, window, stat}, multiple}` against a stored row.
+
+    Every path out of here that lacks a real number on both sides is `unknown` with a
+    reason naming which side was missing. There are five such paths — the metric was never
+    computed, the metric is unavailable, the stat is unsupported, the benchmark was never
+    computed, the benchmark is unavailable — and none of them may return `inactive`, which
+    would assert that the rule was tested against real data and passed.
+    """
     code = expr["metric"]
     metric = _load_metric(ctx, code)
     if metric is None or not metric["is_available"]:
@@ -157,37 +239,35 @@ def _metric_vs_benchmark(
         return Evaluation(state=FlagState.UNKNOWN, reason=reason)
 
     spec = expr["benchmark"]
-    bench = (
-        ctx.session.execute(
-            text(
-                "SELECT b.id, b.median, b.sample_size, b.is_available, b.unavailable_reason "
-                "FROM metric_benchmark b "
-                "JOIN ticker t ON t.id = :t "
-                "JOIN company c ON c.id = t.company_id "
-                "WHERE b.metric_code = :c AND b.as_of_date = CAST(:d AS date) "
-                "  AND b.scope = CAST(:scope AS benchmark_scope) "
-                "  AND b.window_label = :window AND b.sector_id = c.sector_id"
-            ),
-            {
-                "t": ctx.ticker_id,
-                "c": code,
-                "d": ctx.as_of,
-                "scope": spec["scope"],
-                "window": spec["window"],
-            },
-        )
-        .mappings()
-        .first()
-    )
+    scope, window = spec["scope"], spec["window"]
+    stat = spec.get("stat", "median")
+    if stat not in _BENCHMARK_STATS:
+        return Evaluation(state=FlagState.UNKNOWN, reason=f"benchmark_stat_not_supported:{stat}")
+
+    bench: dict[str, Any] | None
+    if scope == BenchmarkScope.SECTOR.value:
+        bench, label = _sector_benchmark(ctx, code, window), scope
+    elif scope == BenchmarkScope.EXCHANGE.value:
+        bench, exchange_code = _exchange_benchmark(ctx, code, window)
+        # The venue goes in the reason and the evidence: "the HOSE median" is a claim a
+        # reader can check, "the exchange median" is not once coverage spans HNX.
+        label = f"{scope}:{exchange_code}" if exchange_code else scope
+    else:
+        # ticker_history included: comparing a figure against a quantile of its own past
+        # is a different rule shape, and resolving it here would have silently matched a
+        # sector row on a NULL sector_id comparison that is never true.
+        return Evaluation(state=FlagState.UNKNOWN, reason=f"benchmark_scope_not_supported:{scope}")
 
     if bench is None:
-        return Evaluation(
-            state=FlagState.UNKNOWN, reason=f"benchmark_not_computed:{code}:{spec['scope']}"
-        )
+        return Evaluation(state=FlagState.UNKNOWN, reason=f"benchmark_not_computed:{code}:{label}")
     if not bench["is_available"] or bench["median"] is None:
+        # Both halves are load-bearing. `is_available=false` is the stated contract, and
+        # the NULL check is the belt: a row written available-but-empty by some future
+        # writer must not reach the comparison below, where `Decimal(str(None))` would
+        # raise and `None * multiple` would be worse.
         return Evaluation(
             state=FlagState.UNKNOWN,
-            reason=f"benchmark_unavailable:{bench['unavailable_reason']}",
+            reason=f"benchmark_unavailable:{code}:{label}:{bench['unavailable_reason']}",
         )
 
     multiple = Decimal(str(expr.get("multiple", 1)))
@@ -201,10 +281,12 @@ def _metric_vs_benchmark(
         "metric": code,
         "value": str(value),
         "op": op,
-        "sector_median": str(bench["median"]),
+        "benchmark_scope": label,
+        "benchmark_stat": stat,
+        "benchmark_median": str(bench["median"]),
         "multiple": str(multiple),
         "comparand": str(comparand),
-        "sample_size": bench["sample_size"],
+        "sample_size": str(bench["sample_size"]),
     }
     if not bool(_OPS[op](value, comparand)):
         return Evaluation(state=FlagState.INACTIVE, triggered_values=triggered)
@@ -223,7 +305,7 @@ def _metric_vs_benchmark(
                 "kind": "benchmark",
                 "ref": f"metric_benchmark:{bench['id']}",
                 "label": (
-                    f"sector median {_exact(bench['median'])} x{_exact(multiple)} "
+                    f"{label} median {_exact(bench['median'])} x{_exact(multiple)} "
                     f"(n={bench['sample_size']})"
                 ),
                 "source_url": None,

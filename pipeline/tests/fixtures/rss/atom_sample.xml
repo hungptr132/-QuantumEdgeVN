@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Constructed Atom 1.0, per RFC 4287. No Vietnamese finance site surveyed on 2026-10-07
+  serves Atom, but a publisher switching format is a normal event and the failure mode to
+  avoid is a parser that answers "0 items" instead of complaining. Entry 1 uses
+  rel="alternate"; entry 2 omits rel, which RFC 4287 defines as defaulting to alternate.
+  Dates are RFC 3339, one in Z and one with a +07:00 offset.
+-->
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Kiểm thử Atom - Chứng khoán</title>
+  <link href="https://atom.kiemthu.example/" rel="alternate"/>
+  <link href="https://atom.kiemthu.example/feed.atom" rel="self"/>
+  <updated>2026-10-07T10:00:00Z</updated>
+  <id>urn:uuid:4f2a6d10-0000-4000-8000-000000000001</id>
+
+  <entry>
+    <title>Thép Nam Kim hoàn tất phát hành riêng lẻ</title>
+    <id>urn:uuid:4f2a6d10-0000-4000-8000-000000000002</id>
+    <link href="https://atom.kiemthu.example/anh/nkg.jpg" rel="enclosure" type="image/jpeg"/>
+    <link href="https://atom.kiemthu.example/nkg-phat-hanh-rieng-le" rel="alternate"/>
+    <published>2026-10-07T02:15:00Z</published>
+    <updated>2026-10-07T04:00:00Z</updated>
+    <summary type="text">KHONGLUUTRUNOIDUNG Phần summary của Atom tương đương description của RSS và cũng không bao giờ được lưu.</summary>
+  </entry>
+
+  <entry>
+    <title>HAX mở đại lý thứ 20</title>
+    <id>urn:uuid:4f2a6d10-0000-4000-8000-000000000003</id>
+    <link href="https://atom.kiemthu.example/hax-dai-ly-thu-20"/>
+    <published>2026-10-07T09:45:00+07:00</published>
+    <updated>2026-10-07T09:45:00+07:00</updated>
+    <content type="html">KHONGLUUTRUNOIDUNG Toàn văn bài báo.</content>
+  </entry>
+</feed>

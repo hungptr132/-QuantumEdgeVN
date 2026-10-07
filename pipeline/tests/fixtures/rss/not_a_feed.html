@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<!--
+  What a provider actually serves when it stops wanting to be read: HTTP 200, an HTML
+  page, no feed. A lenient parser answers this with an empty item list, which reads
+  downstream as a quiet news week. extract.news.parse_feed must raise instead.
+-->
+<html lang="vi">
+<head><meta charset="utf-8"><title>Vui lòng xác minh</title></head>
+<body>
+  <h1>Vui lòng xác minh bạn không phải robot</h1>
+  <p>Hệ thống tạm thời giới hạn truy cập từ địa chỉ của bạn.</p>
+  <form action="/verify" method="post"><button type="submit">Tiếp tục</button></form>
+</body>
+</html>

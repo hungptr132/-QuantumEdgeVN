@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A well-formed RSS 2.0 channel holding no items. This is a legitimate answer - a feed
+  can genuinely have nothing in it - and must stay distinguishable from not_a_feed.xml,
+  which is a failure. The counters, not the absence of rows, are what tell them apart.
+-->
+<rss version="2.0">
+  <channel>
+    <title>Kiểm thử - kênh rỗng</title>
+    <link>https://kiemthu.example/rong</link>
+    <description>Không có tin nào</description>
+    <pubDate>Wed, 07 Oct 2026 10:00:00 +0700</pubDate>
+    <lastBuildDate>Wed, 07 Oct 2026 10:00:00 +0700</lastBuildDate>
+  </channel>
+</rss>

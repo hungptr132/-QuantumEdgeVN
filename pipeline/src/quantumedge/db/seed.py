@@ -171,6 +171,94 @@ def seed_sources(session: Session, settings: Settings) -> int:
     return len(rows)
 
 
+def seed_ticker_aliases(session: Session, settings: Settings) -> int:
+    """Alias rows for headline attribution, derived from names already verified at seed
+    time, plus any the owner has reviewed by hand.
+
+    Only `company.legal_name_vi` is derived automatically. A legal name is long and
+    specific, so an exact token-boundary match on it cannot land on the wrong company.
+
+    `company.short_name` is deliberately NOT derived, even though it is right there and
+    the temptation is obvious. A trading nickname's false-positive risk varies per
+    company, and one of the nine covered names demonstrates it: ANV's short name is
+    "Nam Việt", which normalises to `nam viet` — a token-boundary substring of
+    `nam viet nam`. Any headline about southern Vietnam would have been attributed to a
+    named company, which is the exact failure this product exists to prevent. Nicknames
+    therefore go in the `aliases:` block of `seeds/reference.yaml`, where a person has
+    looked at each one.
+
+    `alias_norm` is computed by Postgres's `unaccent(lower(...))` rather than in Python,
+    because that is what `extract/news.py` normalises headlines with. Two definitions of
+    "normalised" on the two sides of a comparison is how an exact match stops being exact.
+    """
+    data = _load(settings.seeds_dir / "reference.yaml")
+
+    derived = len(
+        session.execute(
+            text(
+                "INSERT INTO ticker_alias (ticker_id, alias, alias_norm, alias_kind) "
+                "SELECT t.id, c.legal_name_vi, unaccent(lower(c.legal_name_vi)), "
+                "       'legal_name' "
+                "FROM ticker t JOIN company c ON c.id = t.company_id "
+                "WHERE c.legal_name_vi <> '' "
+                "ON CONFLICT (alias_norm, ticker_id) DO UPDATE SET "
+                " alias = EXCLUDED.alias, alias_kind = EXCLUDED.alias_kind "
+                "RETURNING id"
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    reviewed = data.get("aliases") or []
+    for row in reviewed:
+        session.execute(
+            text(
+                "INSERT INTO ticker_alias (ticker_id, alias, alias_norm, alias_kind) "
+                "SELECT t.id, :alias, unaccent(lower(:alias)), :kind "
+                "FROM ticker t WHERE t.symbol = :symbol "
+                "ON CONFLICT (alias_norm, ticker_id) DO UPDATE SET "
+                " alias = EXCLUDED.alias, alias_kind = EXCLUDED.alias_kind"
+            ),
+            {"symbol": row["symbol"], "alias": row["alias"], "kind": row["alias_kind"]},
+        )
+
+    return derived + len(reviewed)
+
+
+def seed_news_sources(session: Session, settings: Settings) -> int:
+    """`source` rows for the RSS feeds declared in `seeds/news_sources.yaml`.
+
+    Read from that file rather than copied into `reference.yaml`, because
+    `rate_limit_per_min` and `robots_note` are read at fetch time from the same file. A
+    threshold typed into two files drifts the first time it is tuned — which has already
+    happened once in this repo — so the feed list has exactly one home.
+    """
+    from quantumedge.ingest.rss_news import load_feed_specs  # noqa: PLC0415
+
+    specs = load_feed_specs(settings)
+    for spec in specs:
+        session.execute(
+            text(
+                "INSERT INTO source (code, kind, name, base_url, rate_limit_per_min, "
+                " robots_note) "
+                "VALUES (:code, 'rss', :name, :base_url, :rate_limit_per_min, :robots_note) "
+                "ON CONFLICT (code) DO UPDATE SET kind = EXCLUDED.kind, "
+                "name = EXCLUDED.name, base_url = EXCLUDED.base_url, "
+                "rate_limit_per_min = EXCLUDED.rate_limit_per_min, "
+                "robots_note = EXCLUDED.robots_note"
+            ),
+            {
+                "code": spec.code,
+                "name": spec.name,
+                "base_url": spec.base_url,
+                "rate_limit_per_min": spec.rate_limit_per_min,
+                "robots_note": spec.robots_note.strip(),
+            },
+        )
+    return len(specs)
+
+
 def seed_fact_codes(session: Session, settings: Settings) -> int:
     data = _load(settings.rules_dir / "fact_codes.yaml")
     rows = data.get("fact_codes", [])
@@ -415,7 +503,8 @@ def seed_events(session: Session, settings: Settings) -> dict[str, int]:
 
 def seed_all(session: Session, settings: Settings) -> dict[str, int]:
     counts = seed_reference(session, settings)
-    counts["source"] = seed_sources(session, settings)
+    counts["ticker_alias"] = seed_ticker_aliases(session, settings)
+    counts["source"] = seed_sources(session, settings) + seed_news_sources(session, settings)
     counts["financial_fact_def"] = seed_fact_codes(session, settings)
     counts["metric_def"] = seed_metrics(session, settings)
     counts["flag_def"] = seed_flags(session, settings)

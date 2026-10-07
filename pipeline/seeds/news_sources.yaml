@@ -1,0 +1,90 @@
+# Vietnamese finance RSS feeds.
+#
+# WHY THIS LIVES IN seeds/ AND NOT rules/
+# ---------------------------------------
+# `rule_spec_version` is the content hash across every file in `rules/` (see
+# db/seed.py::rule_spec_version), and that hash is what marks a stored flag stale.
+# A news feed list has no bearing on whether a flag's threshold still holds, so
+# putting it in `rules/` would mean that adding one publisher invalidates every
+# flag_instance in the database and forces a full recalc. It is reference data
+# about where to look, not a rule about what to conclude, so it is seeded.
+#
+# WHAT MAY BE STORED FROM THESE FEEDS
+# -----------------------------------
+# Headline, link, publisher, timestamp. Nothing else, ever. `news_item` has no
+# body column by design (see models.NewsItem and CLAUDE.md). Every feed below
+# ships a `<description>` holding an article summary; the extractor never reads
+# that element. The only prose about an article we may publish is our own
+# `editor_note_vi`, written by a person.
+#
+# `robots_note` records what each site's robots.txt actually said, checked on the
+# date given, so the access basis travels with the code instead of living in
+# someone's memory. Re-check it when a feed starts failing: a Disallow appearing
+# is a legitimate reason for a feed to stop being fetched.
+
+feeds:
+  - code: cafef_rss
+    name: CafeF - Thị trường chứng khoán (RSS)
+    publisher: CafeF
+    kind: rss
+    lang: vi
+    base_url: https://cafef.vn
+    feed_url: https://cafef.vn/thi-truong-chung-khoan.rss
+    rate_limit_per_min: 10
+    robots_note: >-
+      cafef.vn/robots.txt checked 2026-10-07: "User-agent: * / Allow: /" plus two
+      sitemaps, no Disallow of any kind. The feed path is explicitly permitted.
+      Feed verified returning RSS 2.0 with 20+ items. pubDate uses the two-digit
+      year form ("Wed, 07 Oct 26 15:52:00 +0700"), which is legal RFC 822.
+
+  - code: vnexpress_kinhdoanh_rss
+    name: VnExpress - Kinh doanh (RSS)
+    publisher: VnExpress
+    kind: rss
+    lang: vi
+    base_url: https://vnexpress.net
+    feed_url: https://vnexpress.net/rss/kinh-doanh.rss
+    rate_limit_per_min: 10
+    robots_note: >-
+      vnexpress.net/robots.txt checked 2026-10-07: "User-agent: * / Allow: /",
+      with no Disallow for the wildcard agent. The file then names agents
+      individually - several AI crawlers are explicitly allowed and several
+      others (AmazonBot, archive.org_bot, AliyunSecBot) explicitly disallowed.
+      We fetch under the wildcard rule with our own named User-Agent, which the
+      file does not restrict. Feed verified returning RSS 2.0.
+
+  - code: vietstock_chungkhoan_rss
+    name: Vietstock - Chứng khoán (RSS)
+    publisher: Vietstock
+    kind: rss
+    lang: vi
+    base_url: https://vietstock.vn
+    feed_url: https://vietstock.vn/144/chung-khoan.rss
+    rate_limit_per_min: 6
+    robots_note: >-
+      vietstock.vn/robots.txt checked 2026-10-07: "User-agent: *" with
+      Disallow for /*.js, /*.css, /manager, /export and /cache. No crawl-delay
+      is declared. The feed path /144/chung-khoan.rss matches none of those
+      prefixes, so it is permitted; note that /export is disallowed, so no
+      future module here may use it. Rate limit set to 6/min rather than the
+      usual 20 because no crawl-delay is declared and the site is the smallest
+      of the four. Feed verified returning RSS 2.0.
+
+  - code: tinnhanhchungkhoan_rss
+    name: Tin nhanh chứng khoán - Trang chủ (RSS)
+    publisher: Tin nhanh chứng khoán
+    kind: rss
+    lang: vi
+    base_url: https://www.tinnhanhchungkhoan.vn
+    feed_url: https://www.tinnhanhchungkhoan.vn/rss/home.rss
+    rate_limit_per_min: 10
+    robots_note: >-
+      www.tinnhanhchungkhoan.vn/robots.txt checked 2026-10-07: "User-Agent: * /
+      Allow: /" with Disallow for /api/, /search/, /tim-kiem/, /search.html,
+      /tim-kiem.html, /tu-khoa.html, /tag.html and /print.html. /rss/ is not
+      among them. The per-category paths advertised elsewhere (/rss/chung-khoan.rss)
+      302 to /404, so the site-wide /rss/home.rss is the only working feed; it is
+      not finance-only, which is why attribution must stay exact-match. Its
+      pubDate offsets are written "+07:00" with a colon, which RFC 822 does not
+      permit and the stdlib parser silently drops - extract/news.py normalises
+      the colon form before parsing rather than inheriting a 7-hour error.

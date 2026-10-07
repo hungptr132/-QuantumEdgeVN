@@ -117,3 +117,20 @@ users:
   - slug: richard
     display_name: Richard
     role: reviewer
+
+# Hand-reviewed aliases for headline attribution, on top of the legal names that
+# `seed_ticker_aliases` derives automatically.
+#
+# Short names are NOT derived, and the reason is worth keeping in front of whoever adds
+# to this list. ANV's short name is "Nam Việt", which normalises to `nam viet` - a
+# token-boundary substring of `nam viet nam`. Added blindly, every headline about
+# southern Vietnam would have been attributed to a named company.
+#
+# So each entry here is an assertion that someone checked the alias cannot land on
+# anything else. alias_kind is one of: legal_name | short_name | forum_nickname | typo.
+#
+# aliases:
+#   - symbol: NKG
+#     alias: "Thép Nam Kim"
+#     alias_kind: short_name
+aliases: []

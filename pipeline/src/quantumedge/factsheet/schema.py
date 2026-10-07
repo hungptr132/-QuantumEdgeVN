@@ -69,6 +69,20 @@ class BenchmarkRef(Strict):
     members: list[str] = Field(default_factory=list)
     provenance: list[Provenance] = Field(default_factory=list)
 
+    # True when p25/p75 are interpolations between order statistics rather than data
+    # points in the sample. Under the R type 7 convention, at n=3 p25 lands exactly at
+    # (min + median)/2 and p75 at (median + max)/2 — so they carry no information beyond
+    # three numbers already in this row, and calling them percentiles overclaims: the
+    # fraction of a three-point sample below p25 is 1/3, not 1/4. n=5 is the first size
+    # where both quartiles are real order statistics.
+    #
+    # Carried rather than suppressed because the banding rule that reads them is strictly
+    # more conservative than the median-only alternative. Withholding them would push the
+    # page back onto "a dong above the midpoint is above the sector", which is worse. The
+    # defect is the label, so the label is what this fixes.
+    quartiles_are_interpolated: bool = False
+    quartile_note_vi: str | None = None
+
 
 class Comparison(Strict):
     """Where a figure sits relative to its peers and its own past.
@@ -90,6 +104,14 @@ class Comparison(Strict):
 
     position_vs_own_range: Literal["near_high", "near_low", "mid_range", "unknown"] = "unknown"
     position_vs_own_range_label_vi: str = "không công bố"
+
+    # Per exchange, not whole-market: HOSE, HNX and UPCOM impose different listing,
+    # free-float and disclosure regimes, so a median across their union summarises two or
+    # three populations and describes none. It is also the only cross-section available to
+    # a company with no sector assigned, which the sector query filters out entirely.
+    exchange: BenchmarkRef | None = None
+    position_vs_exchange: Literal["above", "below", "in_line", "unknown"] = "unknown"
+    position_vs_exchange_label_vi: str = "không công bố"
 
 
 class Figure(Strict):

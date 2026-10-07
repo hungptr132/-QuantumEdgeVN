@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Constructed, not recorded. Each <item> exercises one decision in extract/news.py that
+  the four recorded feeds happen not to contain today. The <description> bodies carry the
+  marker KHONGLUUTRUNOIDUNG so a test can assert that no text column of news_item holds
+  any part of them.
+-->
+<rss version="2.0">
+  <channel>
+    <title>Phiên bản kiểm thử</title>
+    <link>https://kiemthu.example/chung-khoan</link>
+    <description>Feed dựng tay cho kiểm thử</description>
+    <pubDate>Wed, 07 Oct 2026 10:00:00 +0700</pubDate>
+
+    <!-- 1. Exact multi-word alias match -> attributes NKG. -->
+    <item>
+      <title>Thép Nam Kim báo lãi quý III tăng 42%</title>
+      <link>https://kiemthu.example/nkg-lai-quy-3-18827100701.htm</link>
+      <description><![CDATA[KHONGLUUTRUNOIDUNG Toàn văn bài báo nằm trong phần tử description và không bao giờ được phép đi vào news_item, vì bảng này cố tình không có cột nội dung.]]></description>
+      <pubDate>Wed, 07 Oct 2026 09:30:00 +0700</pubDate>
+    </item>
+
+    <!-- 2. Near miss on a multi-word alias: "nam kim" is a prefix of "nam kimono".
+         Must NOT attribute. -->
+    <item>
+      <title>Nam Kimono mở thêm 12 cửa hàng tại Hà Nội</title>
+      <link>https://kiemthu.example/nam-kimono-mo-cua-hang-18827100702.htm</link>
+      <description><![CDATA[KHONGLUUTRUNOIDUNG Phần nội dung này cũng phải bị bỏ qua hoàn toàn.]]></description>
+      <pubDate>Wed, 07 Oct 2026 09:31:00 +0700</pubDate>
+    </item>
+
+    <!-- 3. Near miss on a bare symbol: NKGP is not NKG. Must NOT attribute. -->
+    <item>
+      <title>Cổ phiếu NKGP bị đưa vào diện cảnh báo</title>
+      <link>https://kiemthu.example/nkgp-canh-bao-18827100703.htm</link>
+      <description><![CDATA[KHONGLUUTRUNOIDUNG Một mã gần giống nhưng khác hẳn.]]></description>
+      <pubDate>Wed, 07 Oct 2026 09:32:00 +0700</pubDate>
+    </item>
+
+    <!-- 4. Bare symbol as a whole token -> attributes HAX. -->
+    <item>
+      <title>HAX chốt quyền nhận cổ tức tiền mặt</title>
+      <link>https://kiemthu.example/hax-co-tuc-18827100704.htm</link>
+      <description><![CDATA[KHONGLUUTRUNOIDUNG Nội dung chi tiết về đợt chi trả.]]></description>
+      <pubDate>Wed, 07 Oct 2026 09:33:00 +0700</pubDate>
+    </item>
+
+    <!-- 5. A date no parser can read. Skipped and counted - never defaulted to now(). -->
+    <item>
+      <title>Thị trường phiên chiều: thanh khoản tiếp tục giảm</title>
+      <link>https://kiemthu.example/phien-chieu-18827100705.htm</link>
+      <description><![CDATA[KHONGLUUTRUNOIDUNG Diễn biến phiên chiều.]]></description>
+      <pubDate>hôm qua lúc 14:00</pubDate>
+    </item>
+
+    <!-- 6. No <link>, and a <guid> that declares itself not a permalink. Skipped. -->
+    <item>
+      <title>Bản tin tài chính sáng 7/10</title>
+      <guid isPermaLink="false">kiemthu-18827100706</guid>
+      <description><![CDATA[KHONGLUUTRUNOIDUNG Bản tin tổng hợp.]]></description>
+      <pubDate>Wed, 07 Oct 2026 09:35:00 +0700</pubDate>
+    </item>
+
+    <!-- 7. Two different companies in one headline. Stored, but left unattributed:
+         choosing one would be a guess about which the article is about. -->
+    <item>
+      <title>Thép Nam Kim và Hàng Xanh cùng lọt rổ VN30 kỳ này</title>
+      <link>https://kiemthu.example/nkg-hax-vn30-18827100707.htm</link>
+      <description><![CDATA[KHONGLUUTRUNOIDUNG Cả hai mã đều được nhắc tới.]]></description>
+      <pubDate>Wed, 07 Oct 2026 09:36:00 +0700</pubDate>
+    </item>
+
+    <!-- 8. The "+07:00" offset form that the stdlib RFC 822 parser silently drops.
+         Must store 02:00Z, not 09:00Z. -->
+    <item>
+      <title>Hàng Xanh công bố kết quả kinh doanh tháng 9</title>
+      <link>https://kiemthu.example/hang-xanh-thang-9-18827100708.htm</link>
+      <description><![CDATA[KHONGLUUTRUNOIDUNG Kết quả tháng 9.]]></description>
+      <pubDate>Wed, 07 Oct 2026 09:00:00 +07:00</pubDate>
+    </item>
+  </channel>
+</rss>

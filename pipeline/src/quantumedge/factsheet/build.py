@@ -407,7 +407,11 @@ def collect_allowed_numbers(figures: list[Figure], flags: list[FlagItem]) -> lis
         # treating a legitimate figure as a hallucination.
         if figure.comparison is None:
             continue
-        for ref in [figure.comparison.sector, *figure.comparison.own_history]:
+        for ref in [
+            figure.comparison.sector,
+            figure.comparison.exchange,
+            *figure.comparison.own_history,
+        ]:
             if ref is None or not ref.available:
                 continue
             for stat in (ref.median, ref.p25, ref.p75, ref.min_value, ref.max_value):
