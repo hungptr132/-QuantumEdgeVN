@@ -31,10 +31,16 @@ directory. Never add a module that spans two stages.
 | Fact sheet | `factsheet/` | calc output | `fact_sheet` |
 | Review | `review/` | `fact_sheet` | `fact_sheet.status`, `fact_sheet_review_log` |
 | Agents | `agents/` | see `agents/README.md` | nothing in Phase 1 |
+| Seed | `db/seed.py` | `rules/*.yaml`, `seeds/*.yaml` | reference tables, plus `event` and `event_coverage` |
 
 One module per external source in `ingest/`. This is load-bearing: when a provider
 breaks — and one already did, see `docs/data-sources.md` — the blast radius must be
 a single file.
+
+`event` and `event_coverage` have no fetching stage in Phase 1: they hold what a person
+read in a disclosure archive, so they load from `seeds/events.yaml` like other reference
+data. Agent 1 will write the same two tables from `ingest/` with `extraction_method =
+'llm_agent1'`, and nothing downstream changes.
 
 Shared helpers live at package root (`config.py`, `hashing.py`, `time.py`, `runs.py`)
 and are imported by stages, never the reverse.
