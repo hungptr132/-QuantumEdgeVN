@@ -65,6 +65,9 @@ the "reverses if" column is how you know it's time to revisit rather than re-lit
 | 2026-10-07 | Templates are written with a **`.template` suffix** that must be removed by hand | Found immediately: `qe ingest filings` stored a blank template, and the sheet then listed a filing source it had no figure from. Having ingest peek inside to see whether a form is filled would mean parsing before storing, breaking the stage boundary. An unfilled form simply is not a document yet | Never |
 | 2026-10-07 | `lineage.data_sources` lists sources that **contributed a row**, not sources with a stored document | Same discovery. An unreadable filing or an empty form leaves a `raw_document` behind, and `raw_document` is append-only so the row cannot be removed - the fix has to be that lineage reflects contribution. A sheet claiming a statement source it got nothing from is exactly the overclaim the rest of the builder prevents | Never |
 
+| 2026-10-07 | Revision **0001 creates `pg_trgm` and `unaccent`** itself, duplicating the bootstrap SQL | Found by running a cold start for the first time instead of assuming one: `alembic upgrade head` on a fresh database failed on `ticker_alias_trgm` with "operator class gin_trgm_ops does not exist", which names neither the extension nor the fix. That path is the documented recovery procedure, so it was broken. `IF NOT EXISTS` makes the duplication harmless, and both are trusted extensions so the database owner needs no superuser | Never |
+| 2026-10-07 | A **cold-start drill** (`scripts/verify-cold-start.ps1`) is part of the repo | The test suite migrates a database that already exists, so it structurally cannot catch a migration that only works on a database someone prepared by hand. The drill builds one from nothing and asserts the guarantees a recovered database must have | Never |
+
 ## Kill criteria
 
 Carried from the product spec, section 8 — recorded here so they stay honest:

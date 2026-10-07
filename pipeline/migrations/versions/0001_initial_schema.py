@@ -80,7 +80,21 @@ WHERE f.status = 'published'
 
 
 def upgrade() -> None:
-    # --- enums first: tables below reference these types ---
+    # --- extensions first: an index below needs an operator class from pg_trgm ---
+    #
+    # These are also created by infra/postgres/init/02_database_setup.sql, which the
+    # bootstrap command applies. They are repeated here because the migration must be
+    # self-sufficient: `alembic upgrade head` against a fresh database is the documented
+    # recovery path, and without this it fails on `ticker_alias_trgm` with
+    # "operator class gin_trgm_ops does not exist" - an error that says nothing about the
+    # missing extension. Found by actually trying a cold start rather than assuming one.
+    #
+    # IF NOT EXISTS makes the repetition harmless, and both are trusted extensions in
+    # PostgreSQL 13+, so the database owner can create them without superuser.
+    op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+    op.execute("CREATE EXTENSION IF NOT EXISTS unaccent")
+
+    # --- enums next: tables below reference these types ---
     for name, values in ENUMS.items():
         joined = ", ".join(f"'{v}'" for v in values)
         op.execute(f"CREATE TYPE {name} AS ENUM ({joined})")

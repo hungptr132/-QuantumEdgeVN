@@ -117,6 +117,23 @@ If the cluster is gone entirely, `qe db bootstrap` recreates it from
 dump with `--data-only` on top of that, or restore the whole dump into a fresh database
 as above.
 
+## Verifying the restore path before you need it
+
+`scriptserify-cold-start.ps1` runs the drill against a throwaway database: createdb,
+`alembic upgrade head`, seed, then assert the guarantees a recovered database must have —
+the published view, `qe_web` denied on every base table, the append-only trigger, the
+extensions, the seeded tickers. It drops the scratch database afterwards and never touches
+the real one.
+
+Run it after changing a migration, and before trusting a backup.
+
+This is not hypothetical. The first time the drill was actually run it **failed**:
+`ticker_alias_trgm` needs an operator class from `pg_trgm`, nothing in the migration
+created the extension, and `alembic upgrade head` on a fresh database died with
+"operator class gin_trgm_ops does not exist" — an error that says nothing about the cause.
+The extension creation now lives in revision 0001, where the plan always said it belonged.
+Until then, the recovery procedure written below would not have worked.
+
 ## What a restore cannot give back
 
 Nothing, as long as a dump exists. Without one: every number returns via
