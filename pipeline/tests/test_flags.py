@@ -15,10 +15,18 @@ from sqlalchemy.orm import Session
 
 from quantumedge.calc.flags import evaluate_flags
 from quantumedge.calc.rule_engine import RuleContext, evaluate
+from quantumedge.config import load_settings
 from quantumedge.db.enums import FlagState, PipelineStage
+from quantumedge.db.seed import rule_spec_version
 from quantumedge.runs import start_run
 
 AS_OF = date(2026, 6, 30)
+
+# Synthetic rules inserted by hand still have to carry the CURRENT rules-file hash,
+# because `evaluate_flags` refuses to run against definitions the YAML has moved past.
+# A hardcoded "spec1" looked harmless and made every one of these tests exercise the
+# exact state that guard exists to prevent.
+CURRENT_SPEC = rule_spec_version(load_settings())
 
 
 def _metric(
@@ -62,7 +70,7 @@ def _threshold_rule(code: str = "test_flag", metric: str = "price_to_par") -> di
         "requires_metrics": [metric],
         "on_missing": "unknown",
         "rule_version": "v1",
-        "rule_spec_version": "spec1",
+        "rule_spec_version": CURRENT_SPEC,
     }
 
 
@@ -145,7 +153,7 @@ class TestRulesWithNoSourceYet:
             "severity": "high",
             "rule_expr": {"event_type": "auditor_change", "within_months": 24},
             "on_missing": "unknown",
-            "rule_spec_version": "spec1",
+            "rule_spec_version": CURRENT_SPEC,
         }
         result = evaluate(ctx, rule)
         assert result.state is FlagState.UNKNOWN
@@ -167,7 +175,7 @@ class TestRulesWithNoSourceYet:
                 "within_months": 18,
             },
             "on_missing": "unknown",
-            "rule_spec_version": "spec1",
+            "rule_spec_version": CURRENT_SPEC,
         }
         result = evaluate(ctx, rule)
         assert result.state is FlagState.UNKNOWN
@@ -182,7 +190,7 @@ class TestRulesWithNoSourceYet:
             "severity": "info",
             "rule_expr": {},
             "on_missing": "unknown",
-            "rule_spec_version": "spec1",
+            "rule_spec_version": CURRENT_SPEC,
         }
         result = evaluate(ctx, rule)
         assert result.state is FlagState.UNKNOWN
@@ -200,10 +208,13 @@ class TestPersistence:
                 " rule_spec_version) "
                 "VALUES ('price_below_par_value', 'Giá dưới mệnh giá', 'valuation', 'watch', "
                 " 'metric_threshold', CAST(:expr AS jsonb), "
-                " ARRAY['price_to_par'], 'unknown', 'Giải thích', 'v1', 'spec1') "
+                " ARRAY['price_to_par'], 'unknown', 'Giải thích', 'v1', :spec) "
                 "ON CONFLICT (code) DO NOTHING"
             ),
-            {"expr": json.dumps({"metric": "price_to_par", "op": "<", "value": 1.0})},
+            {
+                "expr": json.dumps({"metric": "price_to_par", "op": "<", "value": 1.0}),
+                "spec": CURRENT_SPEC,
+            },
         )
 
     def test_every_rule_produces_a_row_for_every_ticker(

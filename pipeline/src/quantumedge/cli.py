@@ -1538,7 +1538,12 @@ def run_daily(
     import os  # noqa: PLC0415
     import subprocess  # noqa: PLC0415
 
-    steps: list[tuple[str, list[str]]] = []
+    # Seed first, always. `flag_def` and `metric_def` mirror rules/*.yaml, and nothing
+    # downstream reloads them - so without this, editing a threshold and running the chain
+    # evaluated flags against the OLD definitions and stamped them with the old
+    # rule_spec_version, with no error. `qe calc flags` now refuses in that state, which
+    # would have made the chain fail here instead. Seeding is idempotent and cheap.
+    steps: list[tuple[str, list[str]]] = [("db seed (rules -> definitions)", ["db", "seed"])]
     if not skip_ingest:
         steps.append(("ingest prices", ["ingest", "prices"]))
     steps += [

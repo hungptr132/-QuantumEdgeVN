@@ -72,9 +72,14 @@ class Health:
             )
 
         if self.stale_flag_rows:
+            # `qe db seed` first, and not optionally. flag_def mirrors rules/flags.yaml and
+            # only seeding refreshes it, so `qe calc flags` alone re-evaluated against the
+            # old definitions and left the staleness exactly as it was. This warning used
+            # to name only the second half, which is how the gap was found: the remediation
+            # it printed did not clear what it was reporting.
             out.append(
                 f"{self.stale_flag_rows} flag rows were evaluated under an older rule spec.  "
-                "Fix: qe calc flags"
+                "Fix: qe db seed && qe calc flags"
             )
 
         if self.stale_published:

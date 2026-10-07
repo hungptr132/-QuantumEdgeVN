@@ -64,6 +64,48 @@ def _tickers(session: Session, symbols: list[str] | None) -> list[dict[str, Any]
     return [dict(r) for r in rows]
 
 
+class StaleRuleDefinitions(RuntimeError):
+    """`flag_def` does not match `rules/*.yaml`, so evaluating would use old thresholds."""
+
+
+def _refuse_if_definitions_are_stale(session: Session) -> None:
+    """Refuse to evaluate flags against rule definitions the YAML has moved past.
+
+    `flag_def` is a mirror of `rules/flags.yaml`, refreshed only by `qe db seed`. Nothing
+    in the calc stage reloads it, and `flag_instance` inherits its `rule_spec_version` from
+    the row it was evaluated against — so editing a threshold and running `qe calc flags`
+    produced flags computed from the OLD threshold, stamped with the OLD version, and no
+    error anywhere.
+
+    It was visible only because `qe doctor` reported the flags stale *after* a recompute
+    that was supposed to clear it, and the remediation it printed (`qe calc flags`) could
+    not have worked. `qe run` did not seed either.
+
+    Refusing rather than auto-seeding: seeding writes to reference tables, which is not
+    the calc stage's business, and a silent reload would hide that the rules changed from
+    whoever is about to look at the output.
+    """
+    from quantumedge.config import load_settings  # noqa: PLC0415
+    from quantumedge.db.seed import rule_spec_version  # noqa: PLC0415
+
+    expected = rule_spec_version(load_settings())
+    stored = sorted(
+        {
+            str(v)
+            for v in session.execute(
+                text("SELECT DISTINCT rule_spec_version FROM flag_def WHERE is_active")
+            ).scalars()
+        }
+    )
+    if stored and stored != [expected]:
+        raise StaleRuleDefinitions(
+            "flag_def was loaded from a different rules/*.yaml than the one on disk "
+            f"(stored {', '.join(s[:12] for s in stored)}…, expected {expected[:12]}…). "
+            "Evaluating now would apply the old thresholds and stamp the result with the "
+            "old version. Run `qe db seed` first."
+        )
+
+
 def evaluate_flags(
     session: Session,
     calc_run_id: int,
@@ -75,6 +117,8 @@ def evaluate_flags(
     rules = _rules(session)
     if not rules:
         raise LookupError("no active flag rules - run: qe db seed")
+
+    _refuse_if_definitions_are_stale(session)
 
     for ticker in _tickers(session, symbols):
         ctx = RuleContext(
