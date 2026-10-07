@@ -56,12 +56,23 @@ packages = ["src/quantumedge"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.format]
 # Migration bodies are generated DDL. Reformatting them risks changing semantics for no
-# benefit, and their long column definitions are inherent. env.py IS linted.
-extend-exclude = ["migrations/versions"]
+# benefit, and their long column definitions are inherent.
+exclude = ["migrations/versions/*.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+
+# Migrations are *linted* even though they are not formatted. They used to be excluded
+# from both, and that is how `import sqlalchemy as sa` became `as s` in revision
+# 5c77d43f28ec and shipped: every `sa.Column` in the body was an undefined name, the
+# suite stayed green because the test database already had the revision applied, and the
+# failure only appeared on a cold start - the one path a recovery depends on. F821 catches
+# it in a second. Only the stylistic rules that generated DDL inherently trips are waived.
+[tool.ruff.lint.per-file-ignores]
+"migrations/versions/*" = ["E501", "I001", "E402"]
 
 [tool.mypy]
 python_version = "3.12"
