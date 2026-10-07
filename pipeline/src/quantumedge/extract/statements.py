@@ -57,6 +57,11 @@ class Candidate:
     label: str
     amount: Decimal | None
     field_path: str
+    # Set only by the transcription reader, where a person has already named the line and
+    # there is no Ma so to match on. When present, VAS matching is skipped - but the
+    # identity checks are NOT, so a mistyped figure still breaks the balance sheet and is
+    # refused like any other bad parse.
+    fact_code: str | None = None
 
 
 @dataclass
@@ -201,7 +206,70 @@ def _looks_numeric(cell: str) -> bool:
     return parse_amount(cell) is not None
 
 
-READERS = {".xlsx": _rows_from_xlsx, ".xls": _rows_from_xlsx, ".pdf": _rows_from_pdf}
+def _rows_from_yaml(path: Path) -> list[Candidate]:
+    """A statement transcribed by hand, as YAML.
+
+    Exists because the automated route needs a spreadsheet, and a great many Vietnamese
+    filings are scanned PDFs with no text layer. Rather than OCR them - guessing at digits
+    is the one thing this pipeline may not do - a person reads the filing and types the
+    dozen figures that matter, citing where each came from.
+
+    That is not a loosening of the no-retyping rule. The rule is that no *model* may
+    retype a figure; a person transcribing their own source document, recording the page
+    it came from, is the recorded fallback. And the transcription is held to the same
+    standard as a parse: every figure needs a citation, and the whole statement must
+    satisfy the VAS identities or it is refused. A typo in total_equity breaks the balance
+    sheet and nothing is written.
+    """
+    import yaml  # noqa: PLC0415
+
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    source = data.get("source") or {}
+    document = str(source.get("document") or path.stem)
+    facts = data.get("facts") or {}
+
+    candidates: list[Candidate] = []
+    for fact_code, entry in facts.items():
+        if entry is None:
+            # A key left blank is a line the transcriber could not find. Skipped, not zero.
+            continue
+        if isinstance(entry, dict):
+            raw_value = entry.get("value")
+            cite = str(entry.get("cite") or "").strip()
+        else:
+            raw_value, cite = entry, ""
+
+        amount = parse_amount(raw_value)
+        if amount is None:
+            continue
+        if not cite:
+            # source_field_path is NOT NULL for a reason: a figure nobody can trace is
+            # worse than no figure. A transcription without a citation is refused.
+            raise ValueError(
+                f"{path.name}: '{fact_code}' has a value but no `cite`. "
+                "Every transcribed figure must say where it came from, e.g. "
+                'cite: "Bang CDKT, ma so 270, trang 5".'
+            )
+
+        candidates.append(
+            Candidate(
+                vas_code="",
+                label=str(fact_code),
+                amount=amount,
+                field_path=f"{document} :: {cite}",
+                fact_code=str(fact_code),
+            )
+        )
+    return candidates
+
+
+READERS = {
+    ".xlsx": _rows_from_xlsx,
+    ".xls": _rows_from_xlsx,
+    ".pdf": _rows_from_pdf,
+    ".yaml": _rows_from_yaml,
+    ".yml": _rows_from_yaml,
+}
 
 
 def read_candidates(path: Path) -> list[Candidate]:
@@ -292,6 +360,13 @@ def extract_statements(
         matched: dict[str, tuple[Decimal, str, bool]] = {}
         for candidate in candidates:
             if candidate.amount is None:
+                continue
+            if candidate.fact_code is not None:
+                # Transcribed: the person named the line, so there is nothing to match.
+                # Still subject to the identity checks below.
+                matched.setdefault(
+                    candidate.fact_code, (candidate.amount, candidate.field_path, False)
+                )
                 continue
             result = match(spec, candidate.vas_code, candidate.label)
             if not result.ok:

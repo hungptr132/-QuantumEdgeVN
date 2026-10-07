@@ -511,13 +511,16 @@ def ingest_filings(
         console.print(f"[yellow]no filings under {settings.filings_dir}[/yellow]")
         raise typer.Exit(code=0)
 
-    with session_scope() as session, run_scope(
-        session,
-        PipelineStage.INGEST,
-        "company_filings",
-        source_code=filings_source.SOURCE_CODE,
-        params={"symbols": symbols or "all"},
-    ) as (run_id, stats):
+    with (
+        session_scope() as session,
+        run_scope(
+            session,
+            PipelineStage.INGEST,
+            "company_filings",
+            source_code=filings_source.SOURCE_CODE,
+            params={"symbols": symbols or "all"},
+        ) as (run_id, stats),
+    ):
         result = StoreResult()
         for found in outcome.found:
             stored = filings_source.archive(found, settings.filing_store_dir)
@@ -539,6 +542,119 @@ def ingest_filings(
     console.print(f"new [green]{result.inserted}[/green] · unchanged [dim]{result.unchanged}[/dim]")
     for rejected in outcome.rejected:
         console.print(f"  [yellow]skipped[/yellow] {rejected}")
+
+
+@ingest_app.command("statement-template")
+def statement_template(
+    tickers: str = typer.Option("", help="Comma-separated symbols. Default: all covered."),
+    year: int = typer.Option(..., help="Fiscal year the filing covers, e.g. 2024."),
+    period: str = typer.Option("Y", help="Y, H1, H2, or Q1..Q4."),
+    force: bool = typer.Option(False, help="Overwrite a template that already exists."),
+) -> None:
+    """Write a YAML template per ticker, to be filled in from a filing by hand.
+
+    For the case the spreadsheet route cannot serve: a great many Vietnamese filings are
+    scanned PDFs with no text layer, and OCR on a financial statement would be guessing at
+    digits. A person reads the filing and types the dozen figures that matter, citing the
+    page each came from.
+
+    The transcription is held to the same standard as a parse. Every figure needs a
+    citation, and the statement must satisfy the VAS identities - so a typo in one line
+    breaks the balance sheet and the whole period is refused rather than written.
+    """
+    from sqlalchemy import text as sql  # noqa: PLC0415
+
+    from quantumedge.config import load_settings  # noqa: PLC0415
+    from quantumedge.db.session import session_scope  # noqa: PLC0415
+    from quantumedge.extract.mapping.vas import spec_for  # noqa: PLC0415
+
+    settings = load_settings()
+    period = period.upper()
+    if period not in {"Y", "H1", "H2", "Q1", "Q2", "Q3", "Q4"}:
+        console.print(f"[red]period must be Y, H1, H2 or Q1..Q4, not {period}[/red]")
+        raise typer.Exit(code=1)
+
+    spec = spec_for(settings.rules_dir)
+    # The lines the identities need come first: without them the statement cannot
+    # self-validate and would be accepted on trust.
+    required = sorted({c for i in spec.identities for c in (*i.left, *i.right)})
+    required = [c.removeprefix("_negative_") for c in required]
+    others = sorted({line.fact_code for line in spec.lines.values()} - set(required))
+
+    with session_scope() as session:
+        if tickers:
+            symbols = [s.strip().upper() for s in tickers.split(",") if s.strip()]
+        else:
+            symbols = list(
+                session.execute(
+                    sql("SELECT symbol FROM ticker WHERE is_covered ORDER BY symbol")
+                ).scalars()
+            )
+        # The Vietnamese label for each fact code, so a template reads as a statement
+        # rather than as a list of identifiers.
+        labels: dict[str, str] = {
+            str(row[0]): str(row[1])
+            for row in session.execute(sql("SELECT code, label_vi FROM financial_fact_def")).all()
+        }
+
+    written, skipped = [], []
+    for symbol in symbols:
+        folder = settings.filings_dir / symbol
+        folder.mkdir(parents=True, exist_ok=True)
+        # Written with a .template suffix so ingest cannot pick it up while it is still
+        # empty. An unfilled form is not a document, and storing one would make the
+        # fact sheet claim a filing source it does not have. The alternative - having
+        # ingest peek inside to see whether it is filled - would mean parsing before
+        # storing, which is the stage boundary this pipeline keeps.
+        path = folder / f"{year}-{period}-transcribed.yaml.template"
+        if path.exists() and not force:
+            skipped.append(f"{symbol}: {path.name} already exists")
+            continue
+
+        lines = [
+            "# Transcribed by hand from the filing. Delete any line you cannot find -",
+            "# a blank is read as 'not disclosed', which is honest. A zero is a claim.",
+            "#",
+            "# Every figure needs a `cite` saying where it came from, or it is refused:",
+            "# a number nobody can trace is worse than no number.",
+            "#",
+            "# The statement must also satisfy the VAS identities, so the lines marked",
+            "# REQUIRED have to be present or there is nothing to check the rest against.",
+            "",
+            "source:",
+            '  document: ""        # e.g. Bao cao tai chinh hop nhat da kiem toan 2024',
+            '  url: ""             # where it was downloaded from, if anywhere',
+            '  transcribed_by: ""  # your reviewer slug',
+            "",
+            "facts:",
+        ]
+        for group, codes in (
+            ("REQUIRED - the identities need these", required),
+            ("Optional", others),
+        ):
+            lines.append(f"  # ---- {group} ----")
+            for code in codes:
+                lines.append(f"  # {labels.get(code, code)}")
+                lines.append(f"  {code}:")
+                lines.append("    value:")
+                lines.append('    cite: ""')
+            lines.append("")
+
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        written.append(str(path.relative_to(settings.filings_dir.parent.parent)))
+
+    for w in written:
+        console.print(f"  [green]wrote[/green] {w}")
+    for s in skipped:
+        console.print(f"  [yellow]skipped[/yellow] {s} [dim](--force to overwrite)[/dim]")
+    if written:
+        console.print()
+        console.print(
+            f"[bold]{len(written)} templates.[/bold] Fill in the figures, then rename "
+            "each file to drop the [bold].template[/bold] suffix - that is what makes it "
+            "a filing rather than a blank form."
+        )
+        console.print("Then: qe ingest filings && qe extract statements")
 
 
 @extract_app.command("statements")

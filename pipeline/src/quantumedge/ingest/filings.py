@@ -45,8 +45,9 @@ DOC_TYPE = "financial_statement"
 
 # Formats worth attempting, in order of how reliably they extract. A spreadsheet carries
 # the figures as numbers; a PDF carries a picture of them, and a scanned PDF carries a
-# picture of a picture.
-SUPPORTED_SUFFIXES = {".xlsx", ".xls", ".pdf"}
+# picture of a picture. YAML is a statement transcribed by hand, for the scanned case -
+# cheaper than OCR and far more honest, since every figure cites its page.
+SUPPORTED_SUFFIXES = {".xlsx", ".xls", ".pdf", ".yaml", ".yml"}
 
 # <fiscal_year>-<period>-<free text>
 FILENAME_PATTERN = re.compile(

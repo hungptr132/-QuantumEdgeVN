@@ -434,3 +434,201 @@ class TestAssumedMappingsAreCounted:
 
         assert outcome.assumed_lines_used == outcome.facts_written
         assert outcome.as_stats()["assumed_lines_used"] > 0
+
+
+def _transcription(path: Path, *, unbalance: bool = False, omit_cite: bool = False) -> Path:
+    """A statement transcribed by hand, as a person would fill the template in."""
+    import yaml
+
+    total = 900_000_000 if unbalance else 1_000_000_000
+
+    def entry(value: int) -> dict[str, object]:
+        row: dict[str, object] = {"value": value}
+        if not omit_cite:
+            row["cite"] = "Bang CDKT, trang 5"
+        return row
+
+    yaml.safe_dump(
+        {
+            "source": {
+                "document": "BCTC hop nhat da kiem toan 2024",
+                "url": "https://example.invalid/bctc.pdf",
+                "transcribed_by": "richard",
+            },
+            "facts": {
+                "total_assets": entry(1_000_000_000),
+                "total_liabilities": entry(400_000_000),
+                "total_equity": entry(600_000_000),
+                "total_liabilities_and_equity": entry(total),
+                "revenue": entry(800_000_000),
+                "cost_of_goods_sold": entry(560_000_000),
+                "gross_profit": entry(240_000_000),
+                "net_profit_after_tax": entry(68_000_000),
+                # A line the transcriber could not find: left blank, not zeroed.
+                "interest_expense": None,
+            },
+        },
+        path.open("w", encoding="utf-8"),
+        allow_unicode=True,
+    )
+    return path
+
+
+class TestTranscribedStatements:
+    """The route for scanned filings. A person typing figures from their own source
+    document is the recorded fallback — the no-retyping rule binds models, not people —
+    but the transcription is held to exactly the same standard as a parse."""
+
+    def test_a_transcription_produces_facts_citing_their_page(
+        self,
+        session: Session,
+        seed_ticker: int,
+        fact_defs: int,
+        filings_dir: Path,
+        tmp_path: Path,
+        spec,
+    ) -> None:
+        _transcription(filings_dir / "2024-Y-transcribed.yaml")
+        _ingest(session, seed_ticker, filings_dir, tmp_path / "store")
+
+        outcome = extract_statements(session, start_run(session, PipelineStage.EXTRACT, "t"), spec)
+
+        assert outcome.periods_written == 1
+        assert outcome.facts_written == 8  # nine keys, one deliberately blank
+        assert outcome.identity_failures == []
+
+        rows = dict(
+            session.execute(
+                text(
+                    "SELECT ff.fact_code, ff.source_field_path FROM financial_fact ff "
+                    "JOIN financial_period fp ON fp.id = ff.financial_period_id "
+                    "WHERE fp.ticker_id = :t"
+                ),
+                {"t": seed_ticker},
+            ).all()
+        )
+        # The citation is the provenance, and it names the document and the page.
+        assert "BCTC hop nhat da kiem toan 2024" in rows["total_assets"]
+        assert "trang 5" in rows["total_assets"]
+        # A blank line yields no row rather than a zero.
+        assert "interest_expense" not in rows
+
+    def test_a_transcription_must_still_balance(
+        self,
+        session: Session,
+        seed_ticker: int,
+        fact_defs: int,
+        filings_dir: Path,
+        tmp_path: Path,
+        spec,
+    ) -> None:
+        """The point of routing transcriptions through the same identities: a typo in one
+        figure breaks the balance sheet and the whole period is refused. Hand entry gets no
+        more trust than a parser does."""
+        _transcription(filings_dir / "2024-Y-transcribed.yaml", unbalance=True)
+        _ingest(session, seed_ticker, filings_dir, tmp_path / "store")
+
+        outcome = extract_statements(session, start_run(session, PipelineStage.EXTRACT, "t"), spec)
+
+        assert outcome.facts_written == 0
+        assert outcome.identity_failures
+        written = session.execute(
+            text(
+                "SELECT count(*) FROM financial_fact ff JOIN financial_period fp "
+                "ON fp.id = ff.financial_period_id WHERE fp.ticker_id = :t"
+            ),
+            {"t": seed_ticker},
+        ).scalar_one()
+        assert written == 0
+
+    def test_a_figure_without_a_citation_is_refused(
+        self,
+        session: Session,
+        seed_ticker: int,
+        fact_defs: int,
+        filings_dir: Path,
+        tmp_path: Path,
+        spec,
+    ) -> None:
+        """source_field_path is NOT NULL for a reason. An untraceable figure is worse than
+        no figure, so the reader refuses the file rather than inventing a path."""
+        _transcription(filings_dir / "2024-Y-transcribed.yaml", omit_cite=True)
+        _ingest(session, seed_ticker, filings_dir, tmp_path / "store")
+
+        outcome = extract_statements(session, start_run(session, PipelineStage.EXTRACT, "t"), spec)
+
+        assert outcome.facts_written == 0
+        assert outcome.skipped == 1
+        assert any("cite" in note for note in outcome.notes)
+
+    def test_transcribed_facts_are_not_counted_as_assumed_mappings(
+        self,
+        session: Session,
+        seed_ticker: int,
+        fact_defs: int,
+        filings_dir: Path,
+        tmp_path: Path,
+        spec,
+    ) -> None:
+        """`assumed` tracks unverified VAS line codes. A transcription bypasses the code
+        mapping entirely — the person named the line — so counting it there would overstate
+        how much rests on an unconfirmed circular reading."""
+        _transcription(filings_dir / "2024-Y-transcribed.yaml")
+        _ingest(session, seed_ticker, filings_dir, tmp_path / "store")
+
+        outcome = extract_statements(session, start_run(session, PipelineStage.EXTRACT, "t"), spec)
+
+        assert outcome.facts_written > 0
+        assert outcome.assumed_lines_used == 0
+
+
+class TestAnUnusedDocumentIsNotClaimedAsASource:
+    """A stored document that produced nothing must not appear in the sheet's lineage.
+
+    Found in practice: a blank transcription template was ingested, and the fact sheet
+    then listed `company_filing` among its data sources despite having no figure from it.
+    raw_document is append-only, so the bad row cannot be deleted - the fix has to be that
+    lineage reflects contribution, not mere presence.
+    """
+
+    def test_a_filing_that_yielded_no_facts_is_absent_from_lineage(
+        self,
+        session: Session,
+        seed_ticker: int,
+        fact_defs: int,
+        metric_defs: int,
+        filings_dir: Path,
+        tmp_path: Path,
+        spec,
+    ) -> None:
+        import yaml
+
+        from quantumedge.factsheet.build import _sources
+
+        # A form saved before anything was typed into it.
+        empty = filings_dir / "2024-Y-transcribed.yaml"
+        yaml.safe_dump(
+            {"source": {"document": ""}, "facts": {"total_assets": None}},
+            empty.open("w", encoding="utf-8"),
+        )
+        _ingest(session, seed_ticker, filings_dir, tmp_path / "store")
+        extract_statements(session, start_run(session, PipelineStage.EXTRACT, "t"), spec)
+
+        assert "company_filing" not in _sources(session, seed_ticker)
+
+    def test_a_filing_that_yielded_facts_does_appear(
+        self,
+        session: Session,
+        seed_ticker: int,
+        fact_defs: int,
+        filings_dir: Path,
+        tmp_path: Path,
+        spec,
+    ) -> None:
+        from quantumedge.factsheet.build import _sources
+
+        _transcription(filings_dir / "2024-Y-transcribed.yaml")
+        _ingest(session, seed_ticker, filings_dir, tmp_path / "store")
+        extract_statements(session, start_run(session, PipelineStage.EXTRACT, "t"), spec)
+
+        assert "company_filing" in _sources(session, seed_ticker)

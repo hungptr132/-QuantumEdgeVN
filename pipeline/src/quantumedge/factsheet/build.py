@@ -463,12 +463,37 @@ def _spec_version(session: Session, ticker_id: int, as_of: date) -> str:
 
 
 def _sources(session: Session, ticker_id: int) -> list[str]:
+    """Sources that actually contributed data to this ticker's page.
+
+    Having a stored document is not the same as having contributed a figure, and the
+    difference is not academic: an unreadable filing, or a form saved before it was filled
+    in, leaves a `raw_document` row behind. Listing it would have the sheet claim a
+    statement source it got nothing from — which is precisely the sort of overclaim the
+    rest of this file exists to prevent.
+
+    So a source counts only once something downstream points at one of its documents.
+    """
     return [
         str(s)
         for s in session.execute(
             text(
-                "SELECT DISTINCT s.code FROM raw_document rd JOIN source s ON s.id = rd.source_id "
-                "WHERE rd.ticker_id = :t ORDER BY s.code"
+                """
+                SELECT DISTINCT s.code
+                FROM raw_document rd
+                JOIN source s ON s.id = rd.source_id
+                WHERE rd.ticker_id = :t
+                  AND (
+                        EXISTS (SELECT 1 FROM price_bar pb
+                                 WHERE pb.source_raw_document_id = rd.id)
+                     OR EXISTS (SELECT 1 FROM financial_fact ff
+                                 WHERE ff.source_raw_document_id = rd.id)
+                     OR EXISTS (SELECT 1 FROM security_identifier si
+                                 WHERE si.source_raw_document_id = rd.id)
+                     OR EXISTS (SELECT 1 FROM news_item ni
+                                 WHERE ni.raw_document_id = rd.id)
+                  )
+                ORDER BY s.code
+                """
             ),
             {"t": ticker_id},
         ).scalars()
