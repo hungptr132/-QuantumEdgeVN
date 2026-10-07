@@ -1,7 +1,10 @@
 # Backup and recovery
 
-Run `.\scripts\backup.ps1` at the end of a working session. It mirrors git and dumps the
-database to `D:`, verifying both.
+Run `.\scripts\backup.ps1` at the end of a working session. It dumps the database to `E:`,
+mirrors git and the working tree to `D:`, and verifies each.
+
+`E:` is the primary store for this project. `D:` is the spare, and **nothing may exist
+only there** — see the last section.
 
 ## Why this exists
 
@@ -17,14 +20,19 @@ something to design around.
 
 ## What is backed up
 
-| What | Where | Covers |
+| Drive | Where | Covers |
 |---|---|---|
-| Git mirror | `D:\QuantumEdge-backup.git` | All history: code, `rules/*.yaml`, migrations, committed fact sheet snapshots, docs |
-| Database dump | `D:\QuantumEdge-backup-db\quantumedge-<timestamp>.dump` | Every table, including the review audit trail. Last 10 kept |
-| Plain files | `D:\QuantumEdge-backup-files\` | The working tree, excluding only what rebuilds itself. ~290 files, ~12 MB |
+| **E: (primary)** | `E:\QuantumEdge\backups\db\` | The database dump, written here **first**. Gitignored — binary, and on D: as well |
+| D: | `D:\QuantumEdge-backup.git` | All git history: code, `rules/*.yaml`, migrations, committed fact sheet snapshots, docs |
+| D: | `D:\QuantumEdge-backup-db\` | Copy of the dumps. Last 10 kept in both places |
+| D: | `D:\QuantumEdge-backup-files\` | Plain copy of the working tree, excluding only what rebuilds itself. ~290 files, ~12 MB |
 
-All three land on `D:` — NTFS, journalled, internal, not removable. Local only: no cloud,
-no account, nothing leaves the machine.
+The dump order matters. For two days it was written to `D:` alone, which meant the
+database — including the review stamps, the only thing here no rerun can recreate — had
+exactly one copy, on the drive that is supposed to be the spare.
+
+The D: copies are NTFS, journalled, internal, not removable. Local only: no cloud, no
+account, nothing leaves the machine.
 
 ### What the plain-file copy is for
 
@@ -149,6 +157,33 @@ If the cluster is gone entirely, `qe db bootstrap` recreates it from
 `infra/postgres/init/*.sql` and `alembic upgrade head` rebuilds the schema; restore the
 dump with `--data-only` on top of that, or restore the whole dump into a fresh database
 as above.
+
+## Nothing may exist only on D:
+
+`D:` is the spare, not a second home. Anything that lives there and nowhere else is
+one drive failure from gone, and worse, it looks backed up.
+
+Checked on 2026-10-07 in the reverse direction - every file on `D:` against `E:` - and
+one real gap turned up: the database dumps existed on `D:` alone. Nine were copied to
+`E:\QuantumEdge\backups\db\` and each verified readable, and the script now writes
+there first.
+
+The check is per-destination, because "the same file" means different things:
+
+* **Git mirror** - compare the object and ref *sets*, not files. A bare repo stores its
+  objects in packfiles, so byte-comparing against `E:\QuantumEdge\.git` would fail on
+  packing differences while the content was identical. 796 objects, matching refs.
+* **Dumps** - compare by SHA-256. These are the only files where `D:` could hold
+  something genuinely absent from `E:`.
+* **Plain files** - compare by relative path; it is a `/MIR` of `E:` by construction.
+
+One artifact was found and removed rather than copied across: a **0-byte dump** left
+behind when the first `pg_dump` failed on the DSN driver bug. It was unreadable by
+`pg_restore`, it occupied a slot in the 10-dump retention window - so it would
+eventually have pushed out a good dump - and it looked like a backup. Copying a known
+fake onto the primary store would have been worse than leaving it. The script now
+deletes the file if either the dump or its readability check fails, so it cannot happen
+again.
 
 ## Verifying the restore path before you need it
 

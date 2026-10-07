@@ -21,12 +21,21 @@
     The twelve quarters of backfilled history are merely expensive to rebuild; the audit
     trail is irreplaceable.
 
-    What this does NOT cover, deliberately:
-      * .env               — holds the database password. Duplicating a secret to widen
-                             its exposure is a poor trade when recovery is cheap; see
-                             docs/BACKUP.md for resetting the role passwords instead.
-      * pipeline/data/     — raw payloads, re-fetchable, and large.
-      * pipeline/.venv/    — reproducible from uv.lock.
+    Three destinations, and E: is the primary one:
+
+      E:\QuantumEdge\backups\db       the dump, written here FIRST
+      D:\QuantumEdge-backup.git       git mirror
+      D:\QuantumEdge-backup-db        copy of the dump
+      D:\QuantumEdge-backup-files     plain copy of the working tree
+
+    The dump order matters. For two days it was written to D: alone, which meant the
+    database — including the review stamps, the only thing here no rerun can recreate —
+    had exactly one copy, on the drive that is supposed to be the spare.
+
+    What this does NOT cover, because it rebuilds itself exactly:
+      * pipeline/.venv/      `uv sync` from uv.lock. 9.8 GB.
+      * web/node_modules/    `npm ci` from package-lock.json. 24 GB.
+      * __pycache__ and the mypy/pytest/ruff/next caches.
 
 .EXAMPLE
     .\scripts\backup.ps1
@@ -39,6 +48,7 @@
 param(
     [string]$Mirror = 'D:\QuantumEdge-backup.git',
     [string]$DbDir = 'D:\QuantumEdge-backup-db',
+    [string]$LocalDbDir = 'E:\QuantumEdge\backups\db',
     [string]$FilesDir = 'D:\QuantumEdge-backup-files',
     [switch]$SkipDatabase,
     [switch]$SkipFiles,
@@ -115,32 +125,56 @@ $dsn = $dsn -replace '^postgresql\+[a-z0-9]+://', 'postgresql://'
 $pgDump = 'C:\QuantumEdgePg\pgsql\bin\pg_dump.exe'
 if (-not (Test-Path $pgDump)) { throw "pg_dump not found at $pgDump" }
 
-if (-not (Test-Path $DbDir)) { New-Item -ItemType Directory -Path $DbDir | Out-Null }
+# The dump is written to E: FIRST, because E: is the primary store for this project and
+# nothing should exist only on the backup drive. D: then gets a copy.
+#
+# This was the one real gap: for two days the dumps lived on D: alone, so the database -
+# including the review stamps, the only thing here no rerun can recreate - had exactly one
+# copy, on the drive that is meant to be the spare.
+foreach ($dir in @($LocalDbDir, $DbDir)) {
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir | Out-Null }
+}
 $stamp = Get-Date -Format 'yyyy-MM-dd-HHmmss'
-$dump = Join-Path $DbDir "quantumedge-$stamp.dump"
+$dump = Join-Path $LocalDbDir "quantumedge-$stamp.dump"
 
 Write-Host "`nDumping the database..."
 # Custom format (-Fc): compressed, and restorable table-by-table with pg_restore.
 & $pgDump --dbname=$dsn --format=custom --file=$dump --no-password
-if ($LASTEXITCODE -ne 0) { throw "pg_dump failed with exit code $LASTEXITCODE" }
+$dumpCode = $LASTEXITCODE
+if ($dumpCode -ne 0) {
+    # pg_dump creates the file before it connects, so a failure leaves a 0-byte file
+    # behind. One of those sat in the backup set for two days looking like a backup, and it
+    # occupied a slot in the retention window - so it would eventually have pushed out a
+    # good dump. Remove it rather than leave a convincing fake.
+    if (Test-Path $dump) { Remove-Item $dump -Force -Confirm:$false }
+    throw "pg_dump failed with exit code $dumpCode (the empty file it left has been removed)"
+}
 
-$size = [math]::Round((Get-Item $dump).Length / 1MB, 1)
+$size = [math]::Round((Get-Item $dump).Length / 1MB, 2)
 Write-Host "  wrote $dump ($size MB)" -ForegroundColor Green
 
-# Prove the dump is readable rather than trusting that it was written. A silently
-# corrupt backup is worse than none, because it is trusted.
+# Prove the dump is readable rather than trusting that it was written. A silently corrupt
+# backup is worse than none, because it is trusted.
 $toc = & 'C:\QuantumEdgePg\pgsql\bin\pg_restore.exe' --list $dump 2>&1
-if ($LASTEXITCODE -ne 0) { throw "the dump just written is not readable by pg_restore" }
 $tables = ($toc | Select-String -Pattern 'TABLE DATA' -SimpleMatch).Count
+if ($LASTEXITCODE -ne 0 -or $tables -eq 0) {
+    if (Test-Path $dump) { Remove-Item $dump -Force -Confirm:$false }
+    throw "the dump just written is not readable by pg_restore - it has been removed"
+}
 Write-Host "  pg_restore reads it: $tables tables with data" -ForegroundColor Green
 
-# Keep a window of dumps. One dump is a single point of failure in its own right: a
-# corruption noticed late needs an older copy to fall back to.
-$old = Get-ChildItem $DbDir -Filter 'quantumedge-*.dump' |
-    Sort-Object LastWriteTime -Descending | Select-Object -Skip $Keep
-foreach ($f in $old) {
-    Remove-Item $f.FullName -Confirm:$false
-    Write-Host "  pruned $($f.Name)" -ForegroundColor DarkGray
+Copy-Item $dump (Join-Path $DbDir (Split-Path -Leaf $dump)) -Force
+Write-Host "  copied to $DbDir" -ForegroundColor Green
+
+# Keep a window of dumps in both places. One dump is a single point of failure in its own
+# right: a corruption noticed late needs an older copy to fall back to.
+foreach ($dir in @($LocalDbDir, $DbDir)) {
+    $old = Get-ChildItem $dir -Filter 'quantumedge-*.dump' -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending | Select-Object -Skip $Keep
+    foreach ($f in $old) {
+        Remove-Item $f.FullName -Force -Confirm:$false
+        Write-Host "  pruned $($f.Name) from $(Split-Path -Leaf $dir)" -ForegroundColor DarkGray
+    }
 }
 
 # --- plain files ------------------------------------------------------------------------
@@ -170,6 +204,7 @@ if (-not $SkipFiles) {
         (Join-Path $repo 'pipeline\.ruff_cache'),
         (Join-Path $repo 'web\node_modules'),
         (Join-Path $repo 'web\.next'),
+        (Join-Path $repo 'backups'),
         '__pycache__'
     )
 
@@ -200,6 +235,7 @@ if (-not $SkipFiles) {
 }
 
 Write-Host "`nBackup complete." -ForegroundColor Green
+Write-Host "db     -> $LocalDbDir  (primary)"
 Write-Host "git    -> $Mirror"
 Write-Host "db     -> $DbDir"
 if (-not $SkipFiles) { Write-Host "files  -> $FilesDir" }

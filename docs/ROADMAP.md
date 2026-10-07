@@ -76,10 +76,21 @@ entered by a person from filings.
 
 ## Backups
 
-`scriptsackup.ps1` mirrors git and dumps the database to `D:` (NTFS, internal), and
-verifies both. Run it at the end of a session. `docs/BACKUP.md` says what is not covered
-and how to recover it. This exists because `E:` disconnected mid-session on 2026-10-04
-while holding the only copy.
+`scripts\backup.ps1` dumps the database to `E:` and mirrors git, the dumps and the working
+tree to `D:` (NTFS, internal), verifying each. Run it at the end of a session.
+
+`E:` is the primary store, and **nothing may exist only on `D:`** — checked in both
+directions on 2026-10-07, which is how the database dumps turned out to be living on the
+spare drive alone. `docs/BACKUP.md` has what is excluded (only what rebuilds itself) and
+how to restore.
+
+Two drills, both worth running after a change that touches them:
+`scripts\verify-cold-start.ps1` rebuilds the schema from nothing and checks the guarantees
+a recovered database must have, and `scripts\verify-restore.ps1` restores the newest dump
+and checks the audit trail came back.
+
+This exists because `E:` disconnected mid-session on 2026-10-04 while holding the only
+copy of the project.
 
 ## Standing constraints
 

@@ -54,3 +54,6 @@ desktop.ini
 /QuantumEdge-backup.git/
 /QuantumEdge-backup-db/
 *.dump
+
+# Local database dumps (docs/BACKUP.md). Binary, large, and mirrored to D: as well.
+/backups/
