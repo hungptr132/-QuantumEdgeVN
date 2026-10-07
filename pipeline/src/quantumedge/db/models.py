@@ -360,6 +360,58 @@ class Event(Base):
     reviewed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
 
 
+class EventCoverage(Base):
+    """A person's assertion that they looked — the thing that lets "no event" mean anything.
+
+    `event_presence` rules can only answer three ways, and the difference between two of
+    them lives here. "No auditor change was disclosed" is a claim about the company. "We
+    have no way to know whether one was" is a claim about us. An empty `event` table
+    supports only the second, and a single hand-seeded row about one ticker must not be
+    allowed to upgrade every *other* ticker's answer to the first.
+
+    So absence is only evidence where someone recorded that they went looking. A row here
+    says: this ticker's disclosures of this type were read through `reviewed_through`, by
+    this person, from this source. Without it the rule stays `unknown` forever, which is
+    the honest answer. With it, an `inactive` result cites the review itself as its
+    evidence — the review is what makes the negative statement defensible.
+
+    `reviewed_by` is a real foreign key for the same reason `fact_sheet.reviewed_by` is:
+    an audit stamp pointing at free text is not an audit stamp.
+
+    When Agent 1 arrives it writes these rows too, with its model and prompt version, and
+    nothing downstream changes.
+    """
+
+    __tablename__ = "event_coverage"
+    __table_args__ = (
+        UniqueConstraint("ticker_id", "event_type", name="event_coverage_unique"),
+        # 'none' is the enum's sentinel for "no event", not a disclosure category anyone
+        # can review, so it cannot be claimed as covered.
+        CheckConstraint("event_type <> 'none'", name="event_coverage_real_type"),
+        CheckConstraint("char_length(source_note) >= 10", name="event_coverage_note_substantive"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    ticker_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("ticker.id"), nullable=False)
+    event_type: Mapped[enums.EventType] = mapped_column(
+        _enum(enums.EventType, "event_type"), nullable=False
+    )
+    # Absence is only evidence up to this date. A rule asking about a window that extends
+    # past it has not been answered, and must say so.
+    reviewed_through: Mapped[date] = mapped_column(Date, nullable=False)
+    reviewed_by: Mapped[str] = mapped_column(Text, ForeignKey("app_user.slug"), nullable=False)
+    reviewed_at: Mapped[datetime] = _ts()
+    # What was actually read, in enough detail that someone else could repeat it.
+    source_note: Mapped[str] = mapped_column(Text, nullable=False)
+    extraction_method: Mapped[enums.ExtractionMethod] = mapped_column(
+        _enum(enums.ExtractionMethod, "extraction_method"),
+        nullable=False,
+        server_default=enums.ExtractionMethod.MANUAL.value,
+    )
+    extractor_model: Mapped[str | None] = mapped_column(Text)
+    prompt_version: Mapped[str | None] = mapped_column(Text)
+
+
 # ───────────────────── deterministic extraction ─────────────────────
 
 

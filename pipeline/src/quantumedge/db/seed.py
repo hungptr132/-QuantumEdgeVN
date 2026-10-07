@@ -324,10 +324,100 @@ def seed_flags(session: Session, settings: Settings) -> int:
     return len(rows)
 
 
+def _ticker_id(session: Session, symbol: str, path: Path) -> int:
+    """Resolve a symbol, refusing to continue if it is unknown.
+
+    A typo in a seed file must not silently drop a row. These files are small and
+    hand-written, which is exactly the case where a quiet skip is unrecoverable: the
+    event would simply never appear and nothing would say why.
+    """
+    row = session.execute(
+        text("SELECT id FROM ticker WHERE symbol = :s"), {"s": symbol}
+    ).scalar_one_or_none()
+    if row is None:
+        raise LookupError(f"{path.name}: no such ticker {symbol!r} - seed reference.yaml first")
+    return int(row)
+
+
+def seed_events(session: Session, settings: Settings) -> dict[str, int]:
+    """Hand-curated disclosure events, and the coverage assertions behind them.
+
+    Reference data rather than ingest output: these rows come from a person reading
+    disclosures, not from a source module fetching bytes, so they load here with
+    `extraction_method='manual'`. Agent 1 will later write the same two tables from
+    `ingest/`, with its model and prompt version, and nothing downstream changes.
+
+    `event_coverage` is the half that carries the weight. An `event_presence` rule finding
+    nothing can only mean "nothing was disclosed" where someone recorded that they looked;
+    otherwise it means "we do not know", and those are different claims about a named
+    company. Both blocks ship empty for that reason - see the comment at the top of
+    `seeds/events.yaml`.
+    """
+    path = settings.seeds_dir / "events.yaml"
+    data = _load(path)
+    counts = {"event_coverage": 0, "event": 0}
+
+    for row in data.get("coverage") or []:
+        event_type = str(row["event_type"])
+        if event_type == "none":
+            raise ValueError(
+                f"{path.name}: coverage for {row['symbol']} claims event_type 'none', which is "
+                "the enum's sentinel for no event, not a category anyone can review"
+            )
+        session.execute(
+            text(
+                "INSERT INTO event_coverage (ticker_id, event_type, reviewed_through, "
+                " reviewed_by, source_note, extraction_method) "
+                "VALUES (:ticker_id, CAST(:event_type AS event_type), :reviewed_through, "
+                " :reviewed_by, :source_note, CAST(:method AS extraction_method)) "
+                "ON CONFLICT (ticker_id, event_type) DO UPDATE SET "
+                " reviewed_through = EXCLUDED.reviewed_through, "
+                " reviewed_by = EXCLUDED.reviewed_by, "
+                " source_note = EXCLUDED.source_note, "
+                " reviewed_at = now()"
+            ),
+            {
+                "ticker_id": _ticker_id(session, row["symbol"], path),
+                "event_type": event_type,
+                "reviewed_through": row["reviewed_through"],
+                "reviewed_by": row["reviewed_by"],
+                "source_note": row["source_note"].strip(),
+                "method": row.get("extraction_method", "manual"),
+            },
+        )
+        counts["event_coverage"] += 1
+
+    for row in data.get("events") or []:
+        session.execute(
+            text(
+                "INSERT INTO event (ticker_id, event_type, event_date, severity, source_url, "
+                " excerpt, extraction_method) "
+                "VALUES (:ticker_id, CAST(:event_type AS event_type), :event_date, "
+                " CAST(:severity AS flag_severity), :source_url, :excerpt, "
+                " CAST(:method AS extraction_method)) "
+                "ON CONFLICT (ticker_id, event_type, event_date, source_url) DO UPDATE SET "
+                " severity = EXCLUDED.severity, excerpt = EXCLUDED.excerpt"
+            ),
+            {
+                "ticker_id": _ticker_id(session, row["symbol"], path),
+                "event_type": str(row["event_type"]),
+                "event_date": row["event_date"],
+                "severity": row["severity"],
+                "source_url": row["source_url"],
+                "excerpt": row["excerpt"].strip(),
+                "method": row.get("extraction_method", "manual"),
+            },
+        )
+        counts["event"] += 1
+
+    return counts
+
+
 def seed_all(session: Session, settings: Settings) -> dict[str, int]:
     counts = seed_reference(session, settings)
     counts["source"] = seed_sources(session, settings)
     counts["financial_fact_def"] = seed_fact_codes(session, settings)
     counts["metric_def"] = seed_metrics(session, settings)
     counts["flag_def"] = seed_flags(session, settings)
+    counts.update(seed_events(session, settings))
     return counts

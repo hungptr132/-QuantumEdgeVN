@@ -1,0 +1,44 @@
+# Hand-curated disclosure events, and the record of who went looking for them.
+#
+# Two blocks, and the second is what makes the first mean anything.
+#
+#   events:   a disclosure that was found. Drives `event_presence` flag rules.
+#   coverage: an assertion that a person read this ticker's disclosures of this type
+#             through a given date. Without it, "no auditor change found" is not a
+#             statement about the company - it is a statement about us - so the rule
+#             answers `unknown` and the page says "khong tim thay cong bo tuong ung".
+#
+# Both ship EMPTY, deliberately. A negative statement about a named company requires
+# attached evidence (CLAUDE.md), and a coverage row is a human review stamp: writing one
+# would claim that someone read HOSE's disclosure archive when nobody has. The mechanism
+# is here; the assertion is the owner's to make, the same way a fact sheet needs a human
+# before it publishes.
+#
+# Until then every event rule reads `unknown` with reason `no_event_source_configured`,
+# which is the true answer.
+#
+# When Agent 1 exists it writes the same two tables with extraction_method: llm_agent1
+# plus its model and prompt version, and nothing downstream changes.
+
+# ---------------------------------------------------------------------------
+# A worked example of each, kept commented so the shape is unambiguous.
+#
+# coverage:
+#   - symbol: AGM
+#     event_type: auditor_change          # never 'none' - a CHECK rejects it
+#     reviewed_through: 2026-09-30        # absence is only evidence up to this date
+#     reviewed_by: richard                # must be an app_user.slug
+#     source_note: "HOSE disclosure archive for AGM, 2022-01-01 to 2026-09-30, read in full"
+#
+# events:
+#   - symbol: AGM
+#     event_type: auditor_change
+#     event_date: 2024-04-18
+#     severity: high                      # info | watch | high
+#     source_url: "https://.../cong-bo-thong-tin/..."
+#     excerpt: "Quoted from the disclosure. <= 500 chars, an excerpt and never a body."
+# ---------------------------------------------------------------------------
+
+coverage: []
+
+events: []

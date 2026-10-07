@@ -12,9 +12,11 @@ tests are the cheap guard that keeps the drill from regressing between runs.
 """
 
 import re
+import tomllib
 from pathlib import Path
 
-MIGRATIONS = Path(__file__).resolve().parents[1] / "migrations" / "versions"
+PIPELINE_ROOT = Path(__file__).resolve().parents[1]
+MIGRATIONS = PIPELINE_ROOT / "migrations" / "versions"
 
 # Index operator classes that only exist once an extension is installed.
 EXTENSION_OPS = {
@@ -102,3 +104,35 @@ class TestMigrationsAreSelfSufficient:
         assert len(heads) == 1, f"expected one head, found {sorted(heads)}"
         roots = [r for r, d in revisions.items() if d is None]
         assert len(roots) == 1, f"expected one root, found {roots}"
+
+
+class TestMigrationsStayInsideTheLinter:
+    """Revision 5c77d43f28ec shipped `import sqlalchemy as s` while its body called
+    `sa.Column`, so every name in its generated DDL was undefined. The suite stayed green
+    because the test database already had the revision applied; the failure appeared only
+    on a cold start, which is the one path a recovery depends on.
+
+    It was invisible because `extend-exclude` kept `migrations/versions` out of ruff
+    entirely. The reason written beside it was about not *formatting* generated DDL, which
+    is still right - excluding them from *linting* was collateral damage. F821 finds this
+    class of bug in about a second, so the only thing worth guarding is the config itself.
+    """
+
+    def test_linting_is_not_excluded(self) -> None:
+        config = tomllib.loads((PIPELINE_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        ruff = config["tool"]["ruff"]
+
+        for key in ("exclude", "extend-exclude"):
+            excluded = ruff.get(key, [])
+            assert not any("migrations" in pattern for pattern in excluded), (
+                f"[tool.ruff] {key} hides migrations from the linter as well as the "
+                "formatter; put the pattern under [tool.ruff.format] instead"
+            )
+
+    def test_formatting_is_still_excluded(self) -> None:
+        """The other half: reformatting generated DDL risks changing semantics for no
+        benefit, and those long column definitions are inherent."""
+        config = tomllib.loads((PIPELINE_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        excluded = config["tool"]["ruff"]["format"]["exclude"]
+
+        assert any("migrations" in pattern for pattern in excluded)
