@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { getPublished, listPublished } from "@/lib/queries/published";
-import { MetricTable, FlagList, GapList } from "@/components/Figures";
+import { MetricTable, FlagList, GapList, NewsList } from "@/components/Figures";
 import { LiquidityPanel, ReviewStamp, Disclaimer } from "@/components/Blocks";
 
 /**
@@ -53,7 +53,10 @@ export default async function TickerPage({
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
       <nav className="mb-6 text-sm">
-        <Link href="/" className="text-slate-500 underline hover:text-slate-900">
+        <Link
+          href="/"
+          className="text-slate-500 underline hover:text-slate-900"
+        >
           ← Tất cả mã đã công bố
         </Link>
       </nav>
@@ -64,12 +67,16 @@ export default async function TickerPage({
           <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-600">
             {row.exchange_code}
           </span>
-          <span className="text-sm text-slate-500">{row.sector_name_vi ?? "—"}</span>
+          <span className="text-sm text-slate-500">
+            {row.sector_name_vi ?? "—"}
+          </span>
         </div>
         <p className="mt-1 text-lg text-slate-700">{row.legal_name_vi}</p>
 
         {sheet.company.description_vi ? (
-          <p className="mt-3 max-w-prose text-slate-700">{sheet.company.description_vi}</p>
+          <p className="mt-3 max-w-prose text-slate-700">
+            {sheet.company.description_vi}
+          </p>
         ) : (
           // The description is NULL by decision: that prose is reserved for a person. It
           // appears in the gap list below rather than being quietly omitted.
@@ -87,6 +94,7 @@ export default async function TickerPage({
       <LiquidityPanel liquidity={sheet.liquidity} />
       <FlagList flags={sheet.flags} />
       <MetricTable title="Chỉ số khác" figures={sheet.other_metrics ?? []} />
+      <NewsList news={sheet.news} />
       <GapList gaps={sheet.disclosure_gaps} />
 
       <ReviewStamp

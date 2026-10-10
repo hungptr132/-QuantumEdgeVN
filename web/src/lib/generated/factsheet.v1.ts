@@ -30,7 +30,8 @@ export type Unit = string;
 export type Display = string;
 export type Available = boolean;
 export type UnavailableReason = string | null;
-export type Kind = "metric" | "benchmark" | "price_bar" | "financial_fact" | "event" | "filing" | "news" | "manual";
+export type Kind =
+  "metric" | "benchmark" | "price_bar" | "financial_fact" | "event" | "filing" | "news" | "manual" | "data_absence";
 export type Ref = string;
 export type Label = string;
 export type SourceUrl = string | null;
@@ -86,7 +87,13 @@ export type LabelVi2 = string;
 export type History = StateChange[];
 export type Flags = FlagItem[];
 export type RecentEvents = Provenance1[];
-export type News = Provenance1[];
+export type Headline = string;
+export type Url = string;
+export type Publisher = string;
+export type PublishedAt = string;
+export type DisplayDate = string;
+export type EditorNoteVi = string | null;
+export type News = NewsRef[];
 export type Field = string;
 export type LabelVi3 = string;
 export type Reason1 = string;
@@ -151,6 +158,17 @@ export interface Figure {
   provenance?: Provenance;
   comparison?: Comparison | null;
 }
+/**
+ * Where one figure or conclusion came from.
+ *
+ * `data_absence` is the odd one and the important one: a `data_absence` rule's evidence
+ * IS the absence — "no audited annual statement within 18 months of this date" — so it
+ * has a ref and a label but no document and no URL. The kind was missing from this
+ * Literal while `rule_engine._data_absence` already emitted it, which did not fail only
+ * because no ticker had statements yet, so the rule always returned `unknown` and never
+ * reached evidence. The first ticker to gain statements *and* a disclosure gap would
+ * have had its fact sheet refuse to build — the sheet for the company the gap is about.
+ */
 export interface Provenance1 {
   kind: Kind;
   ref: Ref;
@@ -243,6 +261,27 @@ export interface StateChange {
   from_state: FromState;
   to_state: ToState;
   label_vi: LabelVi2;
+}
+/**
+ * One headline, and nothing more than a headline.
+ *
+ * `news_item` has no body column — the copyright rule is expressed as the absence of a
+ * place to put the text — and this mirrors it exactly: headline, link, publisher,
+ * timestamp. There is no summary field and none may be added. A reader who wants the
+ * article follows the link to the publisher, which is also the only arrangement that
+ * keeps the publisher's traffic theirs.
+ *
+ * `display_date` is preformatted here because the web layer holds no formatting logic;
+ * `editor_note_vi` is the one line of prose we are entitled to publish, written by a
+ * person and never generated.
+ */
+export interface NewsRef {
+  headline: Headline;
+  url: Url;
+  publisher: Publisher;
+  published_at: PublishedAt;
+  display_date: DisplayDate;
+  editor_note_vi?: EditorNoteVi;
 }
 /**
  * Something a complete page would show and this one cannot.

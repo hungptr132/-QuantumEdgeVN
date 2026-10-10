@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { assertFactSheet } from "@/lib/factsheet";
-import type { FactSheet } from "@/lib/generated/factsheet.v1";
+import type { CheckedFactSheet } from "@/lib/factsheet";
 
 /**
  * Every query in the app lives here, and every one reads `published_ticker_page`.
@@ -22,7 +22,7 @@ export type PublishedRow = {
   reviewed_at: string | null;
   published_at: string | null;
   position_disclosure: string | null;
-  payload: FactSheet;
+  payload: CheckedFactSheet;
 };
 
 export async function listPublished(): Promise<PublishedRow[]> {
@@ -36,7 +36,10 @@ export async function listPublished(): Promise<PublishedRow[]> {
   // Validate here rather than at render time. `payload` is jsonb, so the declared type is
   // an assertion the compiler cannot check; a schema drift would otherwise surface as a
   // page missing a section, which a reader has no way to notice.
-  return rows.map((row) => ({ ...row, payload: assertFactSheet(row.payload, row.symbol) }));
+  return rows.map((row) => ({
+    ...row,
+    payload: assertFactSheet(row.payload, row.symbol),
+  }));
 }
 
 /**
@@ -44,7 +47,9 @@ export async function listPublished(): Promise<PublishedRow[]> {
  * indistinguishable from here, which is the intended behaviour. The caller turns null into
  * a 404 rather than revealing that a draft exists.
  */
-export async function getPublished(symbol: string): Promise<PublishedRow | null> {
+export async function getPublished(
+  symbol: string,
+): Promise<PublishedRow | null> {
   const rows = await sql<PublishedRow[]>`
     SELECT symbol, exchange_code, ticker_status, short_name, legal_name_vi,
            sector_name_vi, as_of_date, version, reviewed_by, reviewed_at,

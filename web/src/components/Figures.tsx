@@ -3,6 +3,7 @@ import type {
   FlagItem,
   DisclosureGap,
   Comparison,
+  NewsRef,
 } from "@/lib/generated/factsheet.v1";
 
 /**
@@ -23,7 +24,9 @@ import type {
  */
 function ComparisonCell({ comparison }: { comparison: Comparison }) {
   const sector = comparison.sector;
-  const threeYear = (comparison.own_history ?? []).find((h) => h.window_label === "3y");
+  const threeYear = (comparison.own_history ?? []).find(
+    (h) => h.window_label === "3y",
+  );
 
   return (
     <div className="mt-1.5 space-y-1 text-xs font-normal text-slate-500">
@@ -32,7 +35,9 @@ function ComparisonCell({ comparison }: { comparison: Comparison }) {
           <span className="text-slate-400">{sector.label_vi}: </span>
           {sector.available ? (
             <>
-              <span className="tabular-nums text-slate-600">{sector.display_median}</span>
+              <span className="tabular-nums text-slate-600">
+                {sector.display_median}
+              </span>
               {(sector.members ?? []).length > 0 ? (
                 <span className="text-slate-400">
                   {" "}
@@ -58,7 +63,9 @@ function ComparisonCell({ comparison }: { comparison: Comparison }) {
       {threeYear?.available ? (
         <div>
           <span className="text-slate-400">{threeYear.label_vi}: </span>
-          <span className="tabular-nums text-slate-600">{threeYear.display_range}</span>
+          <span className="tabular-nums text-slate-600">
+            {threeYear.display_range}
+          </span>
           {comparison.position_vs_own_range !== "unknown" ? (
             <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">
               {comparison.position_vs_own_range_label_vi}
@@ -70,7 +77,13 @@ function ComparisonCell({ comparison }: { comparison: Comparison }) {
   );
 }
 
-export function MetricTable({ title, figures }: { title: string; figures: Figure[] }) {
+export function MetricTable({
+  title,
+  figures,
+}: {
+  title: string;
+  figures: Figure[];
+}) {
   if (figures.length === 0) return null;
   return (
     <section className="mb-8">
@@ -81,8 +94,14 @@ export function MetricTable({ title, figures }: { title: string; figures: Figure
         <table className="w-full text-sm">
           <tbody>
             {figures.map((f) => (
-              <tr key={f.code} className="border-b border-slate-100 last:border-0">
-                <th scope="row" className="p-3 text-left align-top font-medium text-slate-700">
+              <tr
+                key={f.code}
+                className="border-b border-slate-100 last:border-0"
+              >
+                <th
+                  scope="row"
+                  className="p-3 text-left align-top font-medium text-slate-700"
+                >
                   {f.label_vi}
                   <p className="mt-1 max-w-prose text-xs font-normal text-slate-500">
                     {f.definition_vi}
@@ -90,7 +109,9 @@ export function MetricTable({ title, figures }: { title: string; figures: Figure
                 </th>
                 <td
                   className={`p-3 text-right align-top whitespace-nowrap tabular-nums ${
-                    f.available ? "font-semibold text-slate-900" : "text-slate-400 italic"
+                    f.available
+                      ? "font-semibold text-slate-900"
+                      : "text-slate-400 italic"
                   }`}
                 >
                   {f.display}
@@ -101,7 +122,9 @@ export function MetricTable({ title, figures }: { title: string; figures: Figure
                   ) : null}
                   {/* A bare number says little. Shown beside its sector median and its own
                       three-year range, it becomes information. */}
-                  {f.comparison ? <ComparisonCell comparison={f.comparison} /> : null}
+                  {f.comparison ? (
+                    <ComparisonCell comparison={f.comparison} />
+                  ) : null}
                 </td>
               </tr>
             ))}
@@ -148,7 +171,9 @@ export function FlagList({ flags }: { flags: FlagItem[] }) {
                 {flag.state_label_vi}
               </span>
             </div>
-            <p className="mt-2 max-w-prose text-sm text-slate-700">{flag.explanation_vi}</p>
+            <p className="mt-2 max-w-prose text-sm text-slate-700">
+              {flag.explanation_vi}
+            </p>
 
             {(flag.evidence ?? []).length > 0 ? (
               <div className="mt-3">
@@ -182,7 +207,9 @@ export function FlagList({ flags }: { flags: FlagItem[] }) {
                 recorded - a flag already set when coverage began has an unknown start, and
                 dating it to the first day we looked would invent a fact. */}
             {flag.active_since_label_vi ? (
-              <p className="mt-2 text-xs text-slate-600">{flag.active_since_label_vi}</p>
+              <p className="mt-2 text-xs text-slate-600">
+                {flag.active_since_label_vi}
+              </p>
             ) : null}
 
             {(flag.history ?? []).length > 0 ? (
@@ -202,7 +229,9 @@ export function FlagList({ flags }: { flags: FlagItem[] }) {
 
             {/* A flag we cannot assess says why. It is never presented as a clean result. */}
             {flag.state === "unknown" && flag.reason ? (
-              <p className="mt-2 font-mono text-xs text-amber-700">{flag.reason}</p>
+              <p className="mt-2 font-mono text-xs text-amber-700">
+                {flag.reason}
+              </p>
             ) : null}
           </li>
         ))}
@@ -226,19 +255,82 @@ export function GapList({ gaps }: { gaps: DisclosureGap[] }) {
         <table className="w-full text-sm">
           <tbody>
             {gaps.map((gap) => (
-              <tr key={gap.field} className="border-b border-slate-100 last:border-0">
-                <th scope="row" className="p-2.5 text-left font-normal text-slate-700">
+              <tr
+                key={gap.field}
+                className="border-b border-slate-100 last:border-0"
+              >
+                <th
+                  scope="row"
+                  className="p-2.5 text-left font-normal text-slate-700"
+                >
                   {gap.label_vi}
                 </th>
                 <td className="p-2.5 text-right whitespace-nowrap text-slate-400 italic">
                   {gap.display}
                 </td>
-                <td className="p-2.5 font-mono text-xs text-slate-400">{gap.reason}</td>
+                <td className="p-2.5 font-mono text-xs text-slate-400">
+                  {gap.reason}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+    </section>
+  );
+}
+
+/**
+ * Headlines, and deliberately only headlines.
+ *
+ * Every item is a link out to the publisher. There is no summary, no excerpt and no
+ * preview text, because `news_item` has no column that could hold one — the copyright
+ * rule is expressed in the schema rather than trusted to this component. It also keeps
+ * the publisher's traffic theirs, which is the arrangement that lets us link at all.
+ *
+ * Every headline here was attributed to this ticker by an exact alias or whole-symbol
+ * match in the pipeline. Nothing is matched loosely, and an unattributed market headline
+ * never reaches a company page: showing one would assert it was about this company.
+ */
+export function NewsList({ news }: { news: NewsRef[] }) {
+  return (
+    <section className="mb-8">
+      <h2 className="mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase">
+        Tin liên quan
+      </h2>
+      {news.length === 0 ? (
+        // Said rather than left blank. An empty section invites the reader to assume
+        // something was withheld; this says what the absence actually means, and for a
+        // thinly covered stock it is itself informative.
+        <p className="max-w-prose text-sm text-slate-500 italic">
+          Không có tiêu đề nào được gán cho mã này trong các nguồn đang theo
+          dõi. Việc gán tin chỉ dựa trên khớp chính xác tên hoặc mã chứng khoán.
+        </p>
+      ) : (
+        <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
+          {news.map((item) => (
+            <li key={item.url} className="p-3">
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="text-sm text-slate-800 underline decoration-slate-300 hover:decoration-slate-800"
+              >
+                {item.headline}
+              </a>
+              <p className="mt-1 font-mono text-xs text-slate-500">
+                {item.publisher} · {item.display_date}
+              </p>
+              {item.editor_note_vi && (
+                /* The only prose on this page written by a person rather than computed. */
+                <p className="mt-1 max-w-prose text-xs text-slate-600 italic">
+                  {item.editor_note_vi}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

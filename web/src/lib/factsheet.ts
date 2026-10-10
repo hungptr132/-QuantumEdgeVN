@@ -36,7 +36,13 @@ import type { FactSheet } from "@/lib/generated/factsheet.v1";
 export const SUPPORTED_SCHEMA_VERSION = "factsheet/v1";
 
 /** Sections the ticker page renders unconditionally. A missing one is a broken page. */
-const REQUIRED_ARRAYS = ["headline_metrics", "flags", "disclosure_gaps", "allowed_numbers"] as const;
+const REQUIRED_ARRAYS = [
+  "headline_metrics",
+  "flags",
+  "disclosure_gaps",
+  "allowed_numbers",
+  "news",
+] as const;
 
 /** Sections the page renders as objects. */
 const REQUIRED_OBJECTS = ["ticker", "company", "liquidity", "lineage"] as const;
@@ -59,28 +65,60 @@ export class FactSheetContractError extends Error {
  * `symbol` is passed only so the error names the page that failed — with nine tickers in a
  * build, "a sheet is malformed" is not an actionable message.
  */
-export function assertFactSheet(payload: unknown, symbol: string): FactSheet {
-  if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
-    throw new FactSheetContractError(symbol, `payload is ${describe(payload)}, not an object`);
+/**
+ * What the guard has actually established, expressed in the type.
+ *
+ * The generated types mark a section optional whenever the pydantic contract gave it a
+ * default, so `news` and `other_metrics` arrive as `T | undefined` even though every
+ * payload carries them. Once `REQUIRED_ARRAYS` has been checked at runtime they are not
+ * optional any more, and saying so here is what lets a page render them directly instead
+ * of writing `?? []` - a fallback that would silently produce an empty section if the
+ * guard were ever weakened.
+ */
+export type CheckedFactSheet = FactSheet &
+  Required<Pick<FactSheet, "news" | "other_metrics">>;
+
+export function assertFactSheet(
+  payload: unknown,
+  symbol: string,
+): CheckedFactSheet {
+  if (
+    payload === null ||
+    typeof payload !== "object" ||
+    Array.isArray(payload)
+  ) {
+    throw new FactSheetContractError(
+      symbol,
+      `payload is ${describe(payload)}, not an object`,
+    );
   }
 
   const sheet = payload as Record<string, unknown>;
 
   const version = sheet.schema_version;
   if (version !== SUPPORTED_SCHEMA_VERSION) {
-    throw new FactSheetContractError(symbol, `schema_version is ${describe(version)}`);
+    throw new FactSheetContractError(
+      symbol,
+      `schema_version is ${describe(version)}`,
+    );
   }
 
   for (const key of REQUIRED_OBJECTS) {
     const value = sheet[key];
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
-      throw new FactSheetContractError(symbol, `"${key}" is ${describe(value)}, not an object`);
+      throw new FactSheetContractError(
+        symbol,
+        `"${key}" is ${describe(value)}, not an object`,
+      );
     }
   }
 
   for (const key of REQUIRED_ARRAYS) {
     if (!Array.isArray(sheet[key])) {
-      throw new FactSheetContractError(symbol, `"${key}" is ${describe(sheet[key])}, not an array`);
+      throw new FactSheetContractError(
+        symbol,
+        `"${key}" is ${describe(sheet[key])}, not an array`,
+      );
     }
   }
 
@@ -98,17 +136,23 @@ export function assertFactSheet(payload: unknown, symbol: string): FactSheet {
   // The liquidity framing note travels with Agent 5's numbers so they cannot read as a
   // trading signal by omission. A block without it must not render.
   const liquidity = sheet.liquidity as Record<string, unknown>;
-  if (typeof liquidity.framing_note_vi !== "string" || liquidity.framing_note_vi.length === 0) {
+  if (
+    typeof liquidity.framing_note_vi !== "string" ||
+    liquidity.framing_note_vi.length === 0
+  ) {
     throw new FactSheetContractError(
       symbol,
       "the liquidity block has no framing note, which must travel with its figures",
     );
   }
   if (!Array.isArray(liquidity.figures)) {
-    throw new FactSheetContractError(symbol, "liquidity.figures is not an array");
+    throw new FactSheetContractError(
+      symbol,
+      "liquidity.figures is not an array",
+    );
   }
 
-  return sheet as unknown as FactSheet;
+  return sheet as unknown as CheckedFactSheet;
 }
 
 function describe(value: unknown): string {

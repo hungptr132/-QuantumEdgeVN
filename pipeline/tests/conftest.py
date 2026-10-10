@@ -9,11 +9,16 @@ import os
 import subprocess
 import sys
 from collections.abc import Iterator
+from datetime import date
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.orm import Session
+
+from quantumedge.db.enums import PipelineStage
+from quantumedge.runs import start_run
 
 PIPELINE_ROOT = Path(__file__).resolve().parents[1]
 
@@ -133,3 +138,79 @@ def fact_defs(session: Session) -> int:
     from quantumedge.db.seed import seed_fact_codes
 
     return seed_fact_codes(session, load_settings())
+
+
+# The date every fact-sheet test builds for. Pinned rather than derived from the clock:
+# invariant 8, and a sheet whose `as_of` moved with the calendar would make its own
+# assertions unreproducible tomorrow.
+FACTSHEET_AS_OF = date(2026, 6, 30)
+
+
+@pytest.fixture
+def built(session: Session, seed_ticker: int, metric_defs: int) -> tuple[int, int]:
+    """A ticker with one available and one unavailable metric, and a calendar bar.
+
+    Returns (run_id, ticker_id).
+    """
+    session.execute(text("INSERT INTO app_user (slug, display_name) VALUES ('richard', 'Richard')"))
+    session.execute(
+        text(
+            "INSERT INTO source (code, kind, name) VALUES ('t', 'market_data', 't') "
+            "ON CONFLICT DO NOTHING"
+        )
+    )
+    run_id = start_run(session, PipelineStage.CALC, "t")
+    doc_id = session.execute(
+        text(
+            "INSERT INTO raw_document (source_id, ingest_run_id, ticker_id, symbol, doc_type, "
+            " content_hash, payload, byte_size) "
+            "VALUES ((SELECT id FROM source WHERE code='t'), :r, :tk, 'TST', 'p', 'h', "
+            " '{}'::jsonb, 2) RETURNING id"
+        ),
+        {"r": run_id, "tk": seed_ticker},
+    ).scalar_one()
+    session.execute(
+        text(
+            "INSERT INTO market_calendar (exchange_code, trade_date, is_trading_day, source) "
+            "VALUES ('HOSE', :d, true, 'test')"
+        ),
+        {"d": FACTSHEET_AS_OF},
+    )
+    session.execute(
+        text(
+            "INSERT INTO price_bar (ticker_id, trade_date, close, volume, turnover_vnd, "
+            " source_raw_document_id, extract_run_id) "
+            "VALUES (:t, :d, 2100, 1000, 2100000, :src, :r)"
+        ),
+        {"t": seed_ticker, "d": FACTSHEET_AS_OF, "src": doc_id, "r": run_id},
+    )
+    # Every is_headline metric, because QA requires the page to lead with at least five -
+    # which is the spec's own commitment. A fixture with fewer would test a sheet the
+    # pipeline is not allowed to publish.
+    for code, value, available, reason in (
+        ("price_to_par", Decimal("0.21"), True, None),
+        ("avg_turnover_20s_vnd", Decimal("40435850"), True, None),
+        ("median_turnover_20s_vnd", Decimal(0), True, None),
+        ("zero_trade_ratio_3m", Decimal("0.7937"), True, None),
+        ("turnover_concentration_3m", Decimal("0.5221"), True, None),
+        ("pe", None, False, "missing_facts:net_profit_after_tax,shares_outstanding"),
+        ("interest_coverage", None, False, "missing_facts:ebit,interest_expense"),
+        ("sessions_to_exit", None, False, "no_turnover_in_a_typical_session"),
+    ):
+        session.execute(
+            text(
+                "INSERT INTO metric_value (ticker_id, metric_code, as_of_date, value, "
+                " is_available, unavailable_reason, inputs, calc_run_id, calc_version) "
+                "VALUES (:t, :c, :d, :v, :a, :r, '{}'::jsonb, :run, 'test/v1')"
+            ),
+            {
+                "t": seed_ticker,
+                "c": code,
+                "d": FACTSHEET_AS_OF,
+                "v": value,
+                "a": available,
+                "r": reason,
+                "run": run_id,
+            },
+        )
+    return run_id, seed_ticker

@@ -26,11 +26,13 @@ from quantumedge.factsheet.schema import (
     FlagItem,
     Lineage,
     LiquidityBlock,
+    NewsRef,
     Provenance,
     StateChange,
     TickerRef,
 )
 from quantumedge.runs import git_commit
+from quantumedge.time import format_business_date
 from quantumedge.vietnamese import vn_decimal
 
 LIQUIDITY_CATEGORIES = {"liquidity_market", "liquidity_balance_sheet"}
@@ -214,6 +216,7 @@ def build_fact_sheet(session: Session, symbol: str, as_of: date, calc_run_id: in
             framing_note_vi=FRAMING_NOTE_VI,
         ),
         flags=flags,
+        news=_news(session, ref["id"], sheet_as_of),
         disclosure_gaps=gaps,
         allowed_numbers=collect_allowed_numbers(figures_all, flags),
         lineage=Lineage(
@@ -225,6 +228,50 @@ def build_fact_sheet(session: Session, symbol: str, as_of: date, calc_run_id: in
             as_of_date=sheet_as_of,
         ),
     )
+
+
+# How many headlines a page carries. A ticker page is a verification record, not a feed,
+# and an unbounded list would let one noisy week bury the figures underneath it.
+MAX_NEWS_ITEMS = 10
+
+
+def _news(session: Session, ticker_id: int, as_of: date) -> list[NewsRef]:
+    """Headlines attributed to this ticker, newest first.
+
+    Scoped to `ticker_id = :t`, so an unattributed market headline never appears on a
+    company's page: putting one there would assert it is about them, and the attribution
+    rule exists precisely to avoid asserting that without an exact match.
+
+    Bounded by `as_of` like everything else on the sheet. A sheet rebuilt for a past date
+    must not acquire headlines published after it, or the same `as_of` would produce two
+    different pages depending on when it was built — and invariant 7 would be gone.
+    """
+    rows = session.execute(
+        text(
+            """
+            SELECT headline, url, publisher, published_at, editor_note_vi
+            FROM news_item
+            WHERE ticker_id = :t
+              AND published_at < (CAST(:d AS date) + INTERVAL '1 day')
+            ORDER BY published_at DESC
+            LIMIT :n
+            """
+        ),
+        {"t": ticker_id, "d": as_of, "n": MAX_NEWS_ITEMS},
+    ).mappings()
+
+    return [
+        NewsRef(
+            headline=r["headline"],
+            url=r["url"],
+            publisher=r["publisher"],
+            published_at=r["published_at"],
+            # Vietnamese convention, and preformatted: the web layer holds no formatting.
+            display_date=format_business_date(r["published_at"]),
+            editor_note_vi=r["editor_note_vi"],
+        )
+        for r in rows
+    ]
 
 
 def _flag_history(session: Session, ticker_id: int, as_of: date) -> dict[str, list[dict[str, Any]]]:

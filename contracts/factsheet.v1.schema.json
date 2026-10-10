@@ -675,8 +675,57 @@
       "title": "LiquidityBlock",
       "type": "object"
     },
+    "NewsRef": {
+      "additionalProperties": false,
+      "description": "One headline, and nothing more than a headline.\n\n`news_item` has no body column — the copyright rule is expressed as the absence of a\nplace to put the text — and this mirrors it exactly: headline, link, publisher,\ntimestamp. There is no summary field and none may be added. A reader who wants the\narticle follows the link to the publisher, which is also the only arrangement that\nkeeps the publisher's traffic theirs.\n\n`display_date` is preformatted here because the web layer holds no formatting logic;\n`editor_note_vi` is the one line of prose we are entitled to publish, written by a\nperson and never generated.",
+      "properties": {
+        "headline": {
+          "title": "Headline",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "publisher": {
+          "title": "Publisher",
+          "type": "string"
+        },
+        "published_at": {
+          "format": "date-time",
+          "title": "Published At",
+          "type": "string"
+        },
+        "display_date": {
+          "title": "Display Date",
+          "type": "string"
+        },
+        "editor_note_vi": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Editor Note Vi"
+        }
+      },
+      "required": [
+        "headline",
+        "url",
+        "publisher",
+        "published_at",
+        "display_date"
+      ],
+      "title": "NewsRef",
+      "type": "object"
+    },
     "Provenance": {
       "additionalProperties": false,
+      "description": "Where one figure or conclusion came from.\n\n`data_absence` is the odd one and the important one: a `data_absence` rule's evidence\nIS the absence — \"no audited annual statement within 18 months of this date\" — so it\nhas a ref and a label but no document and no URL. The kind was missing from this\nLiteral while `rule_engine._data_absence` already emitted it, which did not fail only\nbecause no ticker had statements yet, so the rule always returned `unknown` and never\nreached evidence. The first ticker to gain statements *and* a disclosure gap would\nhave had its fact sheet refuse to build — the sheet for the company the gap is about.",
       "properties": {
         "kind": {
           "enum": [
@@ -687,7 +736,8 @@
             "event",
             "filing",
             "news",
-            "manual"
+            "manual",
+            "data_absence"
           ],
           "title": "Kind",
           "type": "string"
@@ -891,7 +941,7 @@
     },
     "news": {
       "items": {
-        "$ref": "#/$defs/Provenance"
+        "$ref": "#/$defs/NewsRef"
       },
       "title": "News",
       "type": "array"

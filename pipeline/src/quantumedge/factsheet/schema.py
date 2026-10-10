@@ -242,6 +242,28 @@ class Lineage(Strict):
     as_of_date: date
 
 
+class NewsRef(Strict):
+    """One headline, and nothing more than a headline.
+
+    `news_item` has no body column — the copyright rule is expressed as the absence of a
+    place to put the text — and this mirrors it exactly: headline, link, publisher,
+    timestamp. There is no summary field and none may be added. A reader who wants the
+    article follows the link to the publisher, which is also the only arrangement that
+    keeps the publisher's traffic theirs.
+
+    `display_date` is preformatted here because the web layer holds no formatting logic;
+    `editor_note_vi` is the one line of prose we are entitled to publish, written by a
+    person and never generated.
+    """
+
+    headline: str
+    url: str
+    publisher: str
+    published_at: datetime
+    display_date: str
+    editor_note_vi: str | None = None
+
+
 class FactSheet(Strict):
     schema_version: Literal["factsheet/v1"] = "factsheet/v1"
     as_of_date: date
@@ -258,7 +280,11 @@ class FactSheet(Strict):
     # Empty until Agent 1 exists. Present in the contract so the page and its types do not
     # change shape when events start arriving.
     recent_events: list[Provenance] = Field(default_factory=list)
-    news: list[Provenance] = Field(default_factory=list)
+
+    # Only headlines attributed to *this* ticker, by exact alias or whole-symbol match.
+    # An unattributed market headline on a company's page would be an implicit claim that
+    # it is about them, which is precisely the claim the attribution rule refuses to make.
+    news: list[NewsRef] = Field(default_factory=list)
 
     disclosure_gaps: list[DisclosureGap]
     what_would_have_to_be_true: list[str] = Field(default_factory=list)
